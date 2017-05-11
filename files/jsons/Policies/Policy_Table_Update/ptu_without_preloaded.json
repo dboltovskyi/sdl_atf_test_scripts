@@ -392,6 +392,7 @@
           }
         }
       },
+
       "Notifications": {
         "user_consent_prompt": "Notifications",
         "rpcs": {
@@ -2299,8 +2300,7 @@
         "RequestType":[
         	"PROPRIETARY",
         	"HTTP",
-        	"QUERY_APPS",
-          "LOCK_SCREEN_ICON_URL"
+        	"QUERY_APPS"	
         ]
       },
       "device": {
@@ -2321,25 +2321,29 @@
           "BaseBeforeDataConsent"
         ],
         "RequestType":[
-        	"PROPRIETARY",
-          "LOCK_SCREEN_ICON_URL"
+        	"PROPRIETARY"	
         ]
       },
-      "123456": {
+       "0000001": {
         "keep_context": false,
         "steal_focus": false,
         "priority": "NONE",
         "default_hmi": "NONE",
-        "groups": [
-          "Base-4"
-        ],
+        "groups": ["Base-4"],
         "RequestType":[
           "TRAFFIC_MESSAGE_CHANNEL",
           "PROPRIETARY",
           "HTTP",
-          "QUERY_APPS",
-          "LOCK_SCREEN_ICON_URL"
+          "QUERY_APPS"  
         ]
+      },
+      "MyTestApp": {
+	"keep_context": false,
+        "steal_focus": false,
+        "priority": "NONE",
+        "default_hmi": "NONE",
+        "groups": ["Base-4"],
+        "nicknames": ["Media Application", "MediaApp"]
       }
     }
   }

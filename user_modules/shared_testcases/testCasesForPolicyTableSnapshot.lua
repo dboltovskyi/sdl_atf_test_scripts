@@ -111,7 +111,7 @@ local preloaded_pt_endpoints = {}
 -- flag: If is set to PROPRIETARY or HTTP will verify section SDL in DataDictionary
 -- in all other cases: (nil or EXTERNAL_PROPRIETARY) will check SDL + Ford DataDictionary
 function testCasesForPolicyTableSnapshot:verify_PTS(is_created, app_IDs, device_IDs, app_names, to_print, flag)
-  if ( flag == nil ) then flag = EXTERNAL_PROPRIETARY end
+  if ( flag == nil ) then flag = "EXTERNAL_PROPRIETARY" end
   local is_verification_passed = true
   preloaded_pt_endpoints = {}
   --local data_dictionary = {}
@@ -146,6 +146,35 @@ function testCasesForPolicyTableSnapshot:verify_PTS(is_created, app_IDs, device_
     { name = "app_policies.pre_DataConsent.memory_kb", elem_required = "optional"},
     { name = "app_policies.pre_DataConsent.heart_beat_timeout_ms", elem_required = "optional"},
     { name = "app_policies.pre_DataConsent.RequestType", elem_required = "optional"},
+    -- RC
+    { name = "module_config.country_consent_passengersRC", elem_required = "optional" },
+    { name = "module_config.equipment.zones.Front_Passenger.col", elem_required = "optional" },
+    { name = "module_config.equipment.zones.Front_Passenger.row", elem_required = "optional" },
+    { name = "module_config.equipment.zones.Front_Passenger.level", elem_required = "optional" },
+    { name = "module_config.equipment.zones.Right_Rear_Passenger.col", elem_required = "optional" },
+    { name = "module_config.equipment.zones.Right_Rear_Passenger.row", elem_required = "optional" },
+    { name = "module_config.equipment.zones.Right_Rear_Passenger.level", elem_required = "optional" },
+    { name = "module_config.equipment.zones.Left_Rear_Passenger.col", elem_required = "optional" },
+    { name = "module_config.equipment.zones.Left_Rear_Passenger.row", elem_required = "optional" },
+    { name = "module_config.equipment.zones.Left_Rear_Passenger.level", elem_required = "optional" },
+    { name = "module_config.equipment.zones.Driver.col", elem_required = "optional" },
+    { name = "module_config.equipment.zones.Driver.row", elem_required = "optional" },
+    { name = "module_config.equipment.zones.Driver.level", elem_required = "optional" },
+    { name = "app_policies.pre_DataConsent.certificate", elem_required = "optional"},
+    { name = "app_policies.default.groups_nonPrimaryRC.1", elem_required = "optional"},
+    { name = "app_policies.default.groups_nonPrimaryRC.2", elem_required = "optional"},
+    { name = "app_policies.default.certificate", elem_required = "optional"},
+    { name = "app_policies.default.groups_primaryRC.1", elem_required = "optional"},
+    { name = "app_policies.default.groups_primaryRC.2", elem_required = "optional"},
+    { name = "app_policies.default.moduleType.1", elem_required = "optional"},
+    { name = "app_policies.default.moduleType.2", elem_required = "optional"},
+    { name = "app_policies.pre_consent_passengersRC.memory_kb", elem_required = "optional"},
+    { name = "app_policies.pre_consent_passengersRC.heart_beat_timeout_ms", elem_required = "optional"},
+    { name = "app_policies.pre_consent_passengersRC.RequestType", elem_required = "optional"},
+    { name = "app_policies.pre_consent_passengersRC.certificate", elem_required = "optional"},
+    { name = "app_policies.pre_consent_passengersRC.priority", elem_required = "optional"},
+    { name = "app_policies.pre_consent_passengersRC.groups.1", elem_required = "optional"},
+    { name = "app_policies.pre_consent_passengersRC.AppHMIType.1", elem_required = "optional"}
   }
 
   if(flag ~= "PROPRIETARY" and flag ~= "HTTP") then
@@ -548,11 +577,10 @@ function testCasesForPolicyTableSnapshot:get_data_from_PTS(pts_element)
     end
   end
   if(is_found == false) then
-    print(" \27[31m Element "..pts_element.." is not found in PTS! \27[0m")
+    print(" \27[33m Element "..pts_element.." is not found in PTS! \27[0m")
   end
   if (value == nil) then
-    print(" \27[31m Value of "..pts_element.." is nil \27[0m")
-    value = 0
+    print(" \27[33m Value of "..pts_element.." is nil \27[0m")
   end
 
   return value

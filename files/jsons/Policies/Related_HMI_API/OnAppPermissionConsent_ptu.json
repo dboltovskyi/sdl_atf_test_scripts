@@ -2295,12 +2295,15 @@
         "default_hmi": "NONE",
         "groups": [
           "Base-4"
-        ],
-        "RequestType":[
-        	"PROPRIETARY",
-        	"HTTP",
-        	"QUERY_APPS",
-          "LOCK_SCREEN_ICON_URL"
+        ]
+      },
+	  "0000001": {
+        "keep_context": false,
+        "steal_focus": false,
+        "priority": "NONE",
+        "default_hmi": "NONE",
+        "groups": [
+          "Base-4", "Notifications", "Location-1"
         ]
       },
       "device": {
@@ -2319,26 +2322,6 @@
         "default_hmi": "NONE",
         "groups": [
           "BaseBeforeDataConsent"
-        ],
-        "RequestType":[
-        	"PROPRIETARY",
-          "LOCK_SCREEN_ICON_URL"
-        ]
-      },
-      "123456": {
-        "keep_context": false,
-        "steal_focus": false,
-        "priority": "NONE",
-        "default_hmi": "NONE",
-        "groups": [
-          "Base-4"
-        ],
-        "RequestType":[
-          "TRAFFIC_MESSAGE_CHANNEL",
-          "PROPRIETARY",
-          "HTTP",
-          "QUERY_APPS",
-          "LOCK_SCREEN_ICON_URL"
         ]
       }
     }

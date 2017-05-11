@@ -94,7 +94,7 @@ function commonStepsResumption:ExpectResumeAppFULL(app)
   end)
   EXPECT_NOTIFICATION("OnHMIStatus",
     {hmiLevel = "NONE", systemContext = "MAIN", audioStreamingState = "NOT_AUDIBLE"},
-    {hmiLevel = "FULL", systemContext = "MAIN", audioStreamingState = audio_streaming_state}):ValidIf(CheckTimeBoundaries(time))
+    {hmiLevel = "FULL", systemContext = "MAIN", audioStreamingState = "AUDIBLE"}):ValidIf(CheckTimeBoundaries(time))
     :Do(function(_,data)
       Test.hmiLevel = data.payload.hmiLevel
     end):Times(2)
@@ -102,6 +102,10 @@ function commonStepsResumption:ExpectResumeAppFULL(app)
 end
 
 function commonStepsResumption:ExpectResumeAppLIMITED(app)
+  local audio_streaming_state = "AUDIBLE"
+  if(app.isMediaApplication == false) then 
+    audio_streaming_state = "NOT_AUDIBLE"
+  end
   local time = timestamp() 
   local on_audio_source = EXPECT_HMINOTIFICATION("BasicCommunication.OnResumeAudioSource", {appID = Test.applications[app.appName]})
   EXPECT_NOTIFICATION("OnHMIStatus",

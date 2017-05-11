@@ -10,14 +10,12 @@
 --9. StartSession
 --10. DeleteLogsFileAndPolicyTable
 --11. Check file existence
---12. Respore original .ini file
---13. delete PT
+--12. Respore original .ini file from appMain
+--13. Check SDL path
 --14. delete PT
 --15. Restoring file from appMain folder
 --16. Check directory existence
 --17. DB query
---18. DataBaseQuery
---19. ActivateAppInSpecificLevel
 ---------------------------------------------------------------------------------------------
 
 local commonSteps = {}
@@ -30,7 +28,7 @@ local SDLConfig = require('user_modules/shared_testcases/SmartDeviceLinkConfigur
 
 --1. ActivationApp: Activate default application
 --Parameter: AppNumber is optional
-function commonSteps:ActivationApp(AppNumber, TestCaseName)
+function commonSteps:ActivationApp(AppNumber, TestCaseName)	
 
 	local TCName
 	if TestCaseName ==nil then
@@ -38,24 +36,49 @@ function commonSteps:ActivationApp(AppNumber, TestCaseName)
 	else
 		TCName = TestCaseName
 	end
-
+	
 	Test[TCName] = function(self)
-
+		
 		local Input_AppId
 		if AppNumber == nil then
 			Input_AppId = self.applications[config.application1.registerAppInterfaceParams.appName]
 		else
 			Input_AppId = Apps[AppNumber].appID
 		end
-
+		
 		local deviceMAC = "12ca17b49af2289436f303e0166030a21e525d266e209267433801a8fd4071a0"
 
 		--hmi side: sending SDL.ActivateApp request
 		local RequestId = self.hmiConnection:SendRequest("SDL.ActivateApp", { appID = Input_AppId})
 		EXPECT_HMIRESPONSE(RequestId)
+		:Do(function(_,data)
+			if
+				data.result.isSDLAllowed ~= true then
+				local RequestId = self.hmiConnection:SendRequest("SDL.GetUserFriendlyMessage", {language = "EN-US", messageCodes = {"DataConsent"}})
+				
+				--hmi side: expect SDL.GetUserFriendlyMessage message response
+				--TODO: update after resolving APPLINK-16094.
+				--EXPECT_HMIRESPONSE(RequestId,{result = {code = 0, method = "SDL.GetUserFriendlyMessage"}})
+				EXPECT_HMIRESPONSE(RequestId)
+				:Do(function(_,data)						
+					--hmi side: send request SDL.OnAllowSDLFunctionality
+					--self.hmiConnection:SendNotification("SDL.OnAllowSDLFunctionality", {allowed = true, source = "GUI", device = {id = config.deviceMAC, name = "127.0.0.1"}})
+					self.hmiConnection:SendNotification("SDL.OnAllowSDLFunctionality", {allowed = true, source = "GUI", device = {id = deviceMAC, name = "127.0.0.1"}})
 
+					--hmi side: expect BasicCommunication.ActivateApp request
+					EXPECT_HMICALL("BasicCommunication.ActivateApp")
+					:Do(function(_,data)
+						--hmi side: sending BasicCommunication.ActivateApp response
+						self.hmiConnection:SendResponse(data.id,"BasicCommunication.ActivateApp", "SUCCESS", {})
+					end)
+					:Times(AnyNumber())
+				end)
+
+			end
+		end)
+		
 		--mobile side: expect notification
-		EXPECT_NOTIFICATION("OnHMIStatus", {hmiLevel = "FULL", systemContext = "MAIN"})
+		EXPECT_NOTIFICATION("OnHMIStatus", {hmiLevel = "FULL", systemContext = "MAIN"}) 
 	end
 end
 ---------------------------------------------------------------------------------------------
@@ -65,7 +88,7 @@ end
 
 --1. ActivationApp: Activate default application
 --Parameter: AppNumber is optional
-function commonSteps:ActivationAppGenivi(AppId, TestCaseName)
+function commonSteps:ActivationAppGenivi(AppId, TestCaseName)	
 
 	local TCName
 	if TestCaseName ==nil then
@@ -73,11 +96,11 @@ function commonSteps:ActivationAppGenivi(AppId, TestCaseName)
 	else
 		TCName = TestCaseName
 	end
-
+	
 	Test[TCName] = function(self)
 
 		local Input_AppId
-
+		
 		if AppId ~= nil then
 			Input_AppId = AppId
 		else
@@ -87,9 +110,9 @@ function commonSteps:ActivationAppGenivi(AppId, TestCaseName)
 		--hmi side: sending SDL.ActivateApp request
 		local RequestId = self.hmiConnection:SendRequest("SDL.ActivateApp", { appID = Input_AppId})
 		EXPECT_HMIRESPONSE(RequestId)
-
+		
 		--mobile side: expect notification
-		EXPECT_NOTIFICATION("OnHMIStatus", {hmiLevel = "FULL", systemContext = "MAIN"})
+		EXPECT_NOTIFICATION("OnHMIStatus", {hmiLevel = "FULL", systemContext = "MAIN"}) 
 	end
 end
 ---------------------------------------------------------------------------------------------
@@ -102,14 +125,14 @@ function commonSteps:DeactivateAppToNoneHmiLevel(TestCaseName)
 	else
 		TCName = TestCaseName
 	end
-
+	
 	Test[TCName] = function(self)
-
+	
 		--hmi side: sending BasicCommunication.OnExitApplication notification
 		self.hmiConnection:SendNotification("BasicCommunication.OnExitApplication", {appID = self.applications["Test Application"], reason = "USER_EXIT"})
 
 		EXPECT_NOTIFICATION("OnHMIStatus", { systemContext = "MAIN", hmiLevel = "NONE", audioStreamingState = "NOT_AUDIBLE"})
-	end
+	end	
 end
 
 
@@ -121,7 +144,7 @@ function commonSteps:ChangeHMIToLimited(TestCaseName)
 	else
 		TCName = TestCaseName
 	end
-
+	
 	Test[TCName] = function(self)
 
 		--hmi side: sending BasicCommunication.OnAppDeactivated request
@@ -145,7 +168,7 @@ function commonSteps:DeactivateToBackground(TestCaseName)
 	else
 		TCName = TestCaseName
 	end
-
+	
 	Test[TCName] = function(self)
 
 		--hmi side: sending BasicCommunication.OnAppDeactivated notification
@@ -155,7 +178,7 @@ function commonSteps:DeactivateToBackground(TestCaseName)
 			{ systemContext = "MAIN", hmiLevel = "BACKGROUND", audioStreamingState = "NOT_AUDIBLE"})
 	end
 end
-
+			
 
 -- Precondition 1: Opening new session
 function commonSteps:precondition_AddNewSession(TestCaseName)
@@ -165,53 +188,53 @@ function commonSteps:precondition_AddNewSession(TestCaseName)
 	else
 		TCName = TestCaseName
 	end
-
+	
 	Test[TCName] = function(self)
-
+	
 	  -- Connected expectation
 		Test.mobileSession2 = mobile_session.MobileSession(Test,Test.mobileConnection)
-
+		
 		Test.mobileSession2:StartService(7)
-	end
-end
+	end	
+end	
 
 --4. RegisterTheSecondMediaApp
-function commonSteps:RegisterTheSecondMediaApp()
-
+function commonSteps:RegisterTheSecondMediaApp()		
+	
 	Test["Register_The_Second_Media_App"]  = function(self)
 
-		--mobile side: RegisterAppInterface request
+		--mobile side: RegisterAppInterface request 
 		local CorIdRAI = self.mobileSession2:SendRPC("RegisterAppInterface",
 													{
-														syncMsgVersion =
-														{
-															majorVersion = 4,
-															minorVersion = 4,
-														},
+														syncMsgVersion = 
+														{ 
+															majorVersion = 3,
+															minorVersion = 0,
+														}, 
 														appName ="SPT2",
 														isMediaApplication = true,
 														languageDesired ="EN-US",
 														hmiDisplayLanguageDesired ="EN-US",
 														appID ="2",
-														ttsName =
-														{
-															{
+														ttsName = 
+														{ 
+															{ 
 																text ="SyncProxyTester2",
 																type ="TEXT",
-															},
-														},
-														vrSynonyms =
-														{
+															}, 
+														}, 
+														vrSynonyms = 
+														{ 
 															"vrSPT2",
 														},
 														appHMIType = {"NAVIGATION", "COMMUNICATION"}
-
-													})
-
+					
+													}) 
+	 
 		--hmi side: expect BasicCommunication.OnAppRegistered request
-		EXPECT_HMINOTIFICATION("BasicCommunication.OnAppRegistered",
+		EXPECT_HMINOTIFICATION("BasicCommunication.OnAppRegistered", 
 		{
-			application =
+			application = 
 			{
 				appName = "SPT2"
 			}
@@ -219,8 +242,8 @@ function commonSteps:RegisterTheSecondMediaApp()
 		:Do(function(_,data)
 			appId2 = data.params.application.appID
 		end)
-
-		--mobile side: RegisterAppInterface response
+		
+		--mobile side: RegisterAppInterface response 
 		self.mobileSession2:ExpectResponse(CorIdRAI, { success = true, resultCode = "SUCCESS"})
 			:Timeout(2000)
 
@@ -232,21 +255,40 @@ end
 
 --5. ActivateTheSecondMediaApp_TheFirstAppIsBACKGROUND
 ---------------------------------------------------------------------------------------------
-function commonSteps:ActivateTheSecondMediaApp()
-
+function commonSteps:ActivateTheSecondMediaApp()		
+	
 	Test["Activate_The_Second_Media_App"]  = function(self)
 
 		local deviceMAC = "12ca17b49af2289436f303e0166030a21e525d266e209267433801a8fd4071a0"
-
-		--HMI send ActivateApp request
+	
+		--HMI send ActivateApp request			
 		local RequestId = self.hmiConnection:SendRequest("SDL.ActivateApp", { appID = appId2})
 		EXPECT_HMIRESPONSE(RequestId)
+		:Do(function(_,data)
 
-		self.mobileSession2:ExpectNotification("OnHMIStatus", {hmiLevel = "FULL", audioStreamingState = "AUDIBLE", systemContext = "MAIN"})
+			if data.result.isSDLAllowed ~= true then
+				local RequestId = self.hmiConnection:SendRequest("SDL.GetUserFriendlyMessage", {language = "EN-US", messageCodes = {"DataConsent"}})
+				EXPECT_HMIRESPONSE(RequestId,{result = {code = 0, method = "SDL.GetUserFriendlyMessage"}})
+				:Do(function(_,data)
+					--hmi side: send request SDL.OnAllowSDLFunctionality
+					self.hmiConnection:SendNotification("SDL.OnAllowSDLFunctionality", {allowed = true, source = "GUI", device = {id = deviceMAC, name = "127.0.0.1"}})
+				end)
+
+				EXPECT_HMICALL("BasicCommunication.ActivateApp")
+				:Do(function(_,data)
+					self.hmiConnection:SendResponse(data.id,"BasicCommunication.ActivateApp", "SUCCESS", {})
+				end)
+				:Times(AnyNumber())
+			else
+				self.hmiConnection:SendResponse(data.id,"BasicCommunication.ActivateApp", "SUCCESS", {})
+			end
+		end)
+
+		self.mobileSession2:ExpectNotification("OnHMIStatus", {hmiLevel = "FULL", audioStreamingState = "AUDIBLE", systemContext = "MAIN"}) 
 		:Timeout(12000)
-
-		self.mobileSession:ExpectNotification("OnHMIStatus", {hmiLevel = "BACKGROUND", audioStreamingState = "NOT_AUDIBLE", systemContext = "MAIN"})
-	end
+		
+		self.mobileSession:ExpectNotification("OnHMIStatus", {hmiLevel = "BACKGROUND", audioStreamingState = "NOT_AUDIBLE", systemContext = "MAIN"}) 
+	end	
 end
 
 
@@ -262,16 +304,16 @@ function commonSteps:PutFile(testCaseName, fileName)
 									syncFileName = fileName,
 									fileType = "GRAPHIC_PNG",
 									persistentFile = false,
-									systemFile = false,
+									systemFile = false,	
 								}, "files/icon.png")
 
 		--mobile response
 		EXPECT_RESPONSE(CorIdPutFile, { success = true, resultCode = "SUCCESS"})
 		:Timeout(12000)
-
+		
 	end
-
-end
+			
+end		
 ---------------------------------------------------------------------------------------------
 
 
@@ -283,15 +325,15 @@ function commonSteps:UnregisterApplication(TestCaseName)
 	else
 		TCName = TestCaseName
 	end
-
-	Test[TCName] = function(self)
-
+	
+	Test[TCName] = function(self)		
+	
 		local cid = self.mobileSession:SendRPC("UnregisterAppInterface",{})
 
 		EXPECT_RESPONSE(cid, { success = true, resultCode = "SUCCESS"})
 		:Timeout(2000)
-	end
-end
+	end 
+end	
 
 --8. Register application
 function commonSteps:RegisterAppInterface(TestCaseName)
@@ -301,16 +343,16 @@ function commonSteps:RegisterAppInterface(TestCaseName)
 	else
 		TCName = TestCaseName
 	end
-
-	Test[TCName] = function(self)
-
+	
+	Test[TCName] = function(self)		
+			
 		CorIdRegister = self.mobileSession:SendRPC("RegisterAppInterface", config.application1.registerAppInterfaceParams)
 		strAppName = config.application1.registerAppInterfaceParams.appName
 
 		--hmi side: expect BasicCommunication.OnAppRegistered request
-		EXPECT_HMINOTIFICATION("BasicCommunication.OnAppRegistered",
+		EXPECT_HMINOTIFICATION("BasicCommunication.OnAppRegistered", 
 		{
-			application =
+			application = 
 			{
 				appName = strAppName
 			}
@@ -319,26 +361,19 @@ function commonSteps:RegisterAppInterface(TestCaseName)
 			self.appName = data.params.application.appName
 			self.applications[strAppName] = data.params.application.appID
 		end)
-
+		
 		--mobile side: expect response
-		self.mobileSession:ExpectResponse(CorIdRegister,
-		{
-			syncMsgVersion =
-			{
-				majorVersion = 4,
-				minorVersion = 4
-			}
-		})
+		self.mobileSession:ExpectResponse(CorIdRegister)
 		:Timeout(12000)
 
 		--mobile side: expect notification
-		self.mobileSession:ExpectNotification("OnHMIStatus",
-		{
+		self.mobileSession:ExpectNotification("OnHMIStatus", 
+		{ 
 			systemContext = "MAIN", hmiLevel = "NONE", audioStreamingState = "NOT_AUDIBLE"
 		})
 		:Timeout(12000)
 	end
-end
+end	
 
 --9. StartSession
 function commonSteps:StartSession(TestCaseName)
@@ -348,9 +383,9 @@ function commonSteps:StartSession(TestCaseName)
 	else
 		TCName = TestCaseName
 	end
-
-	Test[TCName] = function(self)
-
+	
+	Test[TCName] = function(self)		
+	
 		self.mobileSession = mobile_session.MobileSession(
 		self,
 		self.mobileConnection)
@@ -371,7 +406,7 @@ function commonSteps:DeleteLogsFileAndPolicyTable(DeleteLogsFlags)
 		--Delete app_info.dat and log files
 		self:DeleteLogsFiles()
 	end
-
+	
 end
 
 --10. DeleteLogsFile
@@ -398,18 +433,18 @@ function commonSteps:DeleteLogsFiles()
 	if self:file_exists(config.pathToSDL .. "HmiFrameworkPlugin.log") == true then
 		os.remove(config.pathToSDL .. "HmiFrameworkPlugin.log")
 	end
-
+	
 end
 
 --11. Check file existence
 function commonSteps:file_exists(name)
    	local f=io.open(name,"r")
 
-   	if f ~= nil then
+   	if f ~= nil then 
    		io.close(f)
    		return true
-   	else
-   		return false
+   	else 
+   		return false 
    	end
 end
 
@@ -420,7 +455,7 @@ function commonSteps:RestoreIniFile()
 
 end
 
---13. delete PT
+--13. Check SDL path
 function commonSteps:CheckSDLPath()
 	--Verify config.pathToSDL
 	findresultFirstCharacters = string.match (config.pathToSDL, '^%.%/')
@@ -440,22 +475,22 @@ function commonSteps:CheckSDLPath()
 	end
 end
 
---14. delete PT
+--14. delete PT 
 function commonSteps:DeletePolicyTable()
 
 	self:CheckSDLPath()
 
 	if self:file_exists(config.pathToSDL .. SDLConfig:GetValue("AppStorageFolder") .. "/policy.sqlite") == true then
-		--Delete policy table
+		--Delete policy table 
 		os.remove(config.pathToSDL .. SDLConfig:GetValue("AppStorageFolder") .. "/policy.sqlite")
-	elseif
+	elseif 
 		self:file_exists(config.pathToSDL .. "policy.sqlite") == true then
-		--Delete policy table
+		--Delete policy table 
 		os.remove(config.pathToSDL .. "policy.sqlite")
 	else
 		print( " \27[33m commonSteps:DeletePolicyTable : policy.sqlite is not found \27[0m " )
 	end
-
+	
 end
 
 -- 15. Restoring file from appMain folder
@@ -472,7 +507,7 @@ function commonSteps:RestoreFileFromAppMainFolder(fileName)
 	os.execute( " cp " .. tostring(OriginalIniFile) .. " " .. tostring(config.pathToSDL) .. "" )
 end
 
--- 16. Check directory existence
+-- 16. Check directory existence 
 function commonSteps:Directory_exist(DirectoryPath)
     if type( DirectoryPath ) ~= 'string' then
             error('Directory_exist : Input parameter is not string : ' .. type(DirectoryPath) )
@@ -491,7 +526,7 @@ function commonSteps:Directory_exist(DirectoryPath)
 end
 
 -- 17. DB query
-local function Exec(cmd)
+local function Exec(cmd) 
     local function trim(s)
       return s:gsub("^%s+", ""):gsub("%s+$", "")
     end
@@ -506,7 +541,7 @@ function commonSteps:DataBaseQuery(DBQueryV)
 
     -- Storage path
 	local StoragePath = SDLConfig:GetValue("AppStorageFolder")
-	if
+	if 
 		not StoragePath or
 		StoragePath == "" then
 		StoragePath = 'storage'
@@ -518,7 +553,7 @@ function commonSteps:DataBaseQuery(DBQueryV)
         if f == 1 then return false end
         return true;
     end
-    for i=1,10 do
+    for i=1,10 do 
         local DBQuery = 'sqlite3 ' .. config.pathToSDL .. StoragePath .. '/policy.sqlite "' .. tostring(DBQueryV) .. '"'
         DBQueryValue = Exec(DBQuery)
         if query_success(DBQueryValue) then
@@ -529,35 +564,5 @@ function commonSteps:DataBaseQuery(DBQueryV)
     return false
 end
 
--- 19.ActivateAppInSpecificLevel
---! @brief Activate application with specific hmi level
---! @param HMIAppID - app ID
---! @param hmi_level - level for activation
-function commonSteps:ActivateAppInSpecificLevel(test, HMIAppID)
-	  local RequestId = test.hmiConnection:SendRequest("SDL.ActivateApp", {appID = HMIAppID})
-	  --hmi side: expect SDL.ActivateApp response
-	  EXPECT_HMIRESPONSE(RequestId)
-	  :Do(function(_,data)
-	  --In case when app is not allowed, it is needed to allow app
-	    if data.result.isSDLAllowed ~= true then
-	    --hmi side: sending SDL.GetUserFriendlyMessage request
-	      RequestId = test.hmiConnection:SendRequest("SDL.GetUserFriendlyMessage",
-	      {language = "EN-US", messageCodes = {"DataConsent"}})
-
-	      EXPECT_HMIRESPONSE(RequestId)
-	      :Do(function(_,_)
-	      	--hmi side: send request SDL.OnAllowSDLFunctionality
-	      	test.hmiConnection:SendNotification("SDL.OnAllowSDLFunctionality",
-	      		{allowed = true, source = "GUI", device = {id = config.deviceMAC, name = "127.0.0.1"}})
-	      	--hmi side: expect BasicCommunication.ActivateApp request
-	      	EXPECT_HMICALL("BasicCommunication.ActivateApp")
-	      	:Do(function(_,data2)
-	        	--hmi side: sending BasicCommunication.ActivateApp response
-	        	test.hmiConnection:SendResponse(data2.id,"BasicCommunication.ActivateApp", "SUCCESS", {})
-	        end)
-	      end)
-	    end
-	  end)
-end
-
 return commonSteps
+

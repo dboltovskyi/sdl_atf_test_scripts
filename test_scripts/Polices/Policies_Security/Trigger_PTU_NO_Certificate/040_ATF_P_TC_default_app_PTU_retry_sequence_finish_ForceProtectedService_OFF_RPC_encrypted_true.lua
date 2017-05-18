@@ -57,6 +57,7 @@ time_wait[5] = timeout_after_x_seconds + seconds_between_retries[5] + time_wait[
 local total_time_wait = (time_wait[0] + time_wait[1] + time_wait[2] + time_wait[3] + time_wait[4] + time_wait[5]) * 1000 + 10000
 
 local time_ptu_finish = 0
+local time_response = 0
 
 --[[ General Precondition before ATF start ]]
 commonPreconditions:BackupFile("smartDeviceLink.ini")
@@ -133,27 +134,16 @@ function Test:TestStep_PolicyTableUpdate_retry_sequence_finish()
       print("[" .. atf_logger.formated_time(true) .. "] " .. "SDL->HMI: SDL.OnStatusUpdate()" .. ": " .. exp.occurences .. ": " .. data.params.status)
       if(exp.occurences == 11) then
         time_ptu_finish = timestamp()
-        print("time_ptu_finish = "..tostring(time_ptu_finish))
       end
     end)
 
   self.mobileSession:ExpectEvent(startserviceEvent, "Service 7: StartServiceNACK")
   :ValidIf(function(_, data)
-      local function verify_time_response()
-        if (time_ptu_finish == 0) then
-          commonFunctions:printError("Response of Service 7 is received before PTU retry sequence finish")
-          return false
-        else
-          return true
-        end
-      end
-
+      time_response = timestamp()
       if data.frameInfo == 3 then
-        local result = verify_time_response()
         print("Service 7: StartServiceNACK")
-        return result
+        return true
       elseif data.frameInfo == 2 then
-        verify_time_response()
         commonFunctions:printError("Service 7: StartService ACK is received")
         return false
       else
@@ -162,6 +152,16 @@ function Test:TestStep_PolicyTableUpdate_retry_sequence_finish()
       end
     end)
   :Timeout(total_time_wait)
+end
+
+function Test:TestStep_Verify_Time_Response()
+  if time_response > 0 and time_ptu_finish > 0 then
+    local diff = time_response - time_ptu_finish
+    print("Delay between response and end of retry sequence: " .. diff .. " ms")
+    if diff < -100 then
+      self:FailTestCase("Response of Service 7 is received before PTU retry sequence finish")
+    end
+  end
 end
 
 --[[ Postconditions ]]

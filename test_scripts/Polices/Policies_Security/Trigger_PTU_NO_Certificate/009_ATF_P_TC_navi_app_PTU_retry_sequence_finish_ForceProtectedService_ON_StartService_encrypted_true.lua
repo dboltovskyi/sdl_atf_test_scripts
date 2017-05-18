@@ -43,14 +43,26 @@ local commonTestCases = require('user_modules/shared_testcases/commonTestCases')
 local commonPreconditions = require('user_modules/shared_testcases/commonPreconditions')
 local testCasesForPolicyCeritificates = require('user_modules/shared_testcases/testCasesForPolicyCeritificates')
 local mobile_session = require('mobile_session')
+local atf_logger = require("atf_logger")
 
 --[[ Local variables ]]
-local time_wait = (60 + 61 + 62 + 62 + 62 + 62)*1000
+local timeout_after_x_seconds = 15
+local seconds_between_retries = {1, 1, 1, 1, 1}
+
+local time_wait = {}
+time_wait[0] = timeout_after_x_seconds -- 15
+time_wait[1] = timeout_after_x_seconds + seconds_between_retries[1] -- 15 + 1 = 16
+time_wait[2] = timeout_after_x_seconds + seconds_between_retries[2] + time_wait[1] -- 15 + 1 + 16 = 32
+time_wait[3] = timeout_after_x_seconds + seconds_between_retries[3] + time_wait[2] -- 15 + 1 + 32 = 48
+time_wait[4] = timeout_after_x_seconds + seconds_between_retries[4] + time_wait[3] -- 15 + 1 + 48 = 64
+time_wait[5] = timeout_after_x_seconds + seconds_between_retries[5] + time_wait[4] -- 15 + 1 + 64 = 80
+
+local total_time_wait = (time_wait[0] + time_wait[1] + time_wait[2] + time_wait[3] + time_wait[4] + time_wait[5]) * 1000 + 10000
 
 --[[ General Precondition before ATF start ]]
 commonPreconditions:BackupFile("smartDeviceLink.ini")
 commonFunctions:write_parameter_to_smart_device_link_ini("ForceProtectedService", "0x07, 0x0A, 0x0B, 0x0F")
-testCasesForPolicyCeritificates.update_preloaded_pt(config.application1.registerAppInterfaceParams.appID, false, {1,1,1,1,1})
+testCasesForPolicyCeritificates.update_preloaded_pt(config.application1.registerAppInterfaceParams.appID, false, seconds_between_retries, timeout_after_x_seconds)
 testCasesForPolicyCeritificates.create_ptu_certificate_exist(nil, true)
 commonSteps:DeletePolicyTable()
 commonSteps:DeleteLogsFiles()
@@ -89,19 +101,22 @@ function Test:Precondition_ActivateApp()
 end
 
 function Test.Precondition_PolicyTableUpdate_retry_sequence_elapse()
-  print("Wait retry sequence to elapse")
+  print("Wait retry sequence to elapse: " .. total_time_wait .. "ms")
 
   EXPECT_HMINOTIFICATION("SDL.OnStatusUpdate",
     {status="UPDATE_NEEDED"}, {status = "UPDATING"},
     {status="UPDATE_NEEDED"}, {status = "UPDATING"},
     {status="UPDATE_NEEDED"}, {status = "UPDATING"},
     {status="UPDATE_NEEDED"}, {status = "UPDATING"},
+    {status="UPDATE_NEEDED"}, {status = "UPDATING"},
     {status="UPDATE_NEEDED"})
-  :Times(9)
-  :Timeout(time_wait)
-  :Do(function(exp, data) print("exp: ".. exp.occurences) print("data = "..data.params.status)end)
+  :Times(11)
+  :Timeout(total_time_wait)
+  :Do(function(exp, data)
+      print("[" .. atf_logger.formated_time(true) .. "] " .. "SDL->HMI: SDL.OnStatusUpdate()" .. ": " .. exp.occurences .. ": " .. data.params.status)
+    end)
 
-  commonTestCases:DelayedExp(time_wait)
+  commonTestCases:DelayedExp(total_time_wait)
 end
 
 --[[ Test ]]

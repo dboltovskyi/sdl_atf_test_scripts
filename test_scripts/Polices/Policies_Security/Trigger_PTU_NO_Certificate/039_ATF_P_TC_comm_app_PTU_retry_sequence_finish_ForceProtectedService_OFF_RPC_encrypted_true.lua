@@ -39,15 +39,28 @@ local commonPreconditions = require('user_modules/shared_testcases/commonPrecond
 local testCasesForPolicyCeritificates = require('user_modules/shared_testcases/testCasesForPolicyCeritificates')
 local events = require('events')
 local Event = events.Event
+local atf_logger = require("atf_logger")
 
 --[[ Local variables ]]
-local time_wait = (60 + 61 + 62 + 62 + 62 + 62)*1000 + 10000 --10 sec tolerance
+local timeout_after_x_seconds = 15
+local seconds_between_retries = {1, 1, 1, 1, 1}
+
+local time_wait = {}
+time_wait[0] = timeout_after_x_seconds -- 15
+time_wait[1] = timeout_after_x_seconds + seconds_between_retries[1] -- 15 + 1 = 16
+time_wait[2] = timeout_after_x_seconds + seconds_between_retries[2] + time_wait[1] -- 15 + 1 + 16 = 32
+time_wait[3] = timeout_after_x_seconds + seconds_between_retries[3] + time_wait[2] -- 15 + 1 + 32 = 48
+time_wait[4] = timeout_after_x_seconds + seconds_between_retries[4] + time_wait[3] -- 15 + 1 + 48 = 64
+time_wait[5] = timeout_after_x_seconds + seconds_between_retries[5] + time_wait[4] -- 15 + 1 + 64 = 80
+
+local total_time_wait = (time_wait[0] + time_wait[1] + time_wait[2] + time_wait[3] + time_wait[4] + time_wait[5]) * 1000 + 10000
+
 local time_ptu_finish = 0
 
 --[[ General Precondition before ATF start ]]
 commonPreconditions:BackupFile("smartDeviceLink.ini")
 commonFunctions:write_parameter_to_smart_device_link_ini("ForceProtectedService", "Non")
-testCasesForPolicyCeritificates.update_preloaded_pt(config.application1.registerAppInterfaceParams.appID, false, {1,1,1,1,1}, 15)
+testCasesForPolicyCeritificates.update_preloaded_pt(config.application1.registerAppInterfaceParams.appID, false, seconds_between_retries, timeout_after_x_seconds)
 testCasesForPolicyCeritificates.create_ptu_certificate_exist(false, true)
 commonSteps:DeletePolicyTable()
 commonSteps:DeleteLogsFiles()
@@ -98,6 +111,8 @@ end
 commonFunctions:newTestCasesGroup("Test")
 
 function Test:TestStep_PolicyTableUpdate_retry_sequence_finish()
+  print("Wait retry sequence to elapse: " .. total_time_wait .. "ms")
+
   local startserviceEvent = Event()
   startserviceEvent.matches =
   function(_, data)
@@ -110,12 +125,11 @@ function Test:TestStep_PolicyTableUpdate_retry_sequence_finish()
     {status = "UPDATE_NEEDED"}, {status = "UPDATING"},
     {status = "UPDATE_NEEDED"}, {status = "UPDATING"},
     {status = "UPDATE_NEEDED"}, {status = "UPDATING"},
-    {status = "UPDATE_NEEDED"}
-  )
+    {status = "UPDATE_NEEDED"})
   :Times(11)
-  :Timeout(time_wait)
+  :Timeout(total_time_wait)
   :Do(function(exp, data)
-      print("exp = "..tostring(exp.occurences) .. "\t" .. data.params.status .. "\t" .. os.date("%X"))
+      print("[" .. atf_logger.formated_time(true) .. "] " .. "SDL->HMI: SDL.OnStatusUpdate()" .. ": " .. exp.occurences .. ": " .. data.params.status)
       if(exp.occurences == 11) then
         time_ptu_finish = timestamp()
         print("time_ptu_finish = "..tostring(time_ptu_finish))
@@ -145,20 +159,21 @@ function Test:TestStep_PolicyTableUpdate_retry_sequence_finish()
         commonFunctions:printError("Service 7: StartServiceACK/NACK is not received at all.")
         return false
       end
-      end):Timeout(time_wait)
-  end
+    end)
+  :Timeout(total_time_wait)
+end
 
-  --[[ Postconditions ]]
-  commonFunctions:newTestCasesGroup("Postconditions")
+--[[ Postconditions ]]
+commonFunctions:newTestCasesGroup("Postconditions")
 
-  function Test.Postcondition_Restore_files()
-    os.execute( " rm -f files/ptu_certificate_exist.json" )
-    commonPreconditions:RestoreFile("smartDeviceLink.ini")
-    commonPreconditions:RestoreFile("sdl_preloaded_pt.json")
-  end
+function Test.Postcondition_Restore_files()
+  os.execute( " rm -f files/ptu_certificate_exist.json" )
+  commonPreconditions:RestoreFile("smartDeviceLink.ini")
+  commonPreconditions:RestoreFile("sdl_preloaded_pt.json")
+end
 
-  function Test.Postcondition_Stop()
-    StopSDL()
-  end
+function Test.Postcondition_Stop()
+  StopSDL()
+end
 
-  return Test
+return Test

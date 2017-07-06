@@ -51,7 +51,7 @@ local function step1_2(self)
   EXPECT_NOTIFICATION("OnInteriorVehicleData")
   :Times(0)
 
-  commonTestCases:DelayedExp(5000)
+  commonTestCases:DelayedExp(commonRC.timeout)
 end
 
 local function step2_1(self)
@@ -97,7 +97,7 @@ local function step2_2(self)
   EXPECT_NOTIFICATION("OnInteriorVehicleData")
   :Times(0)
 
-  commonTestCases:DelayedExp(5000)
+  commonTestCases:DelayedExp(commonRC.timeout)
 end
 
 --[[ Scenario ]]

@@ -7,7 +7,7 @@ config.deviceMAC = "12ca17b49af2289436f303e0166030a21e525d266e209267433801a8fd40
 config.defaultProtocolVersion = 2
 config.ValidateSchema = false
 config.application1.registerAppInterfaceParams.appHMIType = { "REMOTE_CONTROL" }
-config.application1.registerAppInterfaceParams.appID = "8675311"
+config.application2.registerAppInterfaceParams.appHMIType = { "REMOTE_CONTROL" }
 
 --[[ Required Shared libraries ]]
 local commonFunctions = require("user_modules/shared_testcases/commonFunctions")
@@ -52,8 +52,7 @@ local function initHMI(self)
       registerComponent("Buttons", {"Buttons.OnButtonSubscription"})
       registerComponent("TTS")
       registerComponent("VR")
-      registerComponent("BasicCommunication",
-        {
+      registerComponent("BasicCommunication", {
           "BasicCommunication.OnPutFile",
           "SDL.OnStatusUpdate",
           "SDL.OnAppPermissionChanged",
@@ -66,14 +65,12 @@ local function initHMI(self)
           "SDL.OnSDLConsentNeeded",
           "BasicCommunication.OnResumeAudioSource"
         })
-      registerComponent("UI",
-        {
+      registerComponent("UI", {
           "UI.OnRecordStart"
         })
       registerComponent("VehicleInfo")
       registerComponent("RC")
-      registerComponent("Navigation",
-        {
+      registerComponent("Navigation", {
           "Navigation.OnAudioDataStreaming",
           "Navigation.OnVideoDataStreaming"
         })
@@ -103,11 +100,14 @@ local function updatePTU(tbl)
       moduleType = { "RADIO", "CLIMATE" },
       groups = { "Base-4" },
       groups_primaryRC = { "Base-4", "RemoteControl" },
-      groups_nonPrimaryRC = { "Notifications-RC", "RemoteControl" },
       AppHMIType = { "REMOTE_CONTROL" }
     }
-  tbl.policy_table.functional_groupings["RemoteControl"].rpcs.OnInteriorVehicleData.hmi_levels = {
-      "BACKGROUND", "FULL", "LIMITED", "NONE"
+  tbl.policy_table.functional_groupings["RemoteControl"] = {
+      rpcs = {
+        GetInteriorVehicleDataCapabilities = {
+          hmi_levels = { "BACKGROUND", "FULL", "LIMITED", "NONE" }
+        }
+      }
     }
 end
 
@@ -164,6 +164,8 @@ end
 
 local commonRC = {}
 
+commonRC.timeout = 2000
+
 function commonRC.preconditions()
   commonFunctions:SDLForceStop()
   commonSteps:DeletePolicyTable()
@@ -219,57 +221,116 @@ function commonRC.rai_ptu(ptu_update_func, self)
     end)
 end
 
+function commonRC.rai2(self)
+  self.mobileSession2 = mobile_session.MobileSession(self, self.mobileConnection)
+  self.mobileSession2:StartService(7)
+  :Do(function()
+      local corId = self.mobileSession2:SendRPC("RegisterAppInterface", config.application2.registerAppInterfaceParams)
+      EXPECT_HMINOTIFICATION("BasicCommunication.OnAppRegistered", { application = { appName = config.application2.registerAppInterfaceParams.appName } })
+      :Do(function(_, d1)
+          self.applications[config.application2.registerAppInterfaceParams.appID] = d1.params.application.appID
+        end)
+      self.mobileSession2:ExpectResponse(corId, { success = true, resultCode = "SUCCESS" })
+      -- :Do(function(_, d)
+      --     commonFunctions:printTable(d)
+      --     self.mobileSession2:ExpectNotification("OnHMIStatus", { hmiLevel = "NONE", audioStreamingState = "NOT_AUDIBLE", systemContext = "MAIN" })
+      --     self.mobileSession2:ExpectNotification("OnPermissionsChange")
+      --   end)
+    end)
+end
+
 function commonRC.postconditions()
   StopSDL()
 end
 
 function commonRC.getInteriorZone()
   return {
-    col = 0,
-    row = 0,
-    level = 0,
-    colspan = 2,
-    rowspan = 2,
-    levelspan = 1
-  }
+      col = 0,
+      row = 0,
+      level = 0,
+      colspan = 2,
+      rowspan = 2,
+      levelspan = 1
+    }
 end
 
 function commonRC.getClimateControlData()
   return {
-    fanSpeed = 50,
-    currentTemp = 30,
-    desiredTemp = 24,
-    temperatureUnit = "CELSIUS",
-    acEnable = true,
-    circulateAirEnable = true,
-    autoModeEnable = true,
-    defrostZone = "FRONT",
-    dualModeEnable = true
-  }
+      fanSpeed = 50,
+      currentTemp = 30,
+      desiredTemp = 24,
+      temperatureUnit = "CELSIUS",
+      acEnable = true,
+      circulateAirEnable = true,
+      autoModeEnable = true,
+      defrostZone = "FRONT",
+      dualModeEnable = true
+    }
 end
 
 function commonRC.getRadioControlData()
   return {
-    frequencyInteger = 1,
-    frequencyFraction = 2,
-    band = "AM",
-    rdsData = {
-        PS = "ps",
-        RT = "rt",
-        CT = "123456789012345678901234",
-        PI = "pi",
-        PTY = 1,
-        TP = false,
-        TA = true,
-        REG = "US"
-      },
-    availableHDs = 1,
-    hdChannel = 1,
-    signalStrength = 5,
-    signalChangeThreshold = 10,
-    radioEnable = true,
-    state = "ACQUIRING"
-  }
+      frequencyInteger = 1,
+      frequencyFraction = 2,
+      band = "AM",
+      rdsData = {
+          PS = "ps",
+          RT = "rt",
+          CT = "123456789012345678901234",
+          PI = "pi",
+          PTY = 1,
+          TP = false,
+          TA = true,
+          REG = "US"
+        },
+      availableHDs = 1,
+      hdChannel = 1,
+      signalStrength = 5,
+      signalChangeThreshold = 10,
+      radioEnable = true,
+      state = "ACQUIRING"
+    }
 end
+
+function commonRC.getClimateControlCapabilities()
+  return {
+      name = "Climate control module",
+      fanSpeedAvailable = true,
+      desiredTemperatureAvailable = true,
+      acEnableAvailable = true,
+      acMaxEnableAvailable = true,
+      circulateAirEnableAvailable = true,
+      autoModeEnableAvailable = true,
+      dualModeEnableAvailable = true,
+      defrostZoneAvailable = true,
+      defrostZone = { "ALL" },
+      ventilationModeAvailable = true,
+      ventilationMode = { "BOTH" }
+    }
+end
+
+function commonRC.getRadioControlCapabilities()
+  return {
+      name = "Radio control module",
+      radioEnableAvailable = true,
+      radioBandAvailable = true,
+      radioFrequencyAvailable = true,
+      hdChannelAvailable = true,
+      rdsDataAvailable = true,
+      availableHDsAvailable = true,
+      stateAvailable = true,
+      signalStrengthAvailable = true,
+      signalChangeThresholdAvailable = true
+    }
+end
+
+function commonRC.consent(self)
+  EXPECT_HMICALL("RC.GetInteriorVehicleDataConsent")
+  :Times(1)
+  :Do(function(_, data)
+      self.hmiConnection:SendResponse(data.id, data.method, "SUCCESS", { allowed = true })
+    end)
+end
+
 
 return commonRC

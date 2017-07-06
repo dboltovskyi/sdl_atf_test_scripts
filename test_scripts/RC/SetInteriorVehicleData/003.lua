@@ -25,7 +25,7 @@ local function step1(self)
 
 	EXPECT_RESPONSE(cid, { success = false, resultCode = "DISALLOWED" })
 
-	commonTestCases:DelayedExp(5000)
+	commonTestCases:DelayedExp(commonRC.timeout)
 end
 
 local function step2(self)
@@ -42,7 +42,7 @@ local function step2(self)
 
 	EXPECT_RESPONSE(cid, { success = false, resultCode = "DISALLOWED" })
 
-	commonTestCases:DelayedExp(5000)
+	commonTestCases:DelayedExp(commonRC.timeout)
 end
 
 --[[ Scenario ]]

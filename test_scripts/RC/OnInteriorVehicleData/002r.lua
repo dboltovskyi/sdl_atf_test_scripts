@@ -51,7 +51,7 @@ local function step2(self)
   EXPECT_NOTIFICATION("OnInteriorVehicleData")
   :Times(0)
 
-  commonTestCases:DelayedExp(5000)
+  commonTestCases:DelayedExp(commonRC.timeout)
 end
 
 local function ptu_update_func(tbl)

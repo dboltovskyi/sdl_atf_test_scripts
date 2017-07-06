@@ -10,16 +10,15 @@ local commonTestCases = require('user_modules/shared_testcases/commonTestCases')
 --[[ Local Functions ]]
 local function step1(self)
 	local cid = self.mobileSession:SendRPC("GetInteriorVehicleDataCapabilities", {
-		zone = commonRC.getInteriorZone(),
-		moduleTypes = { "CLIMATE" }
-	})
+			moduleTypes = { "CLIMATE" }
+		})
 
 	EXPECT_HMICALL("RC.GetInteriorVehicleDataCapabilities", {})
 	:Times(0)
 
 	EXPECT_RESPONSE(cid, { success = false, resultCode = "DISALLOWED" })
 
-	commonTestCases:DelayedExp(5000)
+	commonTestCases:DelayedExp(commonRC.timeout)
 end
 
 local function ptu_update_func(tbl)

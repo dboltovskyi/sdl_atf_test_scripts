@@ -8,7 +8,7 @@ local runner = require('user_modules/script_runner')
 local commonTestCases = require('user_modules/shared_testcases/commonTestCases')
 
 --[[ Local Functions ]]
-local function step1(self)
+local function step(self)
 	local cid = self.mobileSession:SendRPC("GetInteriorVehicleDataCapabilities", {
 			moduleTypes = { "CLIMATE" }
 		})
@@ -31,6 +31,6 @@ runner.Step("Clean environment", commonRC.preconditions)
 runner.Step("Start SDL, HMI, connect Mobile, start Session", commonRC.start)
 runner.Step("RAI, PTU", commonRC.rai_ptu, { ptu_update_func })
 runner.Title("Test")
-runner.Step("GetInteriorVehicleDataCapabilities_CLIMATE", step1)
+runner.Step("GetInteriorVehicleDataCapabilities_CLIMATE", step)
 runner.Title("Postconditions")
 runner.Step("Stop SDL", commonRC.postconditions)

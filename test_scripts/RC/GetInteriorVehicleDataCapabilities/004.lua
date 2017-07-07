@@ -18,11 +18,7 @@ local function step1(self)
 		})
 	:Do(function(_, data)
 			self.hmiConnection:SendResponse(data.id, data.method, "WARNINGS", {
-				interiorVehicleDataCapabilities = {
-					{
-						climateControlCapabilities = commonRC.getClimateControlCapabilities()
-					}
-				},
+				interiorVehicleDataCapabilities = commonRC.getInteriorVehicleDataCapabilities({ "CLIMATE" }),
 				info = "Radio module is not available"
 			})
 	end)
@@ -30,11 +26,7 @@ local function step1(self)
 	EXPECT_RESPONSE(cid, {
 			success = true,
 			resultCode = "WARNINGS",
-			interiorVehicleDataCapabilities = {
-				{
-					climateControlCapabilities = commonRC.getClimateControlCapabilities()
-				}
-			},
+			interiorVehicleDataCapabilities = commonRC.getInteriorVehicleDataCapabilities({ "CLIMATE" }),
 			info = "Radio module is not available"
 		})
 end
@@ -50,11 +42,7 @@ local function step2(self)
 		})
 	:Do(function(_, data)
 			self.hmiConnection:SendResponse(data.id, data.method, "WARNINGS", {
-				interiorVehicleDataCapabilities = {
-					{
-						radioControlCapabilities = commonRC.getRadioControlCapabilities()
-					}
-				},
+				interiorVehicleDataCapabilities = commonRC.getInteriorVehicleDataCapabilities({ "RADIO" }),
 				info = "Climate module is not available"
 			})
 	end)
@@ -62,11 +50,7 @@ local function step2(self)
 	EXPECT_RESPONSE(cid, {
 			success = true,
 			resultCode = "WARNINGS",
-			interiorVehicleDataCapabilities = {
-				{
-					radioControlCapabilities = commonRC.getRadioControlCapabilities()
-				}
-			},
+			interiorVehicleDataCapabilities = commonRC.getInteriorVehicleDataCapabilities({ "RADIO" }),
 			info = "Climate module is not available"
 		})
 end

@@ -18,22 +18,14 @@ local function step1(self)
 		})
 	:Do(function(_, data)
 			self.hmiConnection:SendResponse(data.id, data.method, "SUCCESS", {
-				interiorVehicleDataCapabilities = {
-					{
-						radioControlCapabilities = commonRC.getRadioControlCapabilities()
-					}
-				}
+				interiorVehicleDataCapabilities = commonRC.getInteriorVehicleDataCapabilities({ "RADIO" })
 			})
 	end)
 
 	EXPECT_RESPONSE(cid, {
 			success = true,
 			resultCode = "SUCCESS",
-			interiorVehicleDataCapabilities = {
-				{
-					radioControlCapabilities = commonRC.getRadioControlCapabilities()
-				}
-			}
+			interiorVehicleDataCapabilities = commonRC.getInteriorVehicleDataCapabilities({ "RADIO" })
 		})
 end
 
@@ -48,22 +40,14 @@ local function step2(self)
 		})
 	:Do(function(_, data)
 			self.hmiConnection:SendResponse(data.id, data.method, "SUCCESS", {
-				interiorVehicleDataCapabilities = {
-					{
-						radioControlCapabilities = commonRC.getRadioControlCapabilities()
-					}
-				}
+				interiorVehicleDataCapabilities = commonRC.getInteriorVehicleDataCapabilities({ "RADIO" })
 			})
 	end)
 
 	EXPECT_RESPONSE(cid, {
 			success = true,
 			resultCode = "SUCCESS",
-			interiorVehicleDataCapabilities = {
-				{
-					radioControlCapabilities = commonRC.getRadioControlCapabilities()
-				}
-			}
+			interiorVehicleDataCapabilities = commonRC.getInteriorVehicleDataCapabilities({ "RADIO" })
 		})
 end
 

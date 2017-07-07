@@ -18,22 +18,14 @@ local function step1(self)
 		})
 	:Do(function(_, data)
 			self.hmiConnection:SendResponse(data.id, data.method, "SUCCESS", {
-				interiorVehicleDataCapabilities = {
-					{
-						climateControlCapabilities = commonRC.getClimateControlCapabilities()
-					}
-				}
+				interiorVehicleDataCapabilities = commonRC.getInteriorVehicleDataCapabilities({ "CLIMATE" })
 			})
 	end)
 
 	EXPECT_RESPONSE(cid, {
 			success = true,
 			resultCode = "SUCCESS",
-			interiorVehicleDataCapabilities = {
-				{
-					climateControlCapabilities = commonRC.getClimateControlCapabilities()
-				}
-			}
+			interiorVehicleDataCapabilities = commonRC.getInteriorVehicleDataCapabilities({ "CLIMATE" })
 		})
 end
 
@@ -48,22 +40,14 @@ local function step2(self)
 		})
 	:Do(function(_, data)
 			self.hmiConnection:SendResponse(data.id, data.method, "SUCCESS", {
-				interiorVehicleDataCapabilities = {
-					{
-						climateControlCapabilities = commonRC.getClimateControlCapabilities()
-					}
-				}
+				interiorVehicleDataCapabilities = commonRC.getInteriorVehicleDataCapabilities({ "CLIMATE" })
 			})
 	end)
 
 	EXPECT_RESPONSE(cid, {
 			success = true,
 			resultCode = "SUCCESS",
-			interiorVehicleDataCapabilities = {
-				{
-					climateControlCapabilities = commonRC.getClimateControlCapabilities()
-				}
-			}
+			interiorVehicleDataCapabilities = commonRC.getInteriorVehicleDataCapabilities({ "CLIMATE" })
 		})
 end
 

@@ -5,4 +5,6 @@
 ./test_scripts/RC/GetInteriorVehicleDataCapabilities/002r.lua
 ./test_scripts/RC/GetInteriorVehicleDataCapabilities/003.lua
 ./test_scripts/RC/GetInteriorVehicleDataCapabilities/004.lua
-./test_scripts/RC/GetInteriorVehicleDataCapabilities/005.lua
+./test_scripts/RC/GetInteriorVehicleDataCapabilities/005_not_completed.lua
+./test_scripts/RC/GetInteriorVehicleDataCapabilities/007.lua
+./test_scripts/RC/GetInteriorVehicleDataCapabilities/008.lua

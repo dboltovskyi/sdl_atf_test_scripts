@@ -7,7 +7,7 @@ config.deviceMAC = "12ca17b49af2289436f303e0166030a21e525d266e209267433801a8fd40
 config.defaultProtocolVersion = 2
 config.ValidateSchema = false
 config.application1.registerAppInterfaceParams.appHMIType = { "REMOTE_CONTROL" }
-config.application2.registerAppInterfaceParams.appHMIType = { "REMOTE_CONTROL" }
+config.application2.registerAppInterfaceParams.appHMIType = nil
 
 --[[ Required Shared libraries ]]
 local commonFunctions = require("user_modules/shared_testcases/commonFunctions")
@@ -221,21 +221,21 @@ function commonRC.rai_ptu(ptu_update_func, self)
     end)
 end
 
-function commonRC.rai2(self)
-  self.mobileSession2 = mobile_session.MobileSession(self, self.mobileConnection)
-  self.mobileSession2:StartService(7)
+function commonRC.rai_n(id, self)
+  self["mobileSession" .. id] = mobile_session.MobileSession(self, self.mobileConnection)
+  self["mobileSession" .. id]:StartService(7)
   :Do(function()
-      local corId = self.mobileSession2:SendRPC("RegisterAppInterface", config.application2.registerAppInterfaceParams)
-      EXPECT_HMINOTIFICATION("BasicCommunication.OnAppRegistered", { application = { appName = config.application2.registerAppInterfaceParams.appName } })
+      local corId = self["mobileSession" .. id]:SendRPC("RegisterAppInterface", config["application" .. id].registerAppInterfaceParams)
+      EXPECT_HMINOTIFICATION("BasicCommunication.OnAppRegistered", { application = { appName = config["application" .. id].registerAppInterfaceParams.appName } })
       :Do(function(_, d1)
-          self.applications[config.application2.registerAppInterfaceParams.appID] = d1.params.application.appID
+          self.applications[config["application" .. id].registerAppInterfaceParams.appID] = d1.params.application.appID
         end)
-      self.mobileSession2:ExpectResponse(corId, { success = true, resultCode = "SUCCESS" })
-      -- :Do(function(_, d)
-      --     commonFunctions:printTable(d)
-      --     self.mobileSession2:ExpectNotification("OnHMIStatus", { hmiLevel = "NONE", audioStreamingState = "NOT_AUDIBLE", systemContext = "MAIN" })
-      --     self.mobileSession2:ExpectNotification("OnPermissionsChange")
-      --   end)
+      self["mobileSession" .. id]:ExpectResponse(corId, { success = true, resultCode = "SUCCESS" })
+      :Do(function()
+          self["mobileSession" .. id]:ExpectNotification("OnHMIStatus", { hmiLevel = "NONE", audioStreamingState = "NOT_AUDIBLE", systemContext = "MAIN" })
+          :Times(AtLeast(1)) -- issue with SDL --> notification is sent twice
+          self["mobileSession" .. id]:ExpectNotification("OnPermissionsChange")
+        end)
     end)
 end
 
@@ -324,6 +324,21 @@ function commonRC.getRadioControlCapabilities()
     }
 end
 
+function commonRC.getInteriorVehicleDataCapabilities(module_types)
+  local out = { }
+  if not module_types then
+    return out
+  end
+  for _, v in pairs(module_types) do
+    if v == "CLIMATE" then
+      out.climateControlCapabilities = commonRC.getClimateControlCapabilities()
+    elseif v == "RADIO" then
+      out.radioControlCapabilities = commonRC.getRadioControlCapabilities()
+    end
+  end
+  return out
+end
+
 function commonRC.consent(self)
   EXPECT_HMICALL("RC.GetInteriorVehicleDataConsent")
   :Times(1)
@@ -331,6 +346,5 @@ function commonRC.consent(self)
       self.hmiConnection:SendResponse(data.id, data.method, "SUCCESS", { allowed = true })
     end)
 end
-
 
 return commonRC

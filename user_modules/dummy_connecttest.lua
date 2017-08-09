@@ -362,149 +362,43 @@ function module:initHMI()
   return exp_waiter.expectation
 end
 
-function module:initHMI_onReady()
-  local exp_waiter = commonFunctions:createMultipleExpectationsWaiter(module, "HMI on ready")
-  local function ExpectRequest(name, mandatory, params)
-    local event = events.Event()
-    event.level = 2
-    event.matches = function(self, data)
-      return data.method == name
-    end
-    local exp = EXPECT_HMIEVENT(event, name)
-    :Times(mandatory and 1 or AnyNumber())
-    :Do(function(_, data)
-        xmlReporter.AddMessage("hmi_connection","SendResponse",
-          {
-            ["methodName"] = tostring(name),
-            ["mandatory"] = mandatory ,
-            ["params"]= params
-          })
-        self.hmiConnection:SendResponse(data.id, data.method, "SUCCESS", params)
-      end)
-    if (mandatory) then
-     exp_waiter:AddExpectation(exp)
-    end
-   return exp
+--------------------------------------
+local function ExpectRequest(self, name, mandatory, params)
+  local event = events.Event()
+  event.level = 2
+  event.matches = function(self, data)
+    return data.method == name
   end
-
-  local function ExpectNotification(name, mandatory)
-    xmlReporter.AddMessage(debug.getinfo(1, "n").name, tostring(name))
-    local event = events.Event()
-    event.level = 2
-    event.matches = function(self, data) return data.method == name end
-    local exp = EXPECT_HMIEVENT(event, name)
-    :Times(mandatory and 1 or AnyNumber())
-    exp_waiter:AddExpectation(exp)
-    return exp
+  local exp = EXPECT_HMIEVENT(event, name)
+  :Times(mandatory and 1 or AnyNumber())
+  :Do(function(_, data)
+      xmlReporter.AddMessage("hmi_connection","SendResponse",
+        {
+          ["methodName"] = tostring(name),
+          ["mandatory"] = mandatory ,
+          ["params"]= params
+        })
+      self.hmiConnection:SendResponse(data.id, data.method, "SUCCESS", params)
+    end)
+  if (mandatory) then
+   exp_waiter:AddExpectation(exp)
   end
+ return exp
+end
 
-  ExpectRequest("BasicCommunication.MixingAudioSupported",
-    true,
-    { attenuatedSupported = true })
-  ExpectRequest("BasicCommunication.GetSystemInfo", false,
-    {
-      ccpu_version = "ccpu_version",
-      language = "EN-US",
-      wersCountryCode = "wersCountryCode"
-    })
-  ExpectRequest("UI.GetLanguage", true, { language = "EN-US" })
-  ExpectRequest("VR.GetLanguage", true, { language = "EN-US" })
-  ExpectRequest("TTS.GetLanguage", true, { language = "EN-US" })
-  ExpectRequest("UI.ChangeRegistration", false, { }):Pin()
-  ExpectRequest("TTS.SetGlobalProperties", false, { }):Pin()
-  ExpectRequest("BasicCommunication.UpdateDeviceList", false, { }):Pin()
-  ExpectRequest("VR.ChangeRegistration", false, { }):Pin()
-  ExpectRequest("TTS.ChangeRegistration", false, { }):Pin()
-  ExpectRequest("VR.GetSupportedLanguages", true, {
-      languages = {
-        "EN-US","ES-MX","FR-CA","DE-DE","ES-ES","EN-GB","RU-RU",
-        "TR-TR","PL-PL","FR-FR","IT-IT","SV-SE","PT-PT","NL-NL",
-        "ZH-TW","JA-JP","AR-SA","KO-KR","PT-BR","CS-CZ","DA-DK",
-        "NO-NO","NL-BE","EL-GR","HU-HU","FI-FI","SK-SK" }
-    })
-  ExpectRequest("TTS.GetSupportedLanguages", true, {
-      languages = {
-        "EN-US","ES-MX","FR-CA","DE-DE","ES-ES","EN-GB","RU-RU",
-        "TR-TR","PL-PL","FR-FR","IT-IT","SV-SE","PT-PT","NL-NL",
-        "ZH-TW","JA-JP","AR-SA","KO-KR","PT-BR","CS-CZ","DA-DK",
-        "NO-NO","NL-BE","EL-GR","HU-HU","FI-FI","SK-SK" }
-    })
-  ExpectRequest("UI.GetSupportedLanguages", true, {
-      languages = {
-        "EN-US","ES-MX","FR-CA","DE-DE","ES-ES","EN-GB","RU-RU",
-        "TR-TR","PL-PL","FR-FR","IT-IT","SV-SE","PT-PT","NL-NL",
-        "ZH-TW","JA-JP","AR-SA","KO-KR","PT-BR","CS-CZ","DA-DK",
-        "NO-NO","NL-BE","EL-GR","HU-HU","FI-FI","SK-SK" }
-    })
-  ExpectRequest("VehicleInfo.GetVehicleType", true, {
-      vehicleType =
-      {
-        make = "Ford",
-        model = "Fiesta",
-        modelYear = "2013",
-        trim = "SE"
-      }
-    })
-  ExpectRequest("VehicleInfo.GetVehicleData", true, { vin = "52-452-52-752" })
-
-  local function button_capability(name, shortPressAvailable, longPressAvailable, upDownAvailable)
-    return
-    {
-      name = name,
-      shortPressAvailable = shortPressAvailable == nil and true or shortPressAvailable,
-      longPressAvailable = longPressAvailable == nil and true or longPressAvailable,
-      upDownAvailable = upDownAvailable == nil and true or upDownAvailable
-    }
-  end
-
-  local buttons_capabilities =
-  {
-    capabilities =
-    {
-      button_capability("PRESET_0"),
-      button_capability("PRESET_1"),
-      button_capability("PRESET_2"),
-      button_capability("PRESET_3"),
-      button_capability("PRESET_4"),
-      button_capability("PRESET_5"),
-      button_capability("PRESET_6"),
-      button_capability("PRESET_7"),
-      button_capability("PRESET_8"),
-      button_capability("PRESET_9"),
-      button_capability("OK", true, false, true),
-      button_capability("SEEKLEFT"),
-      button_capability("SEEKRIGHT"),
-      button_capability("TUNEUP"),
-      button_capability("TUNEDOWN")
-    },
-    presetBankCapabilities = { onScreenPresetsAvailable = true }
-  }
-  ExpectRequest("Buttons.GetCapabilities", true, buttons_capabilities)
-  ExpectRequest("VR.GetCapabilities", true, { vrCapabilities = { "TEXT" } })
-  ExpectRequest("TTS.GetCapabilities", true, {
-      speechCapabilities = { "TEXT", "PRE_RECORDED" },
-      prerecordedSpeechCapabilities =
-      {
-        "HELP_JINGLE",
-        "INITIAL_JINGLE",
-        "LISTEN_JINGLE",
-        "POSITIVE_JINGLE",
-        "NEGATIVE_JINGLE"
-      }
-    })
+local function getUIDisplayCapabilities()
 
   local function text_field(name, characterSet, width, rows)
-    return
-    {
+    return {
       name = name,
       characterSet = characterSet or "TYPE2SET",
       width = width or 500,
       rows = rows or 1
     }
   end
+
   local function image_field(name, width, height)
-    return
-    {
+    return {
       name = name,
       imageTypeSupported =
       {
@@ -518,12 +412,9 @@ function module:initHMI_onReady()
         resolutionHeight = height or 64
       }
     }
-
   end
 
-  ExpectRequest("UI.GetCapabilities", true, {
-      displayCapabilities =
-      {
+  return {
         displayType = "GEN2_8_DMA",
         textFields =
         {
@@ -596,33 +487,208 @@ function module:initHMI_onReady()
           }
         },
         numCustomPresetsAvailable = 10
-      },
-      audioPassThruCapabilities =
+      }
+end
+
+local function getUIAudioPassThruCapabilities()
+  return {
+    samplingRate = "44KHZ",
+    bitsPerSample = "8_BIT",
+    audioType = "PCM"
+  }
+end
+
+local function getUISoftButtonCapabilities()
+  return {
+    {
+      shortPressAvailable = true,
+      longPressAvailable = true,
+      upDownAvailable = true,
+      imageSupported = true
+    }
+  }
+end
+
+local function getRCClimateControlCapabilities()
+    return {
       {
-        samplingRate = "44KHZ",
-        bitsPerSample = "8_BIT",
-        audioType = "PCM"
-      },
-      hmiZoneCapabilities = "FRONT",
-      softButtonCapabilities =
-      {
-        {
-          shortPressAvailable = true,
-          longPressAvailable = true,
-          upDownAvailable = true,
-          imageSupported = true
+        moduleName = "Climate",
+        fanSpeedAvailable = true,
+        desiredTemperatureAvailable = true,
+        acEnableAvailable = true,
+        acMaxEnableAvailable = true,
+        circulateAirEnableAvailable = true,
+        autoModeEnableAvailable = true,
+        dualModeEnableAvailable = true,
+        defrostZoneAvailable = true,
+        defrostZone = {
+          "FRONT", "REAR", "ALL", "NONE"
+        },
+        ventilationModeAvailable = true,
+        ventilationMode = {
+          "UPPER", "LOWER", "BOTH", "NONE"
         }
       }
-    })
+    }
+end
 
-  ExpectRequest("VR.IsReady", true, { available = true })
-  ExpectRequest("TTS.IsReady", true, { available = true })
-  ExpectRequest("UI.IsReady", true, { available = true })
-  ExpectRequest("Navigation.IsReady", true, { available = true })
-  ExpectRequest("VehicleInfo.IsReady", true, { available = true })
+local function getRCRadioControlCapabilities()
+    return {
+      {
+        moduleName = "Radio",
+        radioEnableAvailable = true,
+        radioBandAvailable = true,
+        radioFrequencyAvailable = true,
+        hdChannelAvailable = true,
+        rdsDataAvailable = true,
+        availableHDsAvailable = true,
+        stateAvailable = true,
+        signalStrengthAvailable = true,
+        signalChangeThresholdAvailable = true
+      }
+    }
+end
+
+local function getRCButtonCapabilities()
+    local buttons = {
+      -- climate
+      "AC_MAX", "AC", "RECIRCULATE", "FAN_UP", "FAN_DOWN", "TEMP_UP", "TEMP_DOWN", "DEFROST_MAX", "DEFROST", "DEFROST_REAR", "UPPER_VENT", "LOWER_VENT",
+      -- radio
+      "VOLUME_UP", "VOLUME_DOWN", "EJECT", "SOURCE", "SHUFFLE", "REPEAT"
+    }
+    local out = { }
+    for _, button in pairs(buttons) do
+      table.insert(out, { name = button, shortPressAvailable = true, longPressAvailable = true, upDownAvailable = true })
+    end
+    return out
+end
+
+local function getLanguages()
+  return {
+    "EN-US","ES-MX","FR-CA","DE-DE","ES-ES","EN-GB","RU-RU",
+    "TR-TR","PL-PL","FR-FR","IT-IT","SV-SE","PT-PT","NL-NL",
+    "ZH-TW","JA-JP","AR-SA","KO-KR","PT-BR","CS-CZ","DA-DK",
+    "NO-NO","NL-BE","EL-GR","HU-HU","FI-FI","SK-SK"
+  }
+end
+
+local function getButtonsCapabilities()
+  local function button_capability(name, shortPressAvailable, longPressAvailable, upDownAvailable)
+    return {
+      name = name,
+      shortPressAvailable = shortPressAvailable == nil and true or shortPressAvailable,
+      longPressAvailable = longPressAvailable == nil and true or longPressAvailable,
+      upDownAvailable = upDownAvailable == nil and true or upDownAvailable
+    }
+  end
+  return {
+    capabilities =
+    {
+      button_capability("PRESET_0"),
+      button_capability("PRESET_1"),
+      button_capability("PRESET_2"),
+      button_capability("PRESET_3"),
+      button_capability("PRESET_4"),
+      button_capability("PRESET_5"),
+      button_capability("PRESET_6"),
+      button_capability("PRESET_7"),
+      button_capability("PRESET_8"),
+      button_capability("PRESET_9"),
+      button_capability("OK", true, false, true),
+      button_capability("SEEKLEFT"),
+      button_capability("SEEKRIGHT"),
+      button_capability("TUNEUP"),
+      button_capability("TUNEDOWN")
+    },
+    presetBankCapabilities = { onScreenPresetsAvailable = true }
+  }
+end
+
+local function getUICapabilities()
+  return {
+    displayCapabilities = getUIDisplayCapabilities(),
+    audioPassThruCapabilities = getUIAudioPassThruCapabilities(),
+    hmiZoneCapabilities = "FRONT",
+    softButtonCapabilities = getUISoftButtonCapabilities()
+  }
+end
+
+local function getRCCapabilities()
+  return {
+    remoteControlCapability = {
+      climateControlCapabilities = getRCClimateControlCapabilities(),
+      radioControlCapabilities = getRCRadioControlCapabilities(),
+      buttonCapabilities = getRCButtonCapabilities()
+    }
+  }
+end
+
+local function getVRCapabilities()
+  return {
+    vrCapabilities = {
+      "TEXT"
+    }
+  }
+end
+
+local function getTTSCapabilities()
+  return {
+    speechCapabilities = {
+      "TEXT", "PRE_RECORDED"
+    },
+    prerecordedSpeechCapabilities = {
+      "HELP_JINGLE", "INITIAL_JINGLE", "LISTEN_JINGLE", "POSITIVE_JINGLE", "NEGATIVE_JINGLE"
+    }
+  }
+end
+
+--------------------------------------
+
+function module:initHMI_onReady()
+  local exp_waiter = commonFunctions:createMultipleExpectationsWaiter(module, "HMI on ready")
+
+  ExpectRequest(self, "BasicCommunication.MixingAudioSupported", true, { attenuatedSupported = true })
+  ExpectRequest(self, "BasicCommunication.GetSystemInfo", false, {
+    ccpu_version = "ccpu_version",
+    language = "EN-US",
+    wersCountryCode = "wersCountryCode"
+  })
+  ExpectRequest(self, "UI.GetLanguage", true, { language = "EN-US" })
+  ExpectRequest(self, "VR.GetLanguage", true, { language = "EN-US" })
+  ExpectRequest(self, "TTS.GetLanguage", true, { language = "EN-US" })
+  ExpectRequest(self, "UI.ChangeRegistration", false, { }):Pin()
+  ExpectRequest(self, "TTS.SetGlobalProperties", false, { }):Pin()
+  ExpectRequest(self, "BasicCommunication.UpdateDeviceList", false, { }):Pin()
+  ExpectRequest(self, "VR.ChangeRegistration", false, { }):Pin()
+  ExpectRequest(self, "TTS.ChangeRegistration", false, { }):Pin()
+  ExpectRequest(self, "VR.GetSupportedLanguages", true, { languages = getLanguages() })
+  ExpectRequest(self, "TTS.GetSupportedLanguages", true, { languages = getLanguages() })
+  ExpectRequest(self, "UI.GetSupportedLanguages", true, { languages = getLanguages() })
+  ExpectRequest(self, "VehicleInfo.GetVehicleType", true, {
+    vehicleType = {
+      make = "Ford",
+      model = "Fiesta",
+      modelYear = "2013",
+      trim = "SE"
+    }
+  })
+  ExpectRequest(self, "VehicleInfo.GetVehicleData", true, { vin = "52-452-52-752" })
+
+  ExpectRequest(self, "Buttons.GetCapabilities", true, getButtonsCapabilities())
+  ExpectRequest(self, "VR.GetCapabilities", true, getVRCapabilities())
+  ExpectRequest(self, "TTS.GetCapabilities", true, getTTSCapabilities())
+  ExpectRequest(self, "UI.GetCapabilities", true, getUICapabilities())
+  ExpectRequest(self, "RC.GetCapabilities", true, getRCCapabilities())
+
+  ExpectRequest(self, "VR.IsReady", true, { available = true })
+  ExpectRequest(self, "TTS.IsReady", true, { available = true })
+  ExpectRequest(self, "UI.IsReady", true, { available = true })
+  ExpectRequest(self, "Navigation.IsReady", true, { available = true })
+  ExpectRequest(self, "VehicleInfo.IsReady", true, { available = true })
+  ExpectRequest(self, "RC.IsReady", true, { available = true })
 
   self.applications = { }
-  ExpectRequest("BasicCommunication.UpdateAppList", false, { })
+  ExpectRequest(self, "BasicCommunication.UpdateAppList", false, { })
   :Pin()
   :Do(function(_, data)
       self.hmiConnection:SendResponse(data.id, data.method, "SUCCESS", { })
@@ -662,30 +728,6 @@ function module:startSession()
       end
     end)
   return mobile_connected
-end
-
-function enableFullATFLogs()
-  function enableFullLoggintTestCase()
-    if (config.storeFullATFLogs) then
-      module:FailTestCase("full ATF logs already enabled")
-    else
-      config.storeFullATFLogs = true
-    end
-  end
-  module["EnableFullATFLogs"] = nil
-  module["EnableFullATFLogs"] = enableFullLoggintTestCase
-end
-
-function disableFullATFLogs()
-  function disableFullLoggintTestCase()
-    if (not config.storeFullATFLogs) then
-      module:FailTestCase("full ATF logs already disabled")
-    else
-      config.storeFullATFLogs = false
-    end
-  end
-  module["DisableFullATFLogs"] = nil
-  module["DisableFullATFLogs"] = disableFullLoggintTestCase
 end
 
 return module

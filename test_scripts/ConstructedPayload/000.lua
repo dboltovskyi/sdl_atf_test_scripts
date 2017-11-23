@@ -291,8 +291,8 @@ testCases[12] = {
 
 --[[ Local Functions ]]
 local function process(pServiceType, pRequest, pResponse, self)
-  common.sendControlMessage(common.app.id1, pServiceType, pRequest.frameInfo, pRequest.params, self)
-  common.expectControlMessage(common.app.id1, pServiceType, pResponse.frameInfo, pResponse.params, self)
+  common.sendControlMessage(common.app.id1, pServiceType, pRequest.frameInfo, 5, pRequest.params, self)
+  common.expectControlMessage(common.app.id1, pServiceType, pResponse.frameInfo, 5, pResponse.params, self)
 end
 
 --[[ Scenario ]]

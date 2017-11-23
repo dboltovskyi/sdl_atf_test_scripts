@@ -3,7 +3,7 @@
 ---------------------------------------------------------------------------------------------------
 --[[ General configuration parameters ]]
 config.deviceMAC = "12ca17b49af2289436f303e0166030a21e525d266e209267433801a8fd4071a0"
-config.defaultProtocolVersion = 5
+-- config.defaultProtocolVersion = 5
 
 --[[ Required Shared libraries ]]
 local mobile_session = require("mobile_session")
@@ -189,7 +189,7 @@ function m.startMobileSession(pAppId, self)
   self["mobileSession" .. pAppId] = mobile_session.MobileSession(self, self.mobileConnection)
 end
 
-function m.sendControlMessage(pAppId, pServiceId, pFrameInfo, pPayload, self)
+function m.sendControlMessage(pAppId, pServiceId, pFrameInfo, pVersion, pPayload, self)
   self, pPayload = m.getSelfAndParams(pPayload, self)
   local mobSession = m.getMobileSession(pAppId, self)
   local payload = nil
@@ -203,21 +203,22 @@ function m.sendControlMessage(pAppId, pServiceId, pFrameInfo, pPayload, self)
     frameInfo = pFrameInfo,
     serviceType = pServiceId,
     payload = payload,
+    version = pVersion,
     binaryData = binaryData
   }
   mobSession.mobile_session_impl:Send(msg)
 end
 
-function m.expectControlMessage(pAppId, pServiceId, pFrameInfo, pPayload, self)
+function m.expectControlMessage(pAppId, pServiceId, pFrameInfo, pVersion, pPayload, self)
   self, pPayload = m.getSelfAndParams(pPayload, self)
   if not pPayload then pPayload = { } end
   local mobSession = m.getMobileSession(pAppId, self)
   local event = Event()
   event.matches = function(_, data)
     return (data.frameType == constants.FRAME_TYPE.CONTROL_FRAME) and
-    (data.serviceType == pServiceId) and
-    (pServiceId == m.serviceType.RPC or data.sessionId == mobSession.sessionId) and
-    (data.frameInfo == pFrameInfo)
+      (data.serviceType == pServiceId) and
+      (pServiceId == m.serviceType.RPC or data.sessionId == mobSession.sessionId) and
+      (data.frameInfo == pFrameInfo)
   end
   local ret = mobSession:ExpectEvent(event, "ControlService")
   :Do(function(_, data)
@@ -225,6 +226,12 @@ function m.expectControlMessage(pAppId, pServiceId, pFrameInfo, pPayload, self)
         mobSession.mobile_session_impl.sessionId.set(data.sessionId)
         mobSession.mobile_session_impl.hashCode = data.binaryData
       end
+    end)
+  :ValidIf(function(_, data)
+      if data.version ~= pVersion then
+        return false, "\nExpected protocol version is '" .. pVersion .. "', actual is '" .. data.version .. "'"
+      end
+      return true
     end)
   :ValidIf(function(_, data)
       local function getBSONType(pValue)
@@ -237,7 +244,7 @@ function m.expectControlMessage(pAppId, pServiceId, pFrameInfo, pPayload, self)
       if string.len(data.binaryData) > 0 then
         actualPayload = bson.to_table(data.binaryData)
       end
-      -- commonFunctions:printTable(pPayload)
+      commonFunctions:printTable(data)
       -- commonFunctions:printTable(actualPayload)
       local msg = ""
       for k in pairs(pPayload) do

@@ -382,6 +382,30 @@
                 "FULL",
                 "LIMITED"
               ]
+            },
+            "SubscribeVehicleData": {
+              "hmi_levels": [
+                "NONE",
+                "BACKGROUND",
+                "FULL",
+                "LIMITED"
+              ]
+            },
+            "SubscribeWayPoints": {
+              "hmi_levels": [
+                "NONE",
+                "BACKGROUND",
+                "FULL",
+                "LIMITED"
+              ]
+            },
+            "UnsubscribeWayPoints": {
+              "hmi_levels": [
+                "NONE",
+                "BACKGROUND",
+                "FULL",
+                "LIMITED"
+              ]
             }
           }
         },

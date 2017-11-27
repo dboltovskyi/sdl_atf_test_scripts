@@ -14,8 +14,15 @@
 --[[ Required Shared libraries ]]
 local runner = require('user_modules/script_runner')
 local common = require('test_scripts/ConstructedPayload/commonConstructedPayload')
+local bson = require('bson4lua')
 
---[[ Local Constants ]]
+--[[ Local Variables ]]
+local hashId = {
+  [common.serviceType.RPC] = 0,
+  [common.serviceType.PCM] = 0,
+  [common.serviceType.VIDEO] = 0
+}
+
 local testCases = {}
 testCases[1] = {
   name = "Start Service RPC ACK",
@@ -191,7 +198,12 @@ testCases[7] = {
   service = common.serviceType.PCM,
   request = {
     frameInfo = common.frameInfo.END_SERVICE,
-    params = { }
+    params = {
+      hashId = {
+        type = common.bsonType.INT32,
+        value = hashId[common.serviceType.PCM]
+      }
+    }
   },
   response = {
     frameInfo = common.frameInfo.END_SERVICE_ACK,
@@ -207,7 +219,7 @@ testCases[8] = {
     params = {
       hashId = {
         type = common.bsonType.INT32,
-        value = 65537
+        value = hashId[common.serviceType.PCM]
       }
     }
   },
@@ -225,7 +237,7 @@ testCases[9] = {
     params = {
       hashId = {
         type = common.bsonType.INT32,
-        value = 65537
+        value = hashId[common.serviceType.VIDEO]
       }
     }
   },
@@ -243,7 +255,7 @@ testCases[10] = {
     params = {
       hashId = {
         type = common.bsonType.INT32,
-        value = 65537
+        value = hashId[common.serviceType.VIDEO]
       }
     }
   },
@@ -261,7 +273,7 @@ testCases[11] = {
     params = {
       hashId = {
         type = common.bsonType.INT32,
-        value = 65537
+        value = hashId[common.serviceType.RPC]
       }
     }
   },
@@ -279,7 +291,7 @@ testCases[12] = {
     params = {
       hashId = {
         type = common.bsonType.INT32,
-        value = 65537
+        value = hashId[common.serviceType.RPC]
       }
     }
   },
@@ -290,9 +302,20 @@ testCases[12] = {
 }
 
 --[[ Local Functions ]]
-local function process(pServiceType, pRequest, pResponse, self)
-  common.sendControlMessage(common.app.id1, pServiceType, pRequest.frameInfo, 5, pRequest.params, self)
-  common.expectControlMessage(common.app.id1, pServiceType, pResponse.frameInfo, 5, pResponse.params, self)
+local function startService(pServiceType, pRequest, pResponse)
+  local protocolVersion = 5
+  common.sendControlMessage(pServiceType, pRequest.frameInfo, protocolVersion, pRequest.params)
+  common.expectControlMessage(pServiceType, pResponse.frameInfo, protocolVersion, pResponse.params)
+  :Do(function(_, data)
+      if data.version == 5 and data.frameInfo == common.frameInfo.START_SERVICE_ACK then
+        if data.binaryData then
+          local payload = bson.to_table(data.binaryData)
+          if payload.hashId then
+            hashId[pServiceType] = payload.hashId.value
+          end
+        end
+      end
+    end)
 end
 
 --[[ Scenario ]]
@@ -304,11 +327,11 @@ runner.Step("Start Mobile Session", common.startMobileSession)
 runner.Title("Test")
 
 for k, tc in pairs(testCases) do
-  runner.Step(tc.name, process, { tc.service, tc.request, tc.response })
+  runner.Step(tc.name, startService, { tc.service, tc.request, tc.response })
   if k == 2 then
-    runner.Step("RAI", common.registerApp)
-    runner.Step("ActivateApp", common.activateApp)
-  end
+    runner.Step("Register Application", common.registerApp)
+    runner.Step("Activate Application", common.activateApp)
+   end
 end
 
 runner.Title("Postconditions")

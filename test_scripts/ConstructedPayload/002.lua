@@ -31,15 +31,15 @@ local testCase = {
   },
   response = {
     frameInfo = common.frameInfo.START_SERVICE_NACK,
-    version = 4,
+    version = 5,
     params = { }
   }
 }
 
 --[[ Local Functions ]]
-local function process(pServiceType, pRequest, pResponse, self)
-  common.sendControlMessage(common.app.id1, pServiceType, pRequest.frameInfo, pRequest.version, pRequest.params, self)
-  common.expectControlMessage(common.app.id1, pServiceType, pResponse.frameInfo, pResponse.version, pResponse.params, self)
+local function startService(pServiceType, pRequest, pResponse)
+  common.sendControlMessage(pServiceType, pRequest.frameInfo, pRequest.version, pRequest.params)
+  common.expectControlMessage(pServiceType, pResponse.frameInfo, pResponse.version, pResponse.params)
 end
 
 --[[ Scenario ]]
@@ -49,7 +49,7 @@ runner.Step("Start SDL, HMI, Connect Mobile", common.start)
 runner.Step("Start Mobile Session", common.startMobileSession)
 
 runner.Title("Test")
-runner.Step(testCase.name, process, { testCase.service, testCase.request, testCase.response })
+runner.Step(testCase.name, startService, { testCase.service, testCase.request, testCase.response })
 
 runner.Title("Postconditions")
 runner.Step("Stop SDL", common.postconditions)

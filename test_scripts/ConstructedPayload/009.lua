@@ -30,7 +30,7 @@ local testCase = {
     params = {
       hashId = {
         type = common.bsonType.INT32,
-        value = 65537
+        value = common.hashId.value
       },
       mtu = {
         type = common.bsonType.INT64,

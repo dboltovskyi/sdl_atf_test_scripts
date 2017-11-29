@@ -31,7 +31,7 @@ local testCase = {
   },
   response = {
     frameInfo = common.frameInfo.START_SERVICE_NACK,
-    version = 5,
+    version = 1,
     params = { }
   }
 }

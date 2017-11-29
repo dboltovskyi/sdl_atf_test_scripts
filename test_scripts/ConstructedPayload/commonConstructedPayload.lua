@@ -25,8 +25,8 @@ m.minTimeout = 500
 m.bsonType = {
   DOUBLE = 0x01,
   STRING = 0x02,
-  ARRAY = 0x03,
-  DOCUMENT = 0x04,
+  DOCUMENT = 0x03,
+  ARRAY = 0x04,
   BOOLEAN = 0x08,
   INT32 = 0x10,
   INT64 = 0x12
@@ -35,6 +35,8 @@ m.bsonType = {
 m.serviceType = constants.SERVICE_TYPE
 
 m.frameInfo = constants.FRAME_INFO
+
+m.hashId = { name = "hashId", value = 111 }
 
 --[[ Variables ]]
 local pAppId = 1
@@ -194,6 +196,7 @@ function test.expectControlMessage(pServiceId, pFrameInfo, pVersion, pPayload)
       (pServiceId == m.serviceType.RPC or data.sessionId == mobSession.sessionId) and
       (data.frameInfo == pFrameInfo)
   end
+  local prfx = "\n  "
   local ret = mobSession:ExpectEvent(event, "ControlService")
   :Do(function(_, data)
       if data.serviceType == m.serviceType.RPC and data.frameInfo == constants.FRAME_INFO.START_SERVICE_ACK then
@@ -205,7 +208,7 @@ function test.expectControlMessage(pServiceId, pFrameInfo, pVersion, pPayload)
     end)
   :ValidIf(function(_, data)
       if data.version ~= pVersion then
-        return false, "\nExpected protocol version is '" .. pVersion .. "', actual is '" .. data.version .. "'"
+        return false, prfx .. "Expected protocol version is '" .. pVersion .. "', actual is '" .. data.version .. "'"
       end
       return true
     end)
@@ -226,21 +229,22 @@ function test.expectControlMessage(pServiceId, pFrameInfo, pVersion, pPayload)
       local msg = ""
       for k in pairs(pPayload) do
         if actualPayload[k] == nil then
-          msg = msg .. "\nExpected key '" .. k .. "' is missing"
+          msg = msg .. prfx .. "Expected key '" .. k .. "' is missing"
         else
           if actualPayload[k].type ~= pPayload[k].type then
-            msg = msg .. "\nExpected type for '" .. k .. "' key is '" .. getBSONType(pPayload[k].type)
+            msg = msg .. prfx .."Expected type for '" .. k .. "' key is '" .. getBSONType(pPayload[k].type)
               .. "', actual is '" .. tostring(getBSONType(actualPayload[k].type)) .. "'"
           end
-          if actualPayload[k].value ~= pPayload[k].value then
-            msg = msg .. "\nExpected value for '" .. k .. "' key is '" .. pPayload[k].value
-              .. "', actual is '" .. tostring(actualPayload[k].value) .. "'"
+          if actualPayload[k].value ~= pPayload[k].value
+            and not (k == m.hashId.name and pPayload[k].value == m.hashId.value and actualPayload[k].value) then
+              msg = msg .. prfx .."Expected value for '" .. k .. "' key is '" .. pPayload[k].value
+                .. "', actual is '" .. tostring(actualPayload[k].value) .. "'"
           end
         end
       end
       for k in pairs(actualPayload) do
         if pPayload[k] == nil then
-          msg = msg .. "\nUnexpected key '" .. k .. "' is present"
+          msg = msg .. prfx .."Unexpected key '" .. k .. "' is present"
         end
       end
       return (string.len(msg) > 0 and {false} or {true})[1], msg

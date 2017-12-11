@@ -409,6 +409,26 @@
             }
           }
         },
+        "RemoteControl": {
+          "rpcs": {
+            "GetInteriorVehicleData": {
+              "hmi_levels": [
+                "NONE",
+                "BACKGROUND",
+                "FULL",
+                "LIMITED"
+              ]
+            },
+            "OnInteriorVehicleData": {
+              "hmi_levels": [
+                "NONE",
+                "BACKGROUND",
+                "FULL",
+                "LIMITED"
+              ]
+            }
+          }
+        },
         "DataConsent-2": {
           "user_consent_prompt": "DataConsent",
           "rpcs": null
@@ -1744,8 +1764,9 @@
           "steal_focus": true,
           "priority": "NONE",
           "default_hmi": "NONE",
+          "moduleType": [ "RADIO" ],
           "groups": [
-            "Base-4"
+            "Base-4", "RemoteControl"
           ]
         },
         "device": {

@@ -2,10 +2,13 @@
 -- Issue: https://github.com/SmartDeviceLink/sdl_core/issues/1028
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
-local common = require('test_scripts/Policies/Policies_Security/Trigger_PTU_NO_Certificate/common')
+local common = require('test_scripts/Defects/4_5/Trigger_PTU_NO_Certificate/common')
 local runner = require('user_modules/script_runner')
 local test = require("user_modules/dummy_connecttest")
 local log = require("user_modules/shared_testcases/testCasesForPolicySDLErrorsStops")
+
+--[[ Test Configuration ]]
+runner.testSettings.isSelfIncluded = false
 
 --[[ Local Variables ]]
 local appHMIType = "NAVIGATION"
@@ -82,7 +85,6 @@ local function checkSDLLog(pServiceId)
 end
 
 --[[ Scenario ]]
-runner.SetParameters({ isSelfIncluded = false })
 runner.Title("Preconditions")
 runner.Step("Clean environment", common.preconditions)
 runner.Step("Set ForceProtectedService OFF", common.setForceProtectedServiceParam, { "Non" })

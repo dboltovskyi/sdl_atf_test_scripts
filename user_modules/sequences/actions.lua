@@ -257,6 +257,8 @@ end
 --! @return: none
 --]]
 function m.start(pHMIParams)
+  local event = events.Event()
+  event.matches = function(e1, e2) return e1 == e2 end
   test:runSDL()
   commonFunctions:waitForSDLStart(test)
   :Do(function()
@@ -270,10 +272,12 @@ function m.start(pHMIParams)
               :Do(function()
                   utils.cprint(35, "Mobile connected")
                   allowSDL(test)
+                  RAISE_EVENT(event, event)
                 end)
             end)
         end)
     end)
+  return EXPECT_EVENT(event, "Start event")
 end
 
 --[[ @ExpectRequest: register expectation for request on HMI connection

@@ -221,4 +221,37 @@ function m.startServiceProtected(pServiceId)
   })
 end
 
+local function registerGetSystemTimeNotification()
+  m.getHMIConnection():SendNotification("BasicCommunication.OnSystemTimeReady")
+  m.getHMIConnection():ExpectRequest("BasicCommunication.GetSystemTime")
+  :Do(function(_, d)
+      local function getSystemTime()
+        local dd = os.date("*t")
+        return {
+          millisecond = 0,
+          second = dd.sec,
+          minute = dd.min,
+          hour = dd.hour,
+          day = dd.day,
+          month = dd.month,
+          year = dd.year,
+          tz_hour = 2,
+          tz_minute = 0
+        }
+      end
+      m.getHMIConnection():SendResponse(d.id, d.method, "SUCCESS", { systemTime = getSystemTime() })
+    end)
+  :Times(AnyNumber())
+  :Pin()
+end
+
+local startOrig = m.start
+
+function m.start(pHMIParams)
+  startOrig(pHMIParams)
+  :Do(function()
+      registerGetSystemTimeNotification()
+    end)
+end
+
 return m

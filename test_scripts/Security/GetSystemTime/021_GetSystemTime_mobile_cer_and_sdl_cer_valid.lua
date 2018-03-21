@@ -9,13 +9,13 @@
 -- 1) Mobile app starts secure RPC service
 -- 2) Mobile and sdl certificates are up to date
 -- 3) SDL requests GetSystemTime
--- 4) According to time from GetSystemTime response mobile certificate and sdl certificate are still valid
+-- 4) Mobile certificate and sdl certificate are still valid according to date/time from GetSystemTime response
 -- SDL must:
 -- 1) not trigger PTU
--- 2) start secure service, Handshake is finished with frameInfo = START_SERVICE_ACK, encryption = true
+-- 2) Start secure service: Handshake is finished with frameInfo = START_SERVICE_ACK, encryption = true
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
-local common = require('test_scripts/Policies/GetSystemTime/common')
+local common = require('test_scripts/Security/GetSystemTime/common')
 local runner = require('user_modules/script_runner')
 
 --[[ Test Configuration ]]
@@ -45,7 +45,6 @@ local function ptUpdateWithNotActualCer(pTbl)
   local filePath = "./files/Security/GetSystemTime_certificates/client_credential.pem"
   local crt = common.readFile(filePath)
   pTbl.policy_table.module_config.certificate = crt
-  pTbl.policy_table.app_policies[common.getAppID()].AppHMIType = { common.appHMIType }
 end
 
 --[[ Scenario ]]

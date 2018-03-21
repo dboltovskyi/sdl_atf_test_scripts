@@ -9,22 +9,17 @@
 -- 1) Mobile app starts secure RPC service
 -- 2) Mobile and sdl certificates are up to date
 -- 3) SDL requests GetSystemTime
--- 4) According to time from GetSystemTime response mobile certificate becomes expired and sdl certificate is still valid
+-- 4) HMI does not respond
 -- SDL must:
--- 1) not trigger PTU
--- 2) not start secure service, Handshake is finished with frameInfo = START_SERVICE_NACK, encryption = false
+-- 1) wait default timeout
+-- 2) Not start secure service: Handshake is finished with frameInfo = START_SERVICE_NACK, encryption = false
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
-local common = require('test_scripts/Policies/GetSystemTime/common')
+local common = require('test_scripts/Security/GetSystemTime/common')
 local runner = require('user_modules/script_runner')
 
 --[[ Test Configuration ]]
 runner.testSettings.isSelfIncluded = false
-
---[[ General configuration parameters ]]
-config.serverCertificatePath = "./files/Security/GetSystemTime_certificates/spt_credential_0317_22.pem"
-config.serverPrivateKeyPath = "./files/Security/GetSystemTime_certificates/spt_credential_0317_22.pem"
-config.serverCAChainCertPath = "./files/Security/GetSystemTime_certificates/spt_credential_0317_22.pem"
 
 --[[ Local Variables ]]
 local serviceId = 7
@@ -33,24 +28,11 @@ local pData = {
   encryption = false
 }
 
-local systemTime = {
-  millisecond = 100,
-  second = 30,
-  minute = 29,
-  hour = 15,
-  day = 20,
-  month = 1,
-  year = 2024,
-  tz_hour = -3,
-  tz_minute = 10
-}
-
 --[[ Local Functions ]]
-local function ptUpdateWithNotActualCer(pTbl)
+local function ptUpdate(pTbl)
   local filePath = "./files/Security/GetSystemTime_certificates/client_credential.pem"
   local crt = common.readFile(filePath)
   pTbl.policy_table.module_config.certificate = crt
-  pTbl.policy_table.app_policies[common.getAppID()].AppHMIType = { common.appHMIType }
 end
 
 --[[ Scenario ]]
@@ -62,9 +44,9 @@ runner.Title("Test")
 
 runner.Step("Register App", common.registerApp)
 runner.Step("Activate App", common.activateApp)
-runner.Step("PolicyTableUpdate with not valid certificate", common.policyTableUpdate, { ptUpdateWithNotActualCer })
-runner.Step("Handshake with BC.GetSystemTime request from SDL", common.startServiceSecured,
-	{ pData, serviceId, 1, systemTime })
+runner.Step("PolicyTableUpdate with not valid certificate", common.policyTableUpdate, { ptUpdate })
+runner.Step("Handshake without BC.GetSystemTime response from HMI", common.startServiceSecuredWithoutGetSTResp,
+  { pData, serviceId })
 
 runner.Title("Postconditions")
 runner.Step("Stop SDL", common.postconditions)

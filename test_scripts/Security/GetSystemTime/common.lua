@@ -53,8 +53,8 @@ function m.getAppID(pAppId)
   return m.getConfigAppParams(pAppId).appID
 end
 
-local function allowSDL(self)
-  self.hmiConnection:SendNotification("SDL.OnAllowSDLFunctionality", {
+local function allowSDL()
+  test.hmiConnection:SendNotification("SDL.OnAllowSDLFunctionality", {
     allowed = true,
     source = "GUI",
     device = {
@@ -87,11 +87,11 @@ function m.start(pOnSystemTime, pHMIParams)
     end)
 end
 
-function m.ExpectHandshakeMessage(pMobSession, handshakeOccurences, pGetSystemTimeOccur, pTime)
+function m.ExpectHandshakeMessage(handshakeOccurences, pGetSystemTimeOccur, pTime)
   if not pTime then
     pTime = GetSystemTimeValue()
   end
-  pMobSession:ExpectHandshakeMessage()
+  m.getMobileSession():ExpectHandshakeMessage()
   :Times(handshakeOccurences)
   EXPECT_HMICALL("BasicCommunication.GetSystemTime")
   :Do(function(_, d)
@@ -109,16 +109,16 @@ function m.startServiceSecured(pData, serviceId, pGetSystemTimeOccur, pTime)
 
   local handshakeOccurences = 0
   if pData.encryption == true then handshakeOccurences = 1 end
-  m.ExpectHandshakeMessage(m.getMobileSession(), handshakeOccurences, pGetSystemTimeOccur, pTime)
+  m.ExpectHandshakeMessage(handshakeOccurences, pGetSystemTimeOccur, pTime)
 end
 
 local function ExpNotDuringPTU()
   m.getHMIConnection():ExpectRequest("VehicleInfo.GetVehicleData", { odometer = true })
 end
 
-function m.startServiceSecuredwithPTU(pData, serviceId, pGetSystemTimeOccur, pTime, pPTUpdateFunc)
-  m.getMobileSession():StartSecureService(serviceId)
-  m.getMobileSession():ExpectControlMessage(serviceId, pData)
+function m.startServiceSecuredwithPTU(pData, pServiceId, pGetSystemTimeOccur, pTime, pPTUpdateFunc)
+  m.getMobileSession():StartSecureService(pServiceId)
+  m.getMobileSession():ExpectControlMessage(pServiceId, pData)
 
   m.getHMIConnection():ExpectNotification("SDL.OnStatusUpdate",
     { status = "UPDATE_NEEDED" }, { status = "UPDATING" }, { status = "UP_TO_DATE" })
@@ -131,7 +131,20 @@ function m.startServiceSecuredwithPTU(pData, serviceId, pGetSystemTimeOccur, pTi
 
   local handshakeOccurences = 0
   if pData.encryption == true then handshakeOccurences = 1 end
-  m.ExpectHandshakeMessage(m.getMobileSession(), handshakeOccurences, pGetSystemTimeOccur, pTime)
+  m.ExpectHandshakeMessage(handshakeOccurences, pGetSystemTimeOccur, pTime)
+end
+
+function m.startServiceSecuredWithoutGetSTResp(pData, serviceId)
+  m.getMobileSession():StartSecureService(serviceId)
+  m.getMobileSession():ExpectControlMessage(serviceId, pData)
+
+  m.getHMIConnection():ExpectNotification("SDL.OnStatusUpdate")
+  :Times(0)
+
+  m.getMobileSession():ExpectHandshakeMessage()
+  :Times(0)
+  EXPECT_HMICALL("BasicCommunication.GetSystemTime")
+
 end
 
 return m

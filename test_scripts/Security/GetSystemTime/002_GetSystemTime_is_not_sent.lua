@@ -11,10 +11,10 @@
 -- 3) Mobile app starts secure service
 -- SDL must:
 -- 1) SDL does not request GetSystemTime to HMI
--- 2) not start secure service, Handshake is finished with frameInfo = START_SERVICE_NACK, encryption = false
+-- 2) Not start secure service: Handshake is finished with frameInfo = START_SERVICE_NACK, encryption = false
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
-local common = require('test_scripts/Policies/GetSystemTime/common')
+local common = require('test_scripts/Security/GetSystemTime/common')
 local runner = require('user_modules/script_runner')
 
 --[[ Test Configuration ]]
@@ -32,7 +32,6 @@ local function ptUpdate(pTbl)
   local filePath = "./files/Security/GetSystemTime_certificates/client_credential.pem"
   local crt = common.readFile(filePath)
   pTbl.policy_table.module_config.certificate = crt
-  pTbl.policy_table.app_policies[common.getAppID()].AppHMIType = { common.appHMIType }
 end
 
 --[[ Scenario ]]

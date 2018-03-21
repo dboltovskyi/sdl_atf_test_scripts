@@ -7,16 +7,21 @@
 -- Description:
 -- In case:
 -- 1) Mobile app starts secure RPC service
--- 2) Mobile certificate is up to date and sdl certificates is not up to date
+-- 2) Mobile and sdl certificates are expired
 -- 3) SDL requests GetSystemTime
--- 4) According to time from GetSystemTime response mobile certificate is valid and sdl certificate is not valid yet
+-- 4) Mobile and sdl are still not valid according to date/time from GetSystemTime response
 -- SDL must:
--- 1) trigger PTU
--- 2) not start secure service, Handshake is finished with frameInfo = START_SERVICE_NACK, encryption = false
+-- 1) SDL triggers PTU and sdl certificate becomes valid
+-- 2) Not start secure service: Handshake is finished with frameInfo = START_SERVICE_NACK, encryption = false
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
-local common = require('test_scripts/Policies/GetSystemTime/common')
+local common = require('test_scripts/Security/GetSystemTime/common')
 local runner = require('user_modules/script_runner')
+
+--[[ General configuration parameters ]]
+config.serverCertificatePath = "./files/Security/GetSystemTime_certificates/spt_credential_0323_28.pem"
+config.serverPrivateKeyPath = "./files/Security/GetSystemTime_certificates/spt_credential_0323_28.pem"
+config.serverCAChainCertPath = "./files/Security/GetSystemTime_certificates/spt_credential_0323_28.pem"
 
 --[[ Test Configuration ]]
 runner.testSettings.isSelfIncluded = false
@@ -35,24 +40,22 @@ local systemTime = {
   hour = 15,
   day = 20,
   month = 1,
-  year = 2020,
+  year = 2018,
   tz_hour = -3,
   tz_minute = 10
 }
 
 --[[ Local Functions ]]
-local function ptUpdateWithNotActualCer(pTbl)
+local function ptUpdateWithNotValidCer(pTbl)
   local filePath = "./files/Security/GetSystemTime_certificates/client_credential_0321_26.pem"
   local crt = common.readFile(filePath)
   pTbl.policy_table.module_config.certificate = crt
-  pTbl.policy_table.app_policies[common.getAppID()].AppHMIType = { common.appHMIType }
 end
 
-local function ptUpdateWithExpiredCer(pTbl)
-  local filePath = "./files/Security/GetSystemTime_certificates/client_credential_0312_17.pem"
+local function ptUpdateWithValidCer(pTbl)
+  local filePath = "./files/Security/GetSystemTime_certificates/client_credential_0316_21.pem"
   local crt = common.readFile(filePath)
   pTbl.policy_table.module_config.certificate = crt
-  pTbl.policy_table.app_policies[common.getAppID()].AppHMIType = { common.appHMIType }
 end
 
 --[[ Scenario ]]
@@ -64,9 +67,9 @@ runner.Title("Test")
 
 runner.Step("Register App", common.registerApp)
 runner.Step("Activate App", common.activateApp)
-runner.Step("PolicyTableUpdate with not valid certificate", common.policyTableUpdate, { ptUpdateWithNotActualCer })
+runner.Step("PolicyTableUpdate with not valid certificate", common.policyTableUpdate, { ptUpdateWithNotValidCer })
 runner.Step("Handshake with BC.GetSystemTime request from SDL", common.startServiceSecuredwithPTU,
-	{ pData, serviceId, 1, systemTime, ptUpdateWithExpiredCer })
+	{ pData, serviceId, 1, systemTime, ptUpdateWithValidCer })
 
 runner.Title("Postconditions")
 runner.Step("Stop SDL", common.postconditions)

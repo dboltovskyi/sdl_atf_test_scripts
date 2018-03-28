@@ -137,7 +137,7 @@ end
 function m.startServiceSecuredWitTimeoutWithoutGetSTResp(pData, pServiceId, pTimeout)
   m.getMobileSession():StartSecureService(pServiceId)
   m.getMobileSession():ExpectControlMessage(pServiceId, pData)
-  :Timeout(1100)
+  :Timeout(11000)
 
   m.getHMIConnection():ExpectNotification("SDL.OnStatusUpdate")
   :Times(0)

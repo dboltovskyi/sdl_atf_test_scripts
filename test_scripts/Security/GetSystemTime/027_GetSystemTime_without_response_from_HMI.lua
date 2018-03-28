@@ -20,12 +20,18 @@ local runner = require('user_modules/script_runner')
 
 --[[ Test Configuration ]]
 runner.testSettings.isSelfIncluded = false
+config.application1.registerAppInterfaceParams.appHMIType = {"NAVIGATION"}
 
 --[[ Local Variables ]]
-local serviceId = 7
-local pData = {
+local serviceIdNack = 7
+local pDataNack = {
   frameInfo = common.frameInfo.START_SERVICE_NACK,
   encryption = false
+}
+local serviceIdAck = 10
+local pDataAck = {
+  frameInfo = common.frameInfo.START_SERVICE_ACK,
+  encryption = true
 }
 
 --[[ Local Functions ]]
@@ -45,8 +51,10 @@ runner.Title("Test")
 runner.Step("Register App", common.registerApp)
 runner.Step("Activate App", common.activateApp)
 runner.Step("PolicyTableUpdate with not valid certificate", common.policyTableUpdate, { ptUpdate })
-runner.Step("Handshake without BC.GetSystemTime response from HMI", common.startServiceSecuredWithoutGetSTResp,
-  { pData, serviceId })
+runner.Step("Handshake with response BC.GetSystemTime in 9 sec from HMI", common.startServiceSecuredWitTimeoutWithoutGetSTResp,
+  { pDataAck, serviceIdAck, 9500 })
+runner.Step("Handshake without BC.GetSystemTime response from HMI", common.startServiceSecuredWitTimeoutWithoutGetSTResp,
+  { pDataNack, serviceIdNack })
 
 runner.Title("Postconditions")
 runner.Step("Stop SDL", common.postconditions)

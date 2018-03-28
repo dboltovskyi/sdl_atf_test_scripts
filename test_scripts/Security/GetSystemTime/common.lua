@@ -134,16 +134,28 @@ function m.startServiceSecuredwithPTU(pData, pServiceId, pGetSystemTimeOccur, pT
   m.expectHandshakeMessage(handshakeOccurences, pGetSystemTimeOccur, pTime)
 end
 
-function m.startServiceSecuredWithoutGetSTResp(pData, pServiceId)
+function m.startServiceSecuredWitTimeoutWithoutGetSTResp(pData, pServiceId, pTimeout)
   m.getMobileSession():StartSecureService(pServiceId)
   m.getMobileSession():ExpectControlMessage(pServiceId, pData)
+  :Timeout(1100)
 
   m.getHMIConnection():ExpectNotification("SDL.OnStatusUpdate")
   :Times(0)
 
+  local handshakeOccurences = 0
+  if pData.encryption == true then handshakeOccurences = 1 end
   m.getMobileSession():ExpectHandshakeMessage()
-  :Times(0)
+  :Times(handshakeOccurences)
+
   EXPECT_HMICALL("BasicCommunication.GetSystemTime")
+  :Do(function(_,data)
+    if pTimeout then
+      local function GetSystemTimeResponse()
+        m.getHMIConnection():SendResponse(d.id, d.method, "SUCCESS", { systemTime = getSystemTimeValue() })
+      end
+      RUN_AFTER(GetSystemTimeResponse, pTimeout)
+    end
+  end)
 
 end
 

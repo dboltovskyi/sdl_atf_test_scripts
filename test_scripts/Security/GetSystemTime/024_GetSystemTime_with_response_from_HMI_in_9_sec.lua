@@ -9,10 +9,10 @@
 -- 1) Mobile app starts secure RPC service
 -- 2) Mobile and sdl certificates are up to date
 -- 3) SDL requests GetSystemTime
--- 4) HMI does not respond
+-- 4) HMI responds in 9 seconds
 -- SDL must:
--- 1) wait default timeout
--- 2) Not start secure service: Handshake is finished with frameInfo = START_SERVICE_NACK, encryption = false
+-- 1) wait GetSystemTime default timeout
+-- 2) Start secure service: Handshake is finished with frameInfo = START_SERVICE_ACK, encryption = true
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
 local common = require('test_scripts/Security/GetSystemTime/common')
@@ -20,16 +20,10 @@ local runner = require('user_modules/script_runner')
 
 --[[ Test Configuration ]]
 runner.testSettings.isSelfIncluded = false
-config.application1.registerAppInterfaceParams.appHMIType = {"NAVIGATION"}
 
 --[[ Local Variables ]]
-local serviceIdNack = 7
-local pDataNack = {
-  frameInfo = common.frameInfo.START_SERVICE_NACK,
-  encryption = false
-}
-local serviceIdAck = 10
-local pDataAck = {
+local serviceId = 7
+local pData = {
   frameInfo = common.frameInfo.START_SERVICE_ACK,
   encryption = true
 }
@@ -52,9 +46,7 @@ runner.Step("Register App", common.registerApp)
 runner.Step("Activate App", common.activateApp)
 runner.Step("PolicyTableUpdate with not valid certificate", common.policyTableUpdate, { ptUpdate })
 runner.Step("Handshake with response BC.GetSystemTime in 9 sec from HMI", common.startServiceSecuredWitTimeoutWithoutGetSTResp,
-  { pDataAck, serviceIdAck, 9500 })
-runner.Step("Handshake without BC.GetSystemTime response from HMI", common.startServiceSecuredWitTimeoutWithoutGetSTResp,
-  { pDataNack, serviceIdNack })
+  { pData, serviceId, 9500 })
 
 runner.Title("Postconditions")
 runner.Step("Stop SDL", common.postconditions)

@@ -87,12 +87,16 @@ function m.start(pOnSystemTime, pHMIParams)
     end)
 end
 
-function m.expectHandshakeMessage(pHandshakeOccurences, pGetSystemTimeOccur, pTime)
+function m.expectHandshakeMessage(pGetSystemTimeOccur, pTime)
   if not pTime then
     pTime = getSystemTimeValue()
   end
+  local handshakeOccurences = 1
+  if pGetSystemTimeOccur == 0 then
+    handshakeOccurences = 0
+  end
   m.getMobileSession():ExpectHandshakeMessage()
-  :Times(pHandshakeOccurences)
+    :Times(handshakeOccurences)
   EXPECT_HMICALL("BasicCommunication.GetSystemTime")
   :Do(function(_, d)
     m.getHMIConnection():SendResponse(d.id, d.method, "SUCCESS", { systemTime = pTime })
@@ -107,9 +111,7 @@ function m.startServiceSecured(pData, pServiceId, pGetSystemTimeOccur, pTime)
   m.getHMIConnection():ExpectNotification("SDL.OnStatusUpdate")
   :Times(0)
 
-  local handshakeOccurences = 0
-  if pData.encryption == true then handshakeOccurences = 1 end
-  m.expectHandshakeMessage(handshakeOccurences, pGetSystemTimeOccur, pTime)
+  m.expectHandshakeMessage(pGetSystemTimeOccur, pTime)
 end
 
 local function expNotDuringPTU()
@@ -129,21 +131,21 @@ function m.startServiceSecuredwithPTU(pData, pServiceId, pGetSystemTimeOccur, pT
       end
     end)
 
-  local handshakeOccurences = 0
-  if pData.encryption == true then handshakeOccurences = 1 end
-  m.expectHandshakeMessage(handshakeOccurences, pGetSystemTimeOccur, pTime)
+  m.expectHandshakeMessage(pGetSystemTimeOccur, pTime)
 end
 
 function m.startServiceSecuredWitTimeoutWithoutGetSTResp(pData, pServiceId, pTimeout)
   m.getMobileSession():StartSecureService(pServiceId)
   m.getMobileSession():ExpectControlMessage(pServiceId, pData)
-  :Timeout(11000)
+  :Timeout(11500)
 
   m.getHMIConnection():ExpectNotification("SDL.OnStatusUpdate")
   :Times(0)
 
   local handshakeOccurences = 0
-  if pData.encryption == true then handshakeOccurences = 1 end
+  if pTimeout then
+    handshakeOccurences = 1
+  end
   m.getMobileSession():ExpectHandshakeMessage()
   :Times(handshakeOccurences)
 
@@ -151,7 +153,7 @@ function m.startServiceSecuredWitTimeoutWithoutGetSTResp(pData, pServiceId, pTim
   :Do(function(_,data)
     if pTimeout then
       local function GetSystemTimeResponse()
-        m.getHMIConnection():SendResponse(d.id, d.method, "SUCCESS", { systemTime = getSystemTimeValue() })
+        m.getHMIConnection():SendResponse(data.id, data.method, "SUCCESS", { systemTime = getSystemTimeValue() })
       end
       RUN_AFTER(GetSystemTimeResponse, pTimeout)
     end

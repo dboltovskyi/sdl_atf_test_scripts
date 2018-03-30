@@ -76,6 +76,10 @@ function m.start(pOnSystemTime, pHMIParams)
               utils.cprint(35, "HMI is ready")
               if pOnSystemTime then
                 m.getHMIConnection():SendNotification("BasicCommunication.OnSystemTimeReady")
+                EXPECT_HMICALL("BasicCommunication.GetSystemTime")
+                :Do(function(_,data)
+                      m.getHMIConnection():SendResponse(data.id, data.method, "SUCCESS", { systemTime = getSystemTimeValue() })
+                end)
               end
               test:connectMobile()
               :Do(function()
@@ -87,16 +91,16 @@ function m.start(pOnSystemTime, pHMIParams)
     end)
 end
 
-function m.expectHandshakeMessage(pGetSystemTimeOccur, pTime)
+function m.expectHandshakeMessage(pGetSystemTimeOccur, pTime, pHandshakeOccurences)
   if not pTime then
     pTime = getSystemTimeValue()
   end
-  local handshakeOccurences = 1
+  if not pHandshakeOccurences then pHandshakeOccurences = 1 end
   if pGetSystemTimeOccur == 0 then
-    handshakeOccurences = 0
+    pHandshakeOccurences = pGetSystemTimeOccur
   end
   m.getMobileSession():ExpectHandshakeMessage()
-    :Times(handshakeOccurences)
+    :Times(pHandshakeOccurences)
   EXPECT_HMICALL("BasicCommunication.GetSystemTime")
   :Do(function(_, d)
     m.getHMIConnection():SendResponse(d.id, d.method, "SUCCESS", { systemTime = pTime })
@@ -118,7 +122,7 @@ local function expNotDuringPTU()
   m.getHMIConnection():ExpectRequest("VehicleInfo.GetVehicleData", { odometer = true })
 end
 
-function m.startServiceSecuredwithPTU(pData, pServiceId, pGetSystemTimeOccur, pTime, pPTUpdateFunc)
+function m.startServiceSecuredwithPTU(pData, pServiceId, pGetSystemTimeOccur, pTime, pPTUpdateFunc, pHandshakeOccurences)
   m.getMobileSession():StartSecureService(pServiceId)
   m.getMobileSession():ExpectControlMessage(pServiceId, pData)
 
@@ -131,7 +135,7 @@ function m.startServiceSecuredwithPTU(pData, pServiceId, pGetSystemTimeOccur, pT
       end
     end)
 
-  m.expectHandshakeMessage(pGetSystemTimeOccur, pTime)
+  m.expectHandshakeMessage(pGetSystemTimeOccur, pTime, pHandshakeOccurences)
 end
 
 function m.startServiceSecuredWitTimeoutWithoutGetSTResp(pData, pServiceId, pTimeout)

@@ -44,9 +44,9 @@ runner.Title("Test")
 
 runner.Step("Register App", common.registerApp)
 runner.Step("Activate App", common.activateApp)
-runner.Step("PolicyTableUpdate with not valid certificate", common.policyTableUpdate, { ptUpdate })
+runner.Step("PolicyTableUpdate with valid certificate", common.policyTableUpdate, { ptUpdate })
 runner.Step("Handshake with response BC.GetSystemTime in 9 sec from HMI", common.startServiceSecuredWitTimeoutWithoutGetSTResp,
-  { pData, serviceId, 9500 })
+  { pData, serviceId, 8000 })
 
 runner.Title("Postconditions")
 runner.Step("Stop SDL", common.postconditions)

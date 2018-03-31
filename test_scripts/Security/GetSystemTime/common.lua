@@ -76,10 +76,6 @@ function m.start(pOnSystemTime, pHMIParams)
               utils.cprint(35, "HMI is ready")
               if pOnSystemTime then
                 m.getHMIConnection():SendNotification("BasicCommunication.OnSystemTimeReady")
-                EXPECT_HMICALL("BasicCommunication.GetSystemTime")
-                :Do(function(_,data)
-                      m.getHMIConnection():SendResponse(data.id, data.method, "SUCCESS", { systemTime = getSystemTimeValue() })
-                end)
               end
               test:connectMobile()
               :Do(function()

@@ -7,14 +7,15 @@
 --
 -- Description:
 -- In case:
--- 1) Application is registered with PROJECTION appHMIType via 2 protocol
--- 4) set in LIMITED HMI level
--- 5) and starts audio/video service
+-- 1) Application is registered with PROJECTION appHMIType
+-- 2) app is deactivated to limited HMI level
+-- 3) and starts video streaming
 -- SDL must:
--- 1) reject audio/video service via 2 protocol in LIMITED HMI level
+-- 1) Start service successful
+-- 2) Process streaming from mobile
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
-local common = require('test_scripts/PROJECTION/common')
+local common = require('test_scripts/MobileProjection/Phase1/common')
 local runner = require('user_modules/script_runner')
 
 --[[ Test Configuration ]]
@@ -25,7 +26,7 @@ local appHMIType = "PROJECTION"
 
 --[[ General configuration parameters ]]
 config.application1.registerAppInterfaceParams.appHMIType = { appHMIType }
-config.defaultProtocolVersion = 2
+config.application1.registerAppInterfaceParams.isMediaApplication = false
 
 --[[ Local Functions ]]
 local function ptUpdate(pTbl)
@@ -45,11 +46,12 @@ runner.Step("Start SDL, HMI, connect Mobile, start Session", common.start)
 runner.Step("Register App", common.registerApp)
 runner.Step("PolicyTableUpdate with HMI types", common.policyTableUpdate, { ptUpdate })
 runner.Step("Activate App", common.activateApp)
-runner.Step("Bring app to LIMITED", bringAppToLimited)
+runner.Step("Bring app to limited HMI level", bringAppToLimited)
 
 runner.Title("Test")
-runner.Step("Reject video service in LIMITED via 2 protocol", common.RejectingServiceStart, { 11 })
-runner.Step("Reject audio service in LIMITED via 2 protocol", common.RejectingServiceStart, { 10 })
+runner.Step("Start video service", common.startService, { 11 })
+runner.Step("Start video streaming", common.StartStreaming, { 11, "files/SampleVideo_5mb.mp4" })
 
 runner.Title("Postconditions")
+runner.Step("Stop video streaming", common.StopStreaming, { 11, "files/SampleVideo_5mb.mp4" })
 runner.Step("Stop SDL", common.postconditions)

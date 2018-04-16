@@ -8,13 +8,12 @@
 -- Description:
 -- In case:
 -- 1) Application is registered with PROJECTION appHMIType
--- 2) and starts audio streaming
+-- 2) and starts video and audio services
 -- SDL must:
--- 1) Start service successful
--- 2) Process streaming from mobile
+-- 1) Start services successful
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
-local common = require('test_scripts/PROJECTION/common')
+local common = require('test_scripts/MobileProjection/Phase1/common')
 local runner = require('user_modules/script_runner')
 
 --[[ Test Configuration ]]
@@ -38,11 +37,10 @@ runner.Step("Start SDL, HMI, connect Mobile, start Session", common.start)
 runner.Step("Register App", common.registerApp)
 runner.Step("PolicyTableUpdate with HMI types", common.policyTableUpdate, { ptUpdate })
 runner.Step("Activate App", common.activateApp)
-runner.Step("Start audio service", common.startService, { 10 })
 
 runner.Title("Test")
-runner.Step("Start audio streaming", common.StartStreaming, { 10, "files/MP3_4555kb.mp3" })
+runner.Step("Start video service", common.startService, { 11 })
+runner.Step("Start audio service", common.startService, { 10 })
 
 runner.Title("Postconditions")
-runner.Step("Stop audio streaming", common.StopStreaming, { 10, "files/MP3_4555kb.mp3" })
 runner.Step("Stop SDL", common.postconditions)

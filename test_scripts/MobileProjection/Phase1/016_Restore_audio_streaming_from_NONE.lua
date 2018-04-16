@@ -15,7 +15,7 @@
 -- 2) after activation start service successfully
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
-local common = require('test_scripts/PROJECTION/common')
+local common = require('test_scripts/MobileProjection/Phase1/common')
 local runner = require('user_modules/script_runner')
 local events = require('events')
 local constants = require('protocol_handler/ford_protocol_constants')

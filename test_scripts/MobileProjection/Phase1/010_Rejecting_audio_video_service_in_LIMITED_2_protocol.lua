@@ -7,13 +7,14 @@
 --
 -- Description:
 -- In case:
--- 1) Application is registered with PROJECTION appHMIType
--- 2) and starts video and audio services
+-- 1) Application is registered with PROJECTION appHMIType via 2 protocol
+-- 4) set in LIMITED HMI level
+-- 5) and starts audio/video service
 -- SDL must:
--- 1) Start services successful
+-- 1) reject audio/video service via 2 protocol in LIMITED HMI level
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
-local common = require('test_scripts/PROJECTION/common')
+local common = require('test_scripts/MobileProjection/Phase1/common')
 local runner = require('user_modules/script_runner')
 
 --[[ Test Configuration ]]
@@ -24,10 +25,17 @@ local appHMIType = "PROJECTION"
 
 --[[ General configuration parameters ]]
 config.application1.registerAppInterfaceParams.appHMIType = { appHMIType }
+config.defaultProtocolVersion = 2
 
 --[[ Local Functions ]]
 local function ptUpdate(pTbl)
   pTbl.policy_table.app_policies[common.getAppID()].AppHMIType = { appHMIType }
+end
+
+local function bringAppToLimited()
+  common.getHMIConnection():SendNotification("BasicCommunication.OnAppDeactivated", { appID = common.getHMIAppId() })
+  common.getMobileSession():ExpectNotification("OnHMIStatus",
+    { systemContext = "MAIN", hmiLevel = "LIMITED", audioStreamingState = "AUDIBLE" })
 end
 
 --[[ Scenario ]]
@@ -37,10 +45,11 @@ runner.Step("Start SDL, HMI, connect Mobile, start Session", common.start)
 runner.Step("Register App", common.registerApp)
 runner.Step("PolicyTableUpdate with HMI types", common.policyTableUpdate, { ptUpdate })
 runner.Step("Activate App", common.activateApp)
+runner.Step("Bring app to LIMITED", bringAppToLimited)
 
 runner.Title("Test")
-runner.Step("Start video service", common.startService, { 11 })
-runner.Step("Start audio service", common.startService, { 10 })
+runner.Step("Reject video service in LIMITED via 2 protocol", common.RejectingServiceStart, { 11 })
+runner.Step("Reject audio service in LIMITED via 2 protocol", common.RejectingServiceStart, { 10 })
 
 runner.Title("Postconditions")
 runner.Step("Stop SDL", common.postconditions)

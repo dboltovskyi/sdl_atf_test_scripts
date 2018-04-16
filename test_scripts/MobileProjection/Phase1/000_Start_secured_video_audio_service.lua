@@ -13,7 +13,7 @@
 -- 1) Start services successful
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
-local common = require('test_scripts/PROJECTION/common')
+local common = require('test_scripts/MobileProjection/Phase1/common')
 local runner = require('user_modules/script_runner')
 
 --[[ Test Configuration ]]

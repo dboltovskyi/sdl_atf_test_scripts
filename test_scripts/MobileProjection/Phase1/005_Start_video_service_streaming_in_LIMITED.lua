@@ -26,7 +26,7 @@ local appHMIType = "PROJECTION"
 
 --[[ General configuration parameters ]]
 config.application1.registerAppInterfaceParams.appHMIType = { appHMIType }
-config.application1.registerAppInterfaceParams.isMediaApplication = false
+config.application1.registerAppInterfaceParams.isMediaApplication = true
 
 --[[ Local Functions ]]
 local function ptUpdate(pTbl)

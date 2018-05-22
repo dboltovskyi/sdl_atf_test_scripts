@@ -58,12 +58,12 @@ local vehicleDataValues = {
   rpm = 1000,
   fuelLevel = 50.5,
   fuelLevel_State = "NORMAL",
-  fuelRange = {
-    {
-      type = "GASOLINE",
-      range = 400.5
-    }
-  }
+  -- fuelRange = {
+  --   {
+  --     type = "GASOLINE",
+  --     range = 400.5
+  --   }
+  -- },
   instantFuelConsumption = 1000.5,
   externalTemperature = 55.5,
   vin = "123456",

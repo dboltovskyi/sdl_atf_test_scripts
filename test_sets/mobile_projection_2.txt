@@ -18,3 +18,5 @@
 ./test_scripts/MobileProjection/Phase2/018_two_apps_and_one_app_unregister.lua
 ./test_scripts/MobileProjection/Phase2/019_SDL_stop_audio_video.lua
 ./test_scripts/MobileProjection/Phase2/020_different_types_apps_interactions.lua
+./test_scripts/MobileProjection/Phase2/021_two_apps_and_deactivation.lua
+./test_scripts/MobileProjection/Phase2/022_two_apps_and_deactivation_streaming.lua

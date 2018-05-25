@@ -7,6 +7,7 @@ local security = require("user_modules/sequences/security")
 local utils = require("user_modules/utils")
 local test = require("user_modules/dummy_connecttest")
 local commonFunctions = require("user_modules/shared_testcases/commonFunctions")
+local common = require("test_scripts/Security/common")
 
 --[[ General configuration parameters ]]
 config.serverCertificatePath = "./files/Security/GetSystemTime_certificates/spt_credential.pem"
@@ -159,6 +160,14 @@ function m.startServiceSecuredWitTimeoutWithoutGetSTResp(pData, pServiceId, pTim
     end
   end)
 
+end
+
+m.postconditions = common.postconditions
+
+local preconditionsOrig = m.preconditions
+function m.preconditions()
+  preconditionsOrig()
+  common.initSDLCertificates("./files/Security/client_credential.pem", false)
 end
 
 return m

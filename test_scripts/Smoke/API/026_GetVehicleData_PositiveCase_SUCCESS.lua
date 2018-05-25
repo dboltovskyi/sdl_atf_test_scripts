@@ -63,7 +63,7 @@ local vehicleDataValues = {
       type = "GASOLINE",
       range = 400.5
     }
-  }
+  },
   instantFuelConsumption = 1000.5,
   externalTemperature = 55.5,
   vin = "123456",

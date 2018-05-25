@@ -5,7 +5,7 @@
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
 local runner = require('user_modules/script_runner')
-local common = require("test_scripts/Security/common")
+local common = require("test_scripts/Security/SSLHandshakeFlow/common")
 
 --[[ Test Configuration ]]
 runner.testSettings.isSelfIncluded = false
@@ -24,9 +24,7 @@ local function startServiceSecuredNACK()
   common.getMobileSession():ExpectHandshakeMessage()
   :Times(0)
   local function ptUpdate(pTbl)
-    local filePath = "./files/Security/client_credential_expired.pem"
-    local crt = common.readFile(filePath)
-    pTbl.policy_table.module_config.certificate = crt
+    pTbl.policy_table.module_config.certificate = nil
   end
   common.policyTableUpdateSuccess(ptUpdate)
 end
@@ -34,7 +32,7 @@ end
 --[[ Scenario ]]
 runner.Title("Preconditions")
 runner.Step("Clean environment", common.preconditions)
-runner.Step("Init SDL certificates", common.initSDLCertificates, { "./files/Security/client_credential_expired.pem", false })
+runner.Step("Init SDL certificates", common.initSDLCertificates, { "./files/Security/client_credential_expired.pem" })
 runner.Step("Start SDL, HMI, connect Mobile, start Session", common.start)
 
 runner.Title("Test")

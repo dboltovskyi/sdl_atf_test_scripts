@@ -5,7 +5,7 @@
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
 local runner = require('user_modules/script_runner')
-local common = require("test_scripts/Security/common")
+local common = require("test_scripts/Security/SSLHandshakeFlow/common")
 
 --[[ Test Configuration ]]
 runner.testSettings.isSelfIncluded = false
@@ -32,7 +32,7 @@ end
 --[[ Scenario ]]
 runner.Title("Preconditions")
 runner.Step("Clean environment", common.preconditions)
-runner.Step("Init SDL certificates", common.initSDLCertificates, { "./files/Security/client_credential_expired.pem" })
+runner.Step("Init SDL certificates", common.initSDLCertificates, { "./files/Security/client_credential_expired.pem", false })
 runner.Step("Start SDL, HMI, connect Mobile, start Session", common.start)
 
 runner.Title("Test")

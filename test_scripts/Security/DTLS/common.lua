@@ -13,7 +13,7 @@ local security = require("user_modules/sequences/security")
 local utils = require("user_modules/utils")
 local json = require("modules/json")
 local constants = require('protocol_handler/ford_protocol_constants')
-local common = require("test_scripts/Security/common")
+local common = require("test_scripts/Security/SSLHandshakeFlow/common")
 constants.FRAME_SIZE["P9"] = 131084 -- add unsupported SDL protocol version
 
 --[[ Module ]]

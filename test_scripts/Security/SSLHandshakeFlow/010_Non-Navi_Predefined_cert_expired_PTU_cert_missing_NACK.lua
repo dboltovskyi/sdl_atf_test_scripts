@@ -5,11 +5,11 @@
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
 local runner = require('user_modules/script_runner')
-local common = require("test_scripts/Security/common")
+local common = require("test_scripts/Security/SSLHandshakeFlow/common")
 
 --[[ Test Configuration ]]
 runner.testSettings.isSelfIncluded = false
-config.application1.registerAppInterfaceParams.appHMIType = { "NAVIGATION" }
+config.application1.registerAppInterfaceParams.appHMIType = { "DEFAULT" }
 
 --[[ Local Variables ]]
 
@@ -24,9 +24,7 @@ local function startServiceSecuredNACK()
   common.getMobileSession():ExpectHandshakeMessage()
   :Times(0)
   local function ptUpdate(pTbl)
-    local filePath = "./files/Security/client_credential_expired.pem"
-    local crt = common.readFile(filePath)
-    pTbl.policy_table.module_config.certificate = crt
+    pTbl.policy_table.module_config.certificate = nil
   end
   common.policyTableUpdateSuccess(ptUpdate)
 end

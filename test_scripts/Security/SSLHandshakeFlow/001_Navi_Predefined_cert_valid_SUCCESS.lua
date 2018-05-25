@@ -5,11 +5,11 @@
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
 local runner = require('user_modules/script_runner')
-local common = require("test_scripts/Security/common")
+local common = require("test_scripts/Security/SSLHandshakeFlow/common")
 
 --[[ Test Configuration ]]
 runner.testSettings.isSelfIncluded = false
-config.application1.registerAppInterfaceParams.appHMIType = { "DEFAULT" }
+config.application1.registerAppInterfaceParams.appHMIType = { "NAVIGATION" }
 
 --[[ Local Variables ]]
 
@@ -28,7 +28,6 @@ end
 --[[ Scenario ]]
 runner.Title("Preconditions")
 runner.Step("Clean environment", common.preconditions)
-runner.Step("Clean-up certificates", common.cleanUpCertificates)
 runner.Step("Init SDL certificates", common.initSDLCertificates, { "./files/Security/client_credential.pem" })
 runner.Step("Start SDL, HMI, connect Mobile, start Session", common.start)
 

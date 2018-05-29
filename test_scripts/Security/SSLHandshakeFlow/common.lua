@@ -174,12 +174,21 @@ end
 
 function m.policyTableUpdateSuccess(pPTUpdateFunc)
   local function expNotificationFunc()
-    m.getHMIConnection():ExpectNotification("SDL.OnStatusUpdate",
-      { status = "UPDATE_NEEDED" }, { status = "UPDATING" }, { status = "UP_TO_DATE" })
-    :Times(3)
+    m.getHMIConnection():ExpectRequest("BasicCommunication.DecryptCertificate")
+    :Do(function(_, d)
+        m.getHMIConnection():SendResponse(d.id, d.method, "SUCCESS", { })
+      end)
+    :Times(AnyNumber())
     m.getHMIConnection():ExpectRequest("VehicleInfo.GetVehicleData", { odometer = true })
   end
-  m.policyTableUpdate(pPTUpdateFunc, expNotificationFunc)
+  m.getHMIConnection():ExpectRequest("BasicCommunication.PolicyUpdate")
+  :Do(function(e, d)
+      if e.occurences == 1 then
+        m.getHMIConnection():SendResponse(d.id, d.method, "SUCCESS", { })
+        m.setPTUTable(utils.jsonFileToTable(d.params.file))
+        m.policyTableUpdate(pPTUpdateFunc, expNotificationFunc)
+      end
+    end)
 end
 
 return m

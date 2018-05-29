@@ -68,17 +68,14 @@ end
 function m.policyTableUpdate(pPTUpdateFunc, pExpNotificationFunc)
   if pExpNotificationFunc then
     pExpNotificationFunc()
-  else
-    test.hmiConnection:ExpectNotification("SDL.OnStatusUpdate", { status = "UP_TO_DATE" })
-    test.hmiConnection:ExpectRequest("VehicleInfo.GetVehicleData", { odometer = true })
   end
   local ptsFileName = commonFunctions:read_parameter_from_smart_device_link_ini("SystemFilesPath") .. "/"
     .. commonFunctions:read_parameter_from_smart_device_link_ini("PathToSnapshot")
   local ptuFileName = os.tmpname()
-  local requestId = test.hmiConnection:SendRequest("SDL.GetURLS", { service = 7 })
-  test.hmiConnection:ExpectResponse(requestId)
+  local requestId = m.getHMIConnection():SendRequest("SDL.GetURLS", { service = 7 })
+  m.getHMIConnection():ExpectResponse(requestId)
   :Do(function()
-      test.hmiConnection:SendNotification("BasicCommunication.OnSystemRequest",
+      m.getHMIConnection():SendNotification("BasicCommunication.OnSystemRequest",
         { requestType = "PROPRIETARY", fileName = ptsFileName })
       getPTUFromPTS(ptuTable)
       for i = 1, m.getAppsCount() do
@@ -90,21 +87,24 @@ function m.policyTableUpdate(pPTUpdateFunc, pExpNotificationFunc)
       utils.tableToJsonFile(ptuTable, ptuFileName)
       local event = events.Event()
       event.matches = function(e1, e2) return e1 == e2 end
-      EXPECT_EVENT(event, "PTU event")
+      m.getHMIConnection():ExpectEvent(event, "PTU event")
       for id = 1, m.getAppsCount() do
-        local session = m.getMobileSession(id)
-        session:ExpectNotification("OnSystemRequest", { requestType = "PROPRIETARY" })
+        m.getMobileSession(id):ExpectNotification("OnSystemRequest", { requestType = "PROPRIETARY" })
         :Do(function()
+            if not pExpNotificationFunc then
+               m.getHMIConnection():ExpectRequest("VehicleInfo.GetVehicleData", { odometer = true })
+               m.getHMIConnection():ExpectNotification("SDL.OnStatusUpdate", { status = "UP_TO_DATE" })
+            end
             utils.cprint(35, "App ".. id .. " was used for PTU")
-            RAISE_EVENT(event, event, "PTU event")
-            local corIdSystemRequest = session:SendRPC("SystemRequest",
-              { requestType = "PROPRIETARY" }, ptuFileName)
-            EXPECT_HMICALL("BasicCommunication.SystemRequest")
+            m.getHMIConnection():RaiseEvent(event, "PTU event")
+            local corIdSystemRequest = m.getMobileSession(id):SendRPC("SystemRequest", {
+              requestType = "PROPRIETARY" }, ptuFileName)
+            m.getHMIConnection():ExpectRequest("BasicCommunication.SystemRequest")
             :Do(function(_, d3)
-                test.hmiConnection:SendResponse(d3.id, "BasicCommunication.SystemRequest", "SUCCESS", { })
-                test.hmiConnection:SendNotification("SDL.OnReceivedPolicyUpdate", { policyfile = d3.params.fileName })
+                m.getHMIConnection():SendResponse(d3.id, "BasicCommunication.SystemRequest", "SUCCESS", { })
+                m.getHMIConnection():SendNotification("SDL.OnReceivedPolicyUpdate", { policyfile = d3.params.fileName })
               end)
-            session:ExpectResponse(corIdSystemRequest, { success = true, resultCode = "SUCCESS" })
+            m.getMobileSession(id):ExpectResponse(corIdSystemRequest, { success = true, resultCode = "SUCCESS" })
             :Do(function() os.remove(ptuFileName) end)
           end)
         :Times(AtMost(1))
@@ -154,8 +154,8 @@ end
 --]]
 function m.activateApp(pAppId)
   if not pAppId then pAppId = 1 end
-  local requestId = test.hmiConnection:SendRequest("SDL.ActivateApp", { appID = m.getHMIAppId(pAppId) })
-  test.hmiConnection:ExpectResponse(requestId)
+  local requestId = m.getHMIConnection():SendRequest("SDL.ActivateApp", { appID = m.getHMIAppId(pAppId) })
+  m.getHMIConnection():ExpectResponse(requestId)
   m.getMobileSession(pAppId):ExpectNotification("OnHMIStatus",
     { hmiLevel = "FULL", audioStreamingState = "AUDIBLE", systemContext = "MAIN" })
   utils.wait()
@@ -205,15 +205,13 @@ function m.registerApp(pAppId)
   mobSession:StartService(7)
   :Do(function()
       local corId = mobSession:SendRPC("RegisterAppInterface", m.getConfigAppParams(pAppId))
-      test.hmiConnection:ExpectNotification("BasicCommunication.OnAppRegistered",
+      m.getHMIConnection():ExpectNotification("BasicCommunication.OnAppRegistered",
         { application = { appName = m.getConfigAppParams(pAppId).appName } })
       :Do(function(_, d1)
           hmiAppIds[m.getConfigAppParams(pAppId).appID] = d1.params.application.appID
-          test.hmiConnection:ExpectNotification("SDL.OnStatusUpdate", { status = "UPDATE_NEEDED" }, { status = "UPDATING" })
-          :Times(2)
-          test.hmiConnection:ExpectRequest("BasicCommunication.PolicyUpdate")
+          m.getHMIConnection():ExpectRequest("BasicCommunication.PolicyUpdate")
           :Do(function(_, d2)
-              test.hmiConnection:SendResponse(d2.id, d2.method, "SUCCESS", { })
+              m.getHMIConnection():SendResponse(d2.id, d2.method, "SUCCESS", { })
               ptuTable = utils.jsonFileToTable(d2.params.file)
             end)
         end)
@@ -222,6 +220,7 @@ function m.registerApp(pAppId)
           mobSession:ExpectNotification("OnHMIStatus",
             { hmiLevel = "NONE", audioStreamingState = "NOT_AUDIBLE", systemContext = "MAIN" })
           mobSession:ExpectNotification("OnPermissionsChange")
+          :Times(AnyNumber())
         end)
     end)
 end
@@ -237,7 +236,7 @@ function m.registerAppWOPTU(pAppId)
   mobSession:StartService(7)
   :Do(function()
       local corId = mobSession:SendRPC("RegisterAppInterface", m.getConfigAppParams(pAppId))
-      test.hmiConnection:ExpectNotification("BasicCommunication.OnAppRegistered",
+      m.getHMIConnection():ExpectNotification("BasicCommunication.OnAppRegistered",
         { application = { appName = m.getConfigAppParams(pAppId).appName } })
       :Do(function(_, d1)
           hmiAppIds[m.getConfigAppParams(pAppId).appID] = d1.params.application.appID
@@ -272,12 +271,12 @@ function m.start(pHMIParams)
               :Do(function()
                   utils.cprint(35, "Mobile connected")
                   allowSDL(test)
-                  RAISE_EVENT(event, event)
+                  m.getHMIConnection():RaiseEvent(event, event)
                 end)
             end)
         end)
     end)
-  return EXPECT_EVENT(event, "Start event")
+  return m.getHMIConnection():ExpectEvent(event, "Start event")
 end
 
 --[[ @ExpectRequest: register expectation for request on HMI connection
@@ -376,6 +375,36 @@ function test.hmiConnection:ExpectResponse(pId, ...)
   return ret
 end
 
+function test.hmiConnection:RaiseEvent(pEvent, pEventName)
+  if pEventName == nil then pEventName = "noname" end
+  reporter.AddMessage(debug.getinfo(1, "n").name, pEventName)
+  event_dispatcher:RaiseEvent(self, pEvent)
+end
+
+function test.hmiConnection:ExpectEvent(pEvent, pEventName)
+  if pEventName == nil then pEventName = "noname" end
+  local ret = expectations.Expectation(pEventName, self)
+  ret.event = pEvent
+  event_dispatcher:AddEvent(self, pEvent, ret)
+  test:AddExpectation(ret)
+  return ret
+end
+
+function test.mobileConnection:RaiseEvent(pEvent, pEventName)
+  if pEventName == nil then pEventName = "noname" end
+    reporter.AddMessage(debug.getinfo(1, "n").name, pEventName)
+    event_dispatcher:RaiseEvent(self, pEvent)
+end
+
+function test.mobileConnection:ExpectEvent(pEvent, pEventName)
+  if pEventName == nil then pEventName = "noname" end
+  local ret = expectations.Expectation(pEventName, self)
+  ret.event = pEvent
+  event_dispatcher:AddEvent(self, pEvent, ret)
+  test:AddExpectation(ret)
+  return ret
+end
+
 --[[ @getMobileConnection: return Mobile connection object
 --! @parameters: none
 --! @return: Mobile connection object
@@ -432,8 +461,8 @@ end
 
 --[[ @getPathToFileInStorage: full path to file in storage folder
 --! @parameters:
---! @pFileName = file name
---! @pAppId = application number (1, 2, etc.)
+--! @pFileName - file name
+--! @pAppId - application number (1, 2, etc.)
 --! @return: path
 --]]
 function m.getPathToFileInStorage(pFileName, pAppId)
@@ -441,6 +470,16 @@ function m.getPathToFileInStorage(pFileName, pAppId)
   return commonPreconditions:GetPathToSDL() .. "storage/"
   .. m.getConfigAppParams( pAppId ).appID .. "_"
   .. utils.getDeviceMAC() .. "/" .. pFileName
+end
+
+--[[ @setPTUTable: set PTU table that is used in Policy Table Update sequence
+--! @parameters:
+--! @pPTUTable - PTU table
+--! @return: none
+--]]
+
+function m.setPTUTable(pPTUTable)
+  ptuTable = pPTUTable
 end
 
 return m

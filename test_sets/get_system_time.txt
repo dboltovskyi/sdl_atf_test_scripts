@@ -22,3 +22,4 @@
 ./test_scripts/Security/GetSystemTime/022_GetSystemTime_mobile_cer_and_sdl_cer_become_expired.lua
 ./test_scripts/Security/GetSystemTime/023_GetSystemTime_without_response_from_HMI.lua
 ./test_scripts/Security/GetSystemTime/024_GetSystemTime_with_response_from_HMI_in_9_sec.lua
+./test_scripts/Security/GetSystemTime/025_GetSystemTime_is_sent_later.lua

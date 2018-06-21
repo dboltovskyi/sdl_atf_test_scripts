@@ -30,7 +30,7 @@ config.application1.registerAppInterfaceParams.isMediaApplication = true
 
 --[[ Local Functions ]]
 local function ptUpdate(pTbl)
-  pTbl.policy_table.app_policies[common.getAppID()].AppHMIType = { appHMIType }
+  pTbl.policy_table.app_policies[common.getConfigAppParams().appID].AppHMIType = { appHMIType }
 end
 
 local function bringAppToLimited()

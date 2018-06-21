@@ -16,8 +16,6 @@
 --[[ Required Shared libraries ]]
 local common = require('test_scripts/MobileProjection/Phase1/common')
 local runner = require('user_modules/script_runner')
-local commonFunctions = require('user_modules/shared_testcases/commonFunctions')
-local commonPreconditions = require('user_modules/shared_testcases/commonPreconditions')
 local events = require('events')
 local constants = require('protocol_handler/ford_protocol_constants')
 
@@ -32,16 +30,7 @@ config.application1.registerAppInterfaceParams.appHMIType = { appHMIType }
 
 --[[ Local Functions ]]
 local function ptUpdate(pTbl)
-  pTbl.policy_table.app_policies[common.getAppID()].AppHMIType = { appHMIType }
-end
-
-local function BackUpIniFileAndSetStreamRetryValue()
-  commonPreconditions:BackupFile("smartDeviceLink.ini")
-  commonFunctions:write_parameter_to_smart_device_link_ini("StartStreamRetry", "3,500")
-end
-
-local function RestoreIniFile()
-  commonPreconditions:RestoreFile("smartDeviceLink.ini")
+  pTbl.policy_table.app_policies[common.getConfigAppParams().appID].AppHMIType = { appHMIType }
 end
 
 local function startService()
@@ -62,15 +51,15 @@ local function startService()
       frameInfo = constants.FRAME_INFO.END_SERVICE_ACK
     })
   end)
-  EXPECT_HMICALL("Navigation.StartAudioStream")
-  :Do(function(_,data)
+  common.getHMIConnection():ExpectRequest("Navigation.StartAudioStream")
+  :Do(function(_, data)
     local function response()
       common.getHMIConnection():SendError(data.id, data.method, "REJECTED", "Request is rejected")
     end
     RUN_AFTER(response, 100)
   end)
   :Times(4)
-  EXPECT_HMICALL("Navigation.StopAudioStream")
+  common.getHMIConnection():ExpectRequest("Navigation.StopAudioStream")
   :Do(function(_,data)
     common.getHMIConnection():SendResponse(data.id, data.method, "SUCCESS", { })
   end)
@@ -79,7 +68,6 @@ end
 --[[ Scenario ]]
 runner.Title("Preconditions")
 runner.Step("Clean environment", common.preconditions)
-runner.Step("BackUp ini file and set StartStreamRetry value to 3,500", BackUpIniFileAndSetStreamRetryValue)
 runner.Step("Start SDL, HMI, connect Mobile, start Session", common.start)
 runner.Step("Register App", common.registerApp)
 runner.Step("PolicyTableUpdate with HMI types", common.policyTableUpdate, { ptUpdate })
@@ -90,4 +78,3 @@ runner.Step("Stop audio service by rejecting StartAudioStream", startService)
 
 runner.Title("Postconditions")
 runner.Step("Stop SDL", common.postconditions)
-runner.Step("Restore ini file", RestoreIniFile)

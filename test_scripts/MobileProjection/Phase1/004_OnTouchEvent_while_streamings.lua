@@ -16,7 +16,6 @@
 --[[ Required Shared libraries ]]
 local common = require('test_scripts/MobileProjection/Phase1/common')
 local runner = require('user_modules/script_runner')
-local commonFunctions = require('user_modules/shared_testcases/commonFunctions')
 
 --[[ Test Configuration ]]
 runner.testSettings.isSelfIncluded = false
@@ -39,8 +38,8 @@ config.application1.registerAppInterfaceParams.appHMIType = { appHMIType }
 
 --[[ Local Functions ]]
 local function ptUpdate(pTbl)
-  pTbl.policy_table.app_policies[common.getAppID()].AppHMIType = { appHMIType }
-  pTbl.policy_table.app_policies[common.getAppID()].groups = { "Base-4", "OnTouchEventOnlyGroup" }
+  pTbl.policy_table.app_policies[common.getConfigAppParams().appID].AppHMIType = { appHMIType }
+  pTbl.policy_table.app_policies[common.getConfigAppParams().appID].groups = { "Base-4", "OnTouchEventOnlyGroup" }
 end
 
 local function OnTouchEvent(parameters)
@@ -62,7 +61,7 @@ runner.Step("Start audio streaming", common.StartStreaming, { 10, "files/MP3_455
 
 runner.Title("Test")
 for key, value in pairs(OnTouchEventType) do
-  local parameters = commonFunctions:cloneTable(NotifParams)
+  local parameters = common.cloneTable(NotifParams)
   parameters.type = value
   parameters.event[1].c[1].x = parameters.event[1].c[1].x + key
   parameters.event[1].c[1].y = parameters.event[1].c[1].y + key

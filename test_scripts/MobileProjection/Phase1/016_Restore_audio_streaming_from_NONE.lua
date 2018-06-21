@@ -33,7 +33,7 @@ config.application1.registerAppInterfaceParams.appHMIType = { appHMIType }
 
 --[[ Local Functions ]]
 local function ptUpdate(pTbl)
-  pTbl.policy_table.app_policies[common.getAppID()].AppHMIType = { appHMIType }
+  pTbl.policy_table.app_policies[common.getConfigAppParams().appID].AppHMIType = { appHMIType }
 end
 
 local function EndServiceByUserExit()
@@ -55,20 +55,20 @@ local function EndServiceByUserExit()
     end)
   common.getMobileSession():ExpectNotification("OnHMIStatus",	{
     systemContext = "MAIN", hmiLevel = "NONE", audioStreamingState = "NOT_AUDIBLE" })
-  EXPECT_HMICALL("Navigation.StopAudioStream")
+  common.getHMIConnection():ExpectRequest("Navigation.StopAudioStream")
 	:Do(function(_, data)
       common.getHMIConnection():SendResponse(data.id, data.method, "SUCCESS", { })
     end)
-  EXPECT_HMINOTIFICATION("Navigation.OnAudioDataStreaming", { available = false })
+  common.getHMIConnection():ExpectNotification("Navigation.OnAudioDataStreaming", { available = false })
   :Times(AtLeast(1))
   common.getHMIConnection():SendNotification("BasicCommunication.OnExitApplication", {
     appID = common.getHMIAppId(), reason = "USER_EXIT" })
-  common.delayedExp(1000)
+  common.wait(1000)
 end
 
 local function RestoreService()
   common.getMobileSession():StartService(Service)
-  EXPECT_HMICALL("Navigation.StartAudioStream")
+  common.getHMIConnection():ExpectRequest("Navigation.StartAudioStream")
   :Do(function(_,data)
 	common.getHMIConnection():SendResponse(data.id, data.method, "SUCCESS",  {})
   end)

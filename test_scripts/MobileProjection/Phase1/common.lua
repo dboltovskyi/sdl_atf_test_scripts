@@ -591,7 +591,7 @@ function m.StartStreaming(pService, pFile, pAppId)
      EXPECT_HMINOTIFICATION("Navigation.OnAudioDataStreaming", { available = true })
   end
   commonFunctions:userPrint(33, "Streaming...")
-  m.delayedExp(3000)
+  m.delayedExp(1000)
 end
 
 --[[ @StopStreaming: Stop streaming
@@ -648,6 +648,11 @@ function m.RejectingServiceStart(pService, pAppId)
         return false, "StartService ACK received"
       end
     end)
+end
+
+function m.StopService(pServiceId, pAppId)
+  if not pAppId then pAppId = 1 end
+  m.getMobileSession(pAppId):StopService(pServiceId)
 end
 
 return protect(m)

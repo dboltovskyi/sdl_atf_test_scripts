@@ -66,5 +66,6 @@ runner.Title("Test")
 runner.Step("Start audio service with retry sequence for StartAudioStream", startService)
 
 runner.Title("Postconditions")
+runner.Step("Stop service", common.StopService, { 10 })
 runner.Step("Stop SDL", common.postconditions)
 runner.Step("Restore ini file", RestoreIniFile)

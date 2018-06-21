@@ -66,5 +66,6 @@ runner.Title("Test")
 runner.Step("Start video service with retry sequence for StartStream", startService)
 
 runner.Title("Postconditions")
+runner.Step("Stop service", common.StopService, { 11 })
 runner.Step("Stop SDL", common.postconditions)
 runner.Step("Restore ini file", RestoreIniFile)

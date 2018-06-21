@@ -38,30 +38,32 @@ end
 
 local function EndServiceByUserExit()
   local EndServiceEvent = events.Event()
-  EndServiceEvent.matches =
-	function(_, data)
-      return data.frameType == constants.FRAME_TYPE.CONTROL_FRAME and
-      data.serviceType == constants.SERVICE_TYPE.PCM and
-      data.sessionId == common.getMobileSession().sessionId and
-      data.frameInfo == constants.FRAME_INFO.END_SERVICE
-	end
+  EndServiceEvent.matches =	function(_, data)
+     return data.frameType == constants.FRAME_TYPE.CONTROL_FRAME
+       and data.serviceType == constants.SERVICE_TYPE.PCM
+       and data.sessionId == common.getMobileSession().sessionId
+       and data.frameInfo == constants.FRAME_INFO.END_SERVICE
+  end
   common.getMobileSession():ExpectEvent(EndServiceEvent, "Expect EndServiceEvent")
-  :Do(function( )
-	  common.getMobileSession():Send({
-	  frameType = constants.FRAME_TYPE.CONTROL_FRAME,
-	  serviceType = constants.SERVICE_TYPE.PCM,
-	  frameInfo = constants.FRAME_INFO.END_SERVICE_ACK
-	})
-  end)
-  common.getHMIConnection():SendNotification("BasicCommunication.OnExitApplication",
-	{ appID = common.getHMIAppId(), reason = "USER_EXIT" })
-  common.getMobileSession():ExpectNotification("OnHMIStatus",
-	{ systemContext = "MAIN", hmiLevel = "NONE", audioStreamingState = "NOT_AUDIBLE" })
+  :Do(function()
+      common.getMobileSession():StopStreaming(FileForStreaming)
+	    common.getMobileSession():Send({
+	      frameType = constants.FRAME_TYPE.CONTROL_FRAME,
+	      serviceType = constants.SERVICE_TYPE.PCM,
+	      frameInfo = constants.FRAME_INFO.END_SERVICE_ACK
+	    })
+    end)
+  common.getMobileSession():ExpectNotification("OnHMIStatus",	{
+    systemContext = "MAIN", hmiLevel = "NONE", audioStreamingState = "NOT_AUDIBLE" })
   EXPECT_HMICALL("Navigation.StopAudioStream")
-	:Do(function(_,data)
+	:Do(function(_, data)
       common.getHMIConnection():SendResponse(data.id, data.method, "SUCCESS", { })
-  end)
+    end)
   EXPECT_HMINOTIFICATION("Navigation.OnAudioDataStreaming", { available = false })
+  :Times(AtLeast(1))
+  common.getHMIConnection():SendNotification("BasicCommunication.OnExitApplication", {
+    appID = common.getHMIAppId(), reason = "USER_EXIT" })
+  common.delayedExp(1000)
 end
 
 local function RestoreService()
@@ -88,4 +90,5 @@ runner.Step("Activate App after user exit", common.activateApp)
 runner.Step("Restoring audio service", RestoreService)
 
 runner.Title("Postconditions")
+runner.Step("Stop service", common.StopService, { Service })
 runner.Step("Stop SDL", common.postconditions)

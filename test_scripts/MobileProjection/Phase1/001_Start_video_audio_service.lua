@@ -43,4 +43,6 @@ runner.Step("Start video service", common.startService, { 11 })
 runner.Step("Start audio service", common.startService, { 10 })
 
 runner.Title("Postconditions")
+runner.Step("Stop service", common.StopService, { 10 })
+runner.Step("Stop service", common.StopService, { 11 })
 runner.Step("Stop SDL", common.postconditions)

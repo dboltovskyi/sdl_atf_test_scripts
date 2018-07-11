@@ -113,6 +113,7 @@ function Test:ShutDown_MASTER_RESET()
   :Do(function()
       stopSDL()
     end)
+  commonTestCases:DelayedExp(1000)
 end
 
 --- Start SDL again then add mobile connection

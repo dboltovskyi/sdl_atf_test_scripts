@@ -30,6 +30,7 @@ local commonSteps = require('user_modules/shared_testcases/commonSteps')
 local commonStepsResumption = require('user_modules/shared_testcases/commonStepsResumption')
 local mobile_session = require('mobile_session')
 local SDL = require('SDL')
+local commonTestCases = require("user_modules/shared_testcases/commonTestCases")
 
 --[[ General Settings for configuration ]]
 Test = require('user_modules/dummy_connecttest')
@@ -113,6 +114,7 @@ function Test:IGNITION_OFF()
         stopSDL()
       end)
   end)
+  commonTestCases:DelayedExp(1000)
 end
 
 function Test.Restart_SDL_And_Add_Mobile_Connection()
@@ -131,6 +133,7 @@ function Test:IGNITION_OFF()
         stopSDL()
       end)
   end)
+  commonTestCases:DelayedExp(1000)
 end
 
 function Test.Restart_SDL_And_Add_Mobile_Connection()

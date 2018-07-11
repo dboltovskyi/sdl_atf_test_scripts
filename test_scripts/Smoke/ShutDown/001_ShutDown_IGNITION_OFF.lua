@@ -26,6 +26,7 @@ config.defaultProtocolVersion = 2
 local commonFunctions = require('user_modules/shared_testcases/commonFunctions')
 local commonSteps = require('user_modules/shared_testcases/commonSteps')
 local SDL = require('SDL')
+local commonTestCases = require("user_modules/shared_testcases/commonTestCases")
 
 --[[ General Settings for configuration ]]
 Test = require('user_modules/dummy_connecttest')
@@ -83,6 +84,7 @@ function Test:ShutDown_IGNITION_OFF()
         stopSDL()
       end)
   end)
+  commonTestCases:DelayedExp(1000)
 end
 
 --[[ Postconditions ]]

@@ -1347,5 +1347,17 @@ function commonFunctions.getURLs(pService)
   return url
 end
 
+function commonFunctions:StopSDL()
+  local SDL = require('SDL')
+  print("[" .. atf_logger.formated_time(true) .. "] Start stopping of SDL")
+  local events = require("events")
+  local event = events.Event()
+  event.matches = function(e1, e2) return e1 == e2 end
+  EXPECT_EVENT(event, "Start event")
+  SDL:StopSDL()
+  print("[" .. atf_logger.formated_time(true) .. "] End stopping of SDL")
+  RAISE_EVENT(event, event)
+end
+
 
 return commonFunctions

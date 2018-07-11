@@ -59,6 +59,16 @@ end
 
 --[[ Test ]]
 commonFunctions:newTestCasesGroup("Check that SDL finish it's work properly by IGNITION_OFF")
+
+local function stopSDL()
+  local events = require("events")
+  local event = events.Event()
+  event.matches = function(e1, e2) return e1 == e2 end
+  EXPECT_EVENT(event, "Start event")
+  SDL:StopSDL()
+  RAISE_EVENT(event, event)
+end
+
 function Test:ShutDown_IGNITION_OFF()
   self.hmiConnection:SendNotification("BasicCommunication.OnExitAllApplications",
     { reason = "SUSPEND" })
@@ -70,7 +80,7 @@ function Test:ShutDown_IGNITION_OFF()
     EXPECT_HMINOTIFICATION("BasicCommunication.OnAppUnregistered", { unexpectedDisconnect = false })
     EXPECT_HMINOTIFICATION("BasicCommunication.OnSDLClose")
     :Do(function()
-        SDL:StopSDL()
+        stopSDL()
       end)
   end)
 end

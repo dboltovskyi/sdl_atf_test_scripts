@@ -65,6 +65,15 @@ end
 --[[ Test ]]
 commonFunctions:newTestCasesGroup("SDL does not perform App resumption when app is registered in more than 30 sec after BC.OnReady")
 
+local function stopSDL()
+  local events = require("events")
+  local event = events.Event()
+  event.matches = function(e1, e2) return e1 == e2 end
+  EXPECT_EVENT(event, "Start event")
+  SDL:StopSDL()
+  RAISE_EVENT(event, event)
+end
+
 function Test:IGNITION_OFF()
   self.hmiConnection:SendNotification("BasicCommunication.OnExitAllApplications",
     { reason = "SUSPEND" })
@@ -77,7 +86,7 @@ function Test:IGNITION_OFF()
   EXPECT_HMINOTIFICATION("BasicCommunication.OnAppUnregistered", { unexpectedDisconnect = false })
   EXPECT_HMINOTIFICATION("BasicCommunication.OnSDLClose")
   :Do(function()
-      SDL:StopSDL()
+      stopSDL()
     end)
 end
 

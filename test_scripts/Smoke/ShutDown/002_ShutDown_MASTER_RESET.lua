@@ -92,6 +92,15 @@ end
 --[[ Test ]]
 commonFunctions:newTestCasesGroup("Check that SDL finish it's work properly by MASTER_RESET")
 
+local function stopSDL()
+  local events = require("events")
+  local event = events.Event()
+  event.matches = function(e1, e2) return e1 == e2 end
+  EXPECT_EVENT(event, "Start event")
+  SDL:StopSDL()
+  RAISE_EVENT(event, event)
+end
+
 function Test:ShutDown_MASTER_RESET()
   self.hmiConnection:SendNotification("BasicCommunication.OnExitAllApplications",
     { reason = "MASTER_RESET" })
@@ -102,7 +111,7 @@ function Test:ShutDown_MASTER_RESET()
     end)
   EXPECT_HMINOTIFICATION("BasicCommunication.OnSDLClose")
   :Do(function()
-      SDL:StopSDL()
+      stopSDL()
     end)
 end
 

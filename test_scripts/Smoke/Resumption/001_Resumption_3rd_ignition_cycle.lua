@@ -90,6 +90,15 @@ end
 --[[ Test ]]
 commonFunctions:newTestCasesGroup("SDL should perform data resumption application is registered within 3 ign cycles")
 
+local function stopSDL()
+  local events = require("events")
+  local event = events.Event()
+  event.matches = function(e1, e2) return e1 == e2 end
+  EXPECT_EVENT(event, "Start event")
+  SDL:StopSDL()
+  RAISE_EVENT(event, event)
+end
+
 function Test:IGNITION_OFF()
   self.hmiConnection:SendNotification("BasicCommunication.OnExitAllApplications",
     { reason = "SUSPEND" })
@@ -101,7 +110,7 @@ function Test:IGNITION_OFF()
     EXPECT_HMINOTIFICATION("BasicCommunication.OnAppUnregistered", { unexpectedDisconnect = false })
     EXPECT_HMINOTIFICATION("BasicCommunication.OnSDLClose")
     :Do(function()
-        SDL:StopSDL()
+        stopSDL()
       end)
   end)
 end
@@ -119,7 +128,7 @@ function Test:IGNITION_OFF()
       { reason = "IGNITION_OFF" })
     EXPECT_HMINOTIFICATION("BasicCommunication.OnSDLClose")
     :Do(function()
-        SDL:StopSDL()
+        stopSDL()
       end)
   end)
 end

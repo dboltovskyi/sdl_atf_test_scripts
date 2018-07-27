@@ -1,6 +1,7 @@
 local testCasesForPolicyTableSnapshot = {}
 local commonFunctions = require('user_modules/shared_testcases/commonFunctions')
 local commonSteps = require('user_modules/shared_testcases/commonSteps')
+local commonPreconditions = require('user_modules/shared_testcases/commonPreconditions')
 
 testCasesForPolicyTableSnapshot.preloaded_elements = {}
 testCasesForPolicyTableSnapshot.pts_elements = {}
@@ -80,7 +81,7 @@ end
 function testCasesForPolicyTableSnapshot:extract_preloaded_pt()
   testCasesForPolicyTableSnapshot.preloaded_elements = {}
   testCasesForPolicyTableSnapshot.seconds_between_retries = {}
-  local preloaded_pt = config.pathToSDL ..'sdl_preloaded_pt.json'
+  local preloaded_pt = commonPreconditions:GetPathToSDL() ..'sdl_preloaded_pt.json'
   extract_json(preloaded_pt)
   local k = 1
   for i = 1, #json_elements do

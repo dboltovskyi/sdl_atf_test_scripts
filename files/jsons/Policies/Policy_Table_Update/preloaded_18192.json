@@ -943,7 +943,7 @@
                             "textBody": "TEXTBODY_DataConsent"
                         }
                     }
-                } 
+                }
             }
         },
         "app_policies": {
@@ -952,7 +952,8 @@
                 "steal_focus": false,
                 "priority": "NONE",
                 "default_hmi": "NONE",
-                "groups": ["Base-4"]
+                "groups": ["Base-4"],
+                "RequestType": []
             },
             "device": {
                 "keep_context": false,

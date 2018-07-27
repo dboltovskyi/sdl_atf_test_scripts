@@ -2250,7 +2250,8 @@
                 "steal_focus": false,
                 "priority": "NONE",
                 "default_hmi": "NONE",
-                "groups": ["Location-1"]
+                "groups": ["Location-1"],
+                "RequestType": []
             },
             "device": {
                 "keep_context": false,

@@ -2251,14 +2251,16 @@
                 "steal_focus": false,
                 "priority": "NONE",
                 "default_hmi": "NONE",
-                "groups": ["Base-4"]
+                "groups": ["Base-4"],
+                "RequestType": []
             },
              "0000001": {
                 "keep_context": false,
                 "steal_focus": false,
                 "priority": "NONE",
                 "default_hmi": "NONE",
-                "groups": ["DrivingCharacteristics-3","Base-4"]
+                "groups": ["DrivingCharacteristics-3","Base-4"],
+                "RequestType": []
             },
             "device": {
                 "keep_context": false,

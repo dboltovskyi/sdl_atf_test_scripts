@@ -2293,7 +2293,8 @@
         "steal_focus": false,
         "priority": "NONE",
         "default_hmi": "NONE",
-        "groups": ["Base-4"]
+        "groups": ["Base-4"],
+        "RequestType": []
       },
      "0000001":null,
       "device": {

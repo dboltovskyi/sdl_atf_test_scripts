@@ -1,12 +1,13 @@
 {
-    "policy_table": {        
-        "app_policies": {            
+    "policy_table": {
+        "app_policies": {
             "default": {
                 "keep_context": false,
                 "steal_focus": false,
                 "priority": "NONE",
                 "default_hmi": "NONE",
-                "groups": ["Base-4"]
+                "groups": ["Base-4"],
+                "RequestType": []
             },
             "device": {
                 "keep_context": false,
@@ -23,9 +24,9 @@
                 "groups": ["BaseBeforeDataConsent"]
             }
         },
-        "functional_groupings": {            
+        "functional_groupings": {
             "SpecificPermissions": {
-                "rpcs": { 
+                "rpcs": {
 		    "PutFile": {
                         "hmi_levels": [
                             "BACKGROUND",
@@ -33,7 +34,7 @@
                             "LIMITED",
                             "NONE"
                         ]
-                    }                                       
+                    }
                 }
             },
             "BackgroundAPT": {
@@ -57,8 +58,8 @@
             },
             "Base-4": {
                 "rpcs": {
-                    
-                    
+
+
                     "ChangeRegistration": {
                         "hmi_levels": [
                             "BACKGROUND",
@@ -296,7 +297,7 @@
                             "BACKGROUND"
                         ]
                     },
-                   
+
                     "Slider": {
                         "hmi_levels": [
                             "FULL"
@@ -315,7 +316,7 @@
                             "LIMITED"
                         ]
                     },
-                   
+
                     "UnregisterAppInterface": {
                         "hmi_levels": [
                             "BACKGROUND",
@@ -1198,7 +1199,7 @@
                 },
                 "user_consent_prompt": "VehicleInfo"
             }
-        },        
+        },
         "module_config": {
             "endpoints": {
                 "0x04": {

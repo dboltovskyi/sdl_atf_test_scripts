@@ -2045,14 +2045,16 @@
 				"priority": "EMERGENCY",
 				"default_hmi": "BACKGROUND",
 				"groups": ["Permission_for_1234567"],
-				"nicknames": ["SPT"]
+				"nicknames": ["SPT"],
+        "RequestType": []
 			},
 			"default": {
 				"keep_context": false,
 				"steal_focus": false,
 				"priority": "NONE",
 				"default_hmi": "NONE",
-				"groups": ["Base-4"]
+				"groups": ["Base-4"],
+        "RequestType": []
 			},
 			"device": {
 				"keep_context": false,

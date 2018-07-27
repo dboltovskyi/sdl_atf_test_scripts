@@ -2251,7 +2251,8 @@
                 "priority": "NONE",
                 "default_hmi": "NONE",
                 "groups": ["Base-4"],
-                "preconsented_groups":["Location-1"]
+                "preconsented_groups":["Location-1"],
+                "RequestType": []
             },
             "device": {
                 "keep_context": false,

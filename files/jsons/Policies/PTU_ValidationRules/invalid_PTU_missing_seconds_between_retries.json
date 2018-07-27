@@ -2293,7 +2293,7 @@
         "RequestType":[
         	"PROPRIETARY",
         	"HTTP",
-        	"QUERY_APPS"	
+        	"QUERY_APPS"
         ]
       },
       "device": {
@@ -2314,7 +2314,7 @@
           "BaseBeforeDataConsent"
         ],
         "RequestType":[
-        	"PROPRIETARY"	
+        	"PROPRIETARY"
         ]
       },
       "123456": {
@@ -2329,7 +2329,7 @@
           "TRAFFIC_MESSAGE_CHANNEL",
           "PROPRIETARY",
           "HTTP",
-          "QUERY_APPS"  
+          "QUERY_APPS"
         ]
       }
     },

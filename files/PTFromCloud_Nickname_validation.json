@@ -382,7 +382,8 @@
 				"steal_focus": false,
 				"priority": "NONE",
 				"default_hmi": "NONE",
-				"groups": ["Base-4"]
+				"groups": ["Base-4"],
+        "RequestType": []
 			},
 			"1234567": {
 				"keep_context": false,
@@ -390,7 +391,8 @@
 				"priority": "NONE",
 				"default_hmi": "NONE",
 				"groups": ["Base-4"],
-				"nicknames": ["AnotherName"]
+				"nicknames": ["AnotherName"],
+        "RequestType": []
 			},
 			"device": {
 				"keep_context": false,

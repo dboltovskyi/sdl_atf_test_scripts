@@ -2545,7 +2545,8 @@
         "default_hmi": "NONE",
         "groups": [
           "Base-4"
-        ]
+        ],
+        "RequestType": []
       }
     },
     "module_config": {

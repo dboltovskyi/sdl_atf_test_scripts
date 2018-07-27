@@ -41,7 +41,7 @@
 			},
 			"Base-4" : {
 				"rpcs" : {
-				
+
 				"ReadDID": {
 				"hmi_levels": [
 				"BACKGROUND",
@@ -49,8 +49,8 @@
 				"LIMITED"
 				]
 				}
-				, 
-				
+				,
+
 				"GetDTCs": {
 				"hmi_levels": [
 				"BACKGROUND",
@@ -58,8 +58,8 @@
 				"LIMITED"
 				]
 				}
-				, 
-				
+				,
+
 				"DiagnosticMessage": {
 				"hmi_levels": [
 				"BACKGROUND",
@@ -67,8 +67,8 @@
 				"LIMITED"
 				]
 				}
-				, 
-				
+				,
+
 				"SubscribeVehicleData": {
 				"hmi_levels": [
 				"BACKGROUND",
@@ -76,8 +76,8 @@
 				"LIMITED"
 				]
 				}
-				, 
-				
+				,
+
 				"GetVehicleData": {
 				"hmi_levels": [
 				"BACKGROUND",
@@ -85,8 +85,8 @@
 				"LIMITED"
 				]
 				}
-				, 
-				
+				,
+
 				"UnsubscribeVehicleData": {
 				"hmi_levels": [
 				"BACKGROUND",
@@ -94,7 +94,7 @@
 				"LIMITED"
 				]
 				}
-				, 
+				,
 					"AddCommand" : {
 						"hmi_levels" : ["BACKGROUND",
 							"FULL",
@@ -1602,7 +1602,7 @@
 						}
 					}
 				},
-				
+
 				"group1" : {
 					"languages" : {
 						"de-de" : {
@@ -2375,21 +2375,24 @@
                 "steal_focus": false,
                 "priority": "NONE",
                 "default_hmi": "NONE",
-                "groups": ["Base-4", "groupName_11", "groupName_12"]
+                "groups": ["Base-4", "groupName_11", "groupName_12"],
+                "RequestType": []
             },
             "0000002": {
                 "keep_context": false,
                 "steal_focus": false,
                 "priority": "NONE",
                 "default_hmi": "NONE",
-                "groups": ["Base-4", "groupName_21", "groupName_22"]
+                "groups": ["Base-4", "groupName_21", "groupName_22"],
+                "RequestType": []
             },
 			"default" : {
 				"keep_context" : false,
 				"steal_focus" : false,
 				"priority" : "NONE",
 				"default_hmi" : "NONE",
-				"groups": ["Base-4", "Location-1", "DrivingCharacteristics-3", "VehicleInfo-3", "Emergency-1", "PropriataryData-1"]
+				"groups": ["Base-4", "Location-1", "DrivingCharacteristics-3", "VehicleInfo-3", "Emergency-1", "PropriataryData-1"],
+				"RequestType": []
 			},
 			"device" : {
 				"keep_context" : false,

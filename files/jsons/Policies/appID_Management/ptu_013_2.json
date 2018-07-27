@@ -4,10 +4,11 @@
             "0000001": {
                 "groups": ["Base-4", "Base-6"],
                 "priority": "NONE",
-		"keep_context": false,
+		        "keep_context": false,
                 "steal_focus": false,
-		"default_hmi": "NONE",
-                "nicknames": ["App1"]
+		        "default_hmi": "NONE",
+                "nicknames": ["App1"],
+                "RequestType": []
             },
             "123_xyz": null,
             "default": {
@@ -15,7 +16,8 @@
                 "steal_focus": false,
                 "priority": "NONE",
                 "default_hmi": "NONE",
-                "groups": ["Base-4"]
+                "groups": ["Base-4"],
+                "RequestType": []
             },
             "device": {
                 "keep_context": false,

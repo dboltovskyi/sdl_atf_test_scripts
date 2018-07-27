@@ -1810,14 +1810,16 @@
 				"steal_focus": true,
 				"priority": "NONE",
 				"default_hmi": "NONE",
-				"groups": ["Base-4"]
+				"groups": ["Base-4"],
+        "RequestType": []
 			},
 			"0000001": {
 				"keep_context": true,
 				"steal_focus": true,
 				"priority": "NONE",
 				"default_hmi": "NONE",
-				"groups": ["Base-8"]
+				"groups": ["Base-8"],
+        "RequestType": []
 			},
 			"device": {
 				"keep_context": false,

@@ -3,6 +3,7 @@
 ---------------------------------------------------------------------------------------------------
 config.application1.registerAppInterfaceParams.appHMIType = { "REMOTE_CONTROL" }
 config.application2.registerAppInterfaceParams.appHMIType = { "REMOTE_CONTROL" }
+config.application1.registerAppInterfaceParams.syncMsgVersion.majorVersion = 5
 
 --[[ Required Shared libraries ]]
 local commonRC = require("test_scripts/RC/commonRC")
@@ -103,7 +104,7 @@ function c.getModuleControlData(pModuleType)
       stationLocation = {
         longitudeDegrees = 0.1,
         latitudeDegrees = 0.1,
-        altitudeMeters = 0.1
+        altitude = 0.1
       },
       stationMessage = "station message"
     }
@@ -129,7 +130,7 @@ function c.getModuleControlData(pModuleType)
           id = "FRONT_LEFT_HIGH_BEAM",
           status = "ON",
           density = 0.2,
-          sRGBColor = {
+          color = {
             red = 50,
             green = 150,
             blue = 200
@@ -170,7 +171,7 @@ function c.getAnotherModuleControlData(pModuleType)
       stationLocation = {
         longitudeDegrees = 20.1,
         latitudeDegrees = 20.1,
-        altitudeMeters = 20.1
+        altitude = 20.1
       },
       stationMessage = "station message 2"
     }
@@ -196,7 +197,7 @@ function c.getAnotherModuleControlData(pModuleType)
           id = "READING_LIGHTS",
           status = "ON",
           density = 0.5,
-          sRGBColor = {
+          color = {
             red = 150,
             green = 200,
             blue = 250
@@ -243,7 +244,7 @@ function c.getReadOnlyParamsByModule(pModuleType)
         stationLocation = {
           longitudeDegrees = 20.1,
           latitudeDegrees = 20.1,
-          altitudeMeters = 20.1
+          altitude = 20.1
         },
         stationMessage = "station message 2"
       }

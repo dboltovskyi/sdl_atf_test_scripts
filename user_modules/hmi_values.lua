@@ -423,7 +423,7 @@ function module.getDefaultHMITable()
                 local item = {
                   name = name,
                   densityAvailable = true,
-                  sRGBColorSpaceAvailable = true
+                  RGBColorSpaceAvailable = true
                 }
                 table.insert(out, item)
               end

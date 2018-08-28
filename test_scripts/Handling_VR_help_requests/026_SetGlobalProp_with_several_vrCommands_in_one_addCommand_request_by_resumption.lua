@@ -7,11 +7,11 @@
 --
 -- Description:
 -- In case:
--- 1. Command1 commands with vrCommands Command1_1, Command2_1, Command3_1 is added
+-- 1. Command1 command with a few synonyms is added
 -- 2. Perform reconnect
 -- 3. SDL resumes commands
 -- SDL does:
--- send SetGlobalProperties with constructed the vrHelp and helpPrompt parameters using added vrCommands
+-- 3. send SetGlobalProperties with constructed the vrHelp and helpPrompt parameters using 1st synonym
 -- by command resumption
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]

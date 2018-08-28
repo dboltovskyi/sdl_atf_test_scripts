@@ -7,12 +7,15 @@
 --
 -- Description:
 -- In case:
--- 1. Mobile application sets 29 command one by one
--- 2. Mobile application sets 2 commands in one request
+-- 1. Mobile application sets 28 command one by one
+-- 2. Mobile application sets 2 commands in one request (29) with 2 synonyms
+-- 3. Mobile application sets 1 command in one request (30)
+-- 4. Mobile application sets 1 command in one request (31)
 -- SDL does:
--- 1. send SetGlobalProperties with full list of command values for vrHelp and helpPrompt parameters for 30 VR commands
--- and exclude 31th VR command from list
--- 2. not send SetGlobalProperties after added 31 command
+-- 1. send SetGlobalProperties with full list of command values for vrHelp and helpPrompt parameters for 28 VR commands
+-- 2. send SetGlobalProperties with constructed the vrHelp and helpPrompt parameters using 1st synonym from list
+-- 3. send SetGlobalProperties with constructed the vrHelp and helpPrompt parameters
+-- 4. not send SetGlobalProperties after added 31 command
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
 local runner = require('user_modules/script_runner')
@@ -22,7 +25,7 @@ local common = require('test_scripts/Handling_VR_help_requests/commonVRhelp')
 runner.testSettings.isSelfIncluded = false
 
 --[[ Local Variables ]]
-local AddCommandParams = common.getAddCommandParams(30)
+local AddCommandParams = common.getAddCommandParams(29)
 AddCommandParams.vrCommands = { "Command_30_1", "Command_30_2" }
 
 --[[ Scenario ]]
@@ -33,12 +36,13 @@ runner.Step("App registration", common.registerAppWOPTU)
 runner.Step("App activation", common.activateApp)
 
 runner.Title("Test")
-for i = 1, 29 do
+for i = 1, 28 do
   runner.Step("SetGlobalProperties from SDL after added command " .. i, common.addCommandWithSetGP, { i })
 end
 runner.Step("SetGlobalProperties after AddCommand with several vrCommand", common.addCommandWithSetGP,
   { nil, AddCommandParams })
-runner.Step("Absence SetGlobalProperties from SDL after adding 32 VR command", common.addCommandWithoutSetGP, { 31 })
+runner.Step("SetGlobalProperties from SDL after added command 30", common.addCommandWithSetGP, { 30 })
+runner.Step("Absence SetGlobalProperties from SDL after adding 31 VR command", common.addCommandWithoutSetGP, { 31 })
 
 runner.Title("Postconditions")
 runner.Step("Stop SDL", common.postconditions)

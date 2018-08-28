@@ -7,18 +7,18 @@
 --
 -- Description:
 -- In case:
--- 1. Mobile application sets 30 commands in requests #1, #2, #3
--- 2. Mobile application sets 10 commands in requests #4 and #5
--- 3. Mobile application removes commands
+-- 1. Mobile application sets 30 commands
+-- 2. Mobile application sets 31st command
+-- 3. Mobile application removes 31st command
+-- 4. Mobile application removes 1st command
+-- 5. Mobile application sets 32nd command
 -- SDL does:
 -- 1. send SetGlobalProperties with full list of command values for vrHelp and helpPrompt parameters for 30 VR commands
--- after processing request #1, #2, #3
--- 2. not send SetGlobalProperties after processing requests #4, #5
--- 3. not send SetGlobalProperties when commands from request #4 and #5 were removed
+-- 2. not send SetGlobalProperties for 31st VR command
+-- 3. not send SetGlobalProperties when 31st VR command is removed
 -- 4. send SetGlobalProperties with full list of command values for vrHelp and helpPrompt parameters for 30 VR commands
--- after removing commands from requests #1, #2
--- 5. send SetGlobalProperties with empty array for helpPrompt parameter and omitted vrHelp parameter
--- after removing commands from requests #3
+-- when 1st VR command is removed
+-- 5. send SetGlobalProperties with full list of command values for vrHelp and helpPrompt parameters for 32nd VR command
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
 local runner = require('user_modules/script_runner')
@@ -26,55 +26,6 @@ local common = require('test_scripts/Handling_VR_help_requests/commonVRhelp')
 
 --[[ Test Configuration ]]
 runner.testSettings.isSelfIncluded = false
-
---[[ Local Variables ]]
-local function getVRCommandsList(pCmdId, pN)
-  local out = {}
-  for _ = 1, pN do
-    table.insert(out, "Command_" .. pCmdId .. "_" .. pN)
-  end
-  return out
-end
-
-local params1 = common.getAddCommandParams(1)
-params1.vrCommands = getVRCommandsList(1, 10)
-
-local params2 = common.getAddCommandParams(2)
-params2.vrCommands = getVRCommandsList(2, 10)
-
-local params3 = common.getAddCommandParams(3)
-params3.vrCommands = getVRCommandsList(3, 10)
-
-local params4 = common.getAddCommandParams(4)
-params4.vrCommands = getVRCommandsList(4, 5)
-
-local params5 = common.getAddCommandParams(5)
-params5.vrCommands = getVRCommandsList(5, 5)
-
-
-local function deleteLastCommand(pN)
-  common.deleteCommand({ cmdID = pN }, true)
-  local requestUiParams = {
-    vrHelpTitle = common.getConfigAppParams().appName
-  }
-  EXPECT_HMICALL("UI.SetGlobalProperties", requestUiParams)
-  :Do(function(_,data)
-    common.getHMIConnection():SendResponse(data.id, data.method, "SUCCESS", {})
-  end)
-  :ValidIf(function(_, data)
-      if data.params.vrHelp ~= nil then
-        return false, "'vrHelp' is not expected"
-      end
-      return true
-    end)
-  local requestTtsParams = {
-    helpPrompt = {}
-  }
-  EXPECT_HMICALL("TTS.SetGlobalProperties", requestTtsParams)
-  :Do(function(_,data)
-    common.getHMIConnection():SendResponse(data.id, data.method, "SUCCESS", {})
-  end)
-end
 
 --[[ Scenario ]]
 runner.Title("Preconditions")
@@ -84,24 +35,13 @@ runner.Step("App registration", common.registerAppWOPTU)
 runner.Step("App activation", common.activateApp)
 
 runner.Title("Test")
-runner.Step("SetGlobalProperties from SDL after added cmd_id 1 with 10 commands", common.addCommandWithSetGP,
-  { nil, params1 })
-runner.Step("SetGlobalProperties from SDL after added cmd_id 2 with 10 commands", common.addCommandWithSetGP,
-  { nil, params2 })
-runner.Step("SetGlobalProperties from SDL after added cmd_id 3 with 10 commands", common.addCommandWithSetGP,
-  { nil, params3 })
-
-runner.Step("Absence SetGlobalProperties from SDL after adding cmd_id 4 with 5 commands", common.addCommandWithoutSetGP,
-  { nil, params4 })
-runner.Step("Absence SetGlobalProperties from SDL after adding cmd_id 5 with 5 commands", common.addCommandWithoutSetGP,
-  { nil, params5 })
-
-runner.Step("No SetGlobalProperties from SDL after deleted cmd_id 4", common.deleteCommandWithoutSetGP, { 4 })
-runner.Step("No SetGlobalProperties from SDL after deleted cmd_id 5", common.deleteCommandWithoutSetGP, { 5 })
-
-runner.Step("SetGlobalProperties from SDL after deleted cmd_id 1", common.deleteCommandWithSetGP, { 1 })
-runner.Step("SetGlobalProperties from SDL after deleted cmd_id 2", common.deleteCommandWithSetGP, { 2 })
-runner.Step("SetGlobalProperties from SDL after deleted cmd_id 3", deleteLastCommand, { 3 })
+for i = 1, 30 do
+  runner.Step("SetGlobalProperties from SDL after added command " .. i, common.addCommandWithSetGP, { i })
+end
+runner.Step("No SetGlobalProperties from SDL after added command 31", common.addCommandWithoutSetGP, { 31 })
+runner.Step("No SetGlobalProperties from SDL after deleted command 31", common.deleteCommandWithoutSetGP, { 31 })
+runner.Step("SetGlobalProperties from SDL after deleted command 1", common.deleteCommandWithSetGP, { 1 })
+runner.Step("SetGlobalProperties from SDL after added command 32", common.addCommandWithSetGP, { 32 })
 
 runner.Title("Postconditions")
 runner.Step("Stop SDL", common.postconditions)

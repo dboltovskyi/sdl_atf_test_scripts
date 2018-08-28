@@ -172,15 +172,13 @@ function m.vrHelp(pCommandArray)
   local out = {}
   local counter = 0
   for _, value in pairs(pCommandArray) do
-    for _, sub_v in pairs(value.vrCommand) do
-      counter = counter + 1
-      local item = {
-        text = sub_v,
-        position = counter
-      }
-      table.insert(out, item)
-      if counter == m.commandsLimit then return out end
-    end
+    counter = counter + 1
+    local item = {
+      text = value.vrCommand[1],
+      position = counter
+    }
+    table.insert(out, item)
+    if counter == m.commandsLimit then return out end
   end
   return out
 end
@@ -189,15 +187,13 @@ function m.vrHelpPrompt(pVrCommandArray)
   local out = {}
   local counter = 0
   for _, value in pairs(pVrCommandArray) do
-    for _, sub_v in pairs(value.vrCommand) do
-      counter = counter + 1
-      local item = {
-        text = sub_v,
-        type = "TEXT"
-      }
-      table.insert(out, item)
-      if counter == m.commandsLimit then return out end
-    end
+    counter = counter + 1
+    local item = {
+      text = value.vrCommand[1],
+      type = "TEXT"
+    }
+    table.insert(out, item)
+    if counter == m.commandsLimit then return out end
   end
   return out
 end

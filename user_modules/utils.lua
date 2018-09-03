@@ -94,7 +94,7 @@ end
 --! @return: name of the device
 --]]
 function m.getDeviceName()
-  return config.mobileHost .. ":" .. config.mobilePort
+  return config.mobileHost --.. ":" .. config.mobilePort
 end
 
 --[[ @getDeviceMAC: provide device MAC address

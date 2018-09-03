@@ -53,7 +53,7 @@ function Test:TestStep_Allowed_false_with_device()
       self:FailTestCase("Device is not consented after user consent.")
     else
       self.hmiConnection:SendNotification("SDL.OnAllowSDLFunctionality",
-        {allowed = false, source = "GUI", device = {id = utils.getDeviceMAC(), name = utils.getDeviceName(), isSDLAllowed = false}})
+        {allowed = false, source = "GUI"})
     end
   end
 end

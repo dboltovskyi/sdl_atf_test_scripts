@@ -29,12 +29,12 @@ local TESTED_DATA = {
   {
     key = "de-de",
     label = "Fahrzeuginformationen",
-    tts = "Eine App hat Zugriff auf die folgenden Fahrzeuginformationen: Kraftstoff-Füllstand, Kraftstoffverbrauch, Motordrehzahl, Kilometerzähler, FIN, Außentemperatur, Gangstellung, Reifenluftdruck."
+    tts = "Eine App hat Zugriff auf die folgenden Fahrzeuginformationen: Kraftstoff-Füllstand, Kraftstoffverbrauch, Kilometerzähler, FIN, AußentemperaturReifenluftdruck."
   },
   {
     key = "en-us",
-    label = "Vehicle information",
-    tts = "An app can access the following vehicle information: Fuel Level, Fuel Economy, Engine RPMs, Odometer, VIN, External Temperature, Gear Position, Tire Pressure."
+    label = "Vehicle Information",
+    tts = "An app can access the following vehicle information: Fuel Level, Fuel Economy, Odometer, VIN, External Temperature, Tire Pressure."
   },
   preloaded_date = {"2000-10-01","2016-01-01"}
 }

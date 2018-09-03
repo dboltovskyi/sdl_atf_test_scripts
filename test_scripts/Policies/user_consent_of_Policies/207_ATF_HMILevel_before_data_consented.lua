@@ -62,13 +62,13 @@ function Test:ActivateApp_on_unconsented_device()
         :Do(function()
             --Press "NO"on data consent
             self.hmiConnection:SendNotification("SDL.OnAllowSDLFunctionality",
-              {allowed = false, source = "GUI", device = {id = utils.getDeviceMAC(), name = utils.getDeviceName()}})
+              {allowed = false, source = "GUI"})
 
             EXPECT_NOTIFICATION("OnPermissionsChange", {}):Times(0)
           end)
       end
     end)
-  EXPECT_HMICALL("BasicCommunication.ActivateApp",{ level = "NONE" }):Times(1)
+  EXPECT_HMICALL("BasicCommunication.ActivateApp",{ level = "NONE" }):Times(AtLeast(1))
   EXPECT_NOTIFICATION("OnHMIStatus", {}):Times(0)
 end
 

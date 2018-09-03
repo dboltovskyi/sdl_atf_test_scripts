@@ -253,7 +253,7 @@ function testCasesForPolicyTableSnapshot:verify_PTS(is_created, app_IDs, device_
         omitted_preloaded_original[#omitted_preloaded_original + 1] = { name = "device_data."..device_IDs[i]..".max_number_rfcom_ports", elem_required = "required"}
         omitted_preloaded_original[#omitted_preloaded_original + 1] = { name = "device_data."..device_IDs[i]..".connection_type", elem_required = "required"}
         --TODO(istoimenova): Update when "[GENIVI] SDL must support "Mobile Apps via USB" setting for each Android device " is implemented
-        --omitted_preloaded_original[#omitted_preloaded_original + 1] = { name = "device_data."..device_IDs[i]..".usb_transport_enabled", elem_required = "required"}
+        -- omitted_preloaded_original[#omitted_preloaded_original + 1] = { name = "device_data."..device_IDs[i]..".usb_transport_enabled", elem_required = "required"}
         omitted_preloaded_original[#omitted_preloaded_original + 1] = { name = "device_data."..device_IDs[i]..".user_consent_records.device.input", elem_required = "required"}
         omitted_preloaded_original[#omitted_preloaded_original + 1] = { name = "device_data."..device_IDs[i]..".user_consent_records.device.time_stamp", elem_required = "required"}
       end

@@ -73,6 +73,8 @@ Test[TEST_NAME_ON .. "Precondition_Update_Policy_Table"] = function(self)
   local parent_item = {"policy_table","module_config"}
   local removed_json_items = {"preloaded_pt"}
   common_functions:RemoveItemsFromJsonFile("/tmp/ptu_update.json", parent_item, removed_json_items)
+  local removed_json_items_preloaded_date = {"preloaded_date"}
+  common_functions:RemoveItemsFromJsonFile("/tmp/ptu_update.json", parent_item, removed_json_items_preloaded_date)
   -- update policy table
   common_functions_external_consent:UpdatePolicy(self, "/tmp/ptu_update.json")
 end

@@ -183,6 +183,16 @@ function Test:RegisterSecondApp()
   self.mobileSession2:ExpectNotification("OnHMIStatus",{ systemContext = "MAIN", hmiLevel = "NONE"})
 end
 
+function Test:ConsentDevice()
+  local requestId2 = self.hmiConnection:SendRequest("SDL.GetUserFriendlyMessage",
+          { language = "EN-US", messageCodes = { "DataConsent" } })
+  EXPECT_HMIRESPONSE(requestId2)
+  :Do(function(_, _)
+      self.hmiConnection:SendNotification("SDL.OnAllowSDLFunctionality",
+        { allowed = true, source = "GUI" })
+    end)
+end
+
 function Test:ActivateSecondApp()
   commonSteps:ActivateAppInSpecificLevel(self, HMIAppID2)
   self.mobileSession2:ExpectNotification("OnHMIStatus",{ systemContext = "MAIN", hmiLevel = "FULL"})

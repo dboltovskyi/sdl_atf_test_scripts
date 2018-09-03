@@ -48,7 +48,7 @@ function Test:TestStep_PTS_Storage_On_File_System()
       :Do(function(_,_)
 
           self.hmiConnection:SendNotification("SDL.OnAllowSDLFunctionality",
-            {allowed = true, source = "GUI", device = {id = utils.getDeviceMAC(), name = utils.getDeviceName(), isSDLAllowed = true}})
+            {allowed = true, source = "GUI"})
           local function check_snapshot()
             if ( commonSteps:file_exists( SystemFilesPath..'/' .. PathToSnapshot) == false ) then
               self:FailTestCase(SystemFilesPath..'/' .. PathToSnapshot.."sdl_snapshot.json doesn't exist!")

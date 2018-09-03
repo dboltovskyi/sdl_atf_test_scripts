@@ -28,7 +28,7 @@ local json = require("modules/json")
 local TESTED_DATA = {
   {
     key = "en-us",
-    label = "GPS and speed",
+    label = "GPS and Speed",
     tts = "An app can access vehicle GPS and speed."
   },
   {

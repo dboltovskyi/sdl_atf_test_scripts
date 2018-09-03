@@ -55,7 +55,7 @@ end
 
 function Test:Precondition_Disallow_device()
   self.hmiConnection:SendNotification("SDL.OnAllowSDLFunctionality",
-    {allowed = false, source = "GUI", device = {id = utils.getDeviceMAC() , name = utils.getDeviceName()}})
+    {allowed = false, source = "GUI"})
 end
 
 --[[ Test ]]
@@ -91,9 +91,9 @@ function Test:ActivateApp()
         local requestId2 = self.hmiConnection:SendRequest("SDL.GetUserFriendlyMessage", { language = "EN-US", messageCodes = { "DataConsent" } })
         EXPECT_HMIRESPONSE(requestId2)
         :Do(function(_, _)
-            self.hmiConnection:SendNotification("SDL.OnAllowSDLFunctionality", { allowed = true, source = "GUI", device = { id = utils.getDeviceMAC(), name = utils.getDeviceName() } })
-            EXPECT_HMICALL("BasicCommunication.ActivateApp")
-            :Do(function(_, data2)
+            self.hmiConnection:SendNotification("SDL.OnAllowSDLFunctionality", { allowed = true, source = "GUI" })
+            EXPECT_HMICALL("BasicCommunication.ActivateApp"):Times(AtLeast(1))
+            :DoOnce(function(_, data2)
                 self.hmiConnection:SendResponse(data2.id,"BasicCommunication.ActivateApp", "SUCCESS", { })
               end)
             :Times(1)

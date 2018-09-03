@@ -44,12 +44,12 @@ function Test:GetUserFriendlyMessage_data_consent_prompt()
         { messages = { {messageCode = "DataConsent"}}})
       :Do(function(_,_)
         self.hmiConnection:SendNotification("SDL.OnAllowSDLFunctionality",
-          {allowed = true, source = "GUI", device = {id = utils.getDeviceMAC(), name = utils.getDeviceName(), isSDLAllowed = true}})
+          {allowed = true, source = "GUI"})
       end)
     end
   end)
-  EXPECT_HMICALL("BasicCommunication.ActivateApp")
-  :Do(function(_,data) self.hmiConnection:SendResponse(data.id,"BasicCommunication.ActivateApp", "SUCCESS", {}) end)
+  EXPECT_HMICALL("BasicCommunication.ActivateApp"):Times(AtLeast(1))
+  :DoOnce(function(_,data) self.hmiConnection:SendResponse(data.id,"BasicCommunication.ActivateApp", "SUCCESS", {}) end)
   EXPECT_NOTIFICATION("OnHMIStatus", {hmiLevel = "FULL", systemContext = "MAIN"})
 end
 

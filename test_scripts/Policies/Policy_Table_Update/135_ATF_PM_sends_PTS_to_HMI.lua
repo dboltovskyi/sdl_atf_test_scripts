@@ -50,7 +50,7 @@ function Test:TestStep_PolicyManager_sends_PTS_to_HMI()
       :Do(function(_,_)
 
           self.hmiConnection:SendNotification("SDL.OnAllowSDLFunctionality",
-            {allowed = true, source = "GUI", device = {id = utils.getDeviceMAC(), name = utils.getDeviceName(), isSDLAllowed = true}})
+            {allowed = true, source = "GUI"})
 
           EXPECT_HMICALL("BasicCommunication.PolicyUpdate",{})
           :Do(function(_,data)

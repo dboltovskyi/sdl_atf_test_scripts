@@ -93,7 +93,7 @@ function Test:TestStep_PTU_GetURLs_AppRegistered()
   for _, value in pairs(sevices_table) do
     policy_endpoints[#policy_endpoints + 1] = { found = false, service = value }
     --TODO(istoimenova): Should be updated when policy defect is fixed
-      if ( value == "0x04" or value == "0x07" or value == "0x01") then
+      if ( value == "4" or value == "7" or value == "1") then
         policy_endpoints[#policy_endpoints].found = true
       end
   end

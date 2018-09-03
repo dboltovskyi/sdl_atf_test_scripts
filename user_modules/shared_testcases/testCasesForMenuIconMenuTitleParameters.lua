@@ -94,10 +94,10 @@ function testCasesForMenuIconMenuTitleParameters:ActivateAppDiffPolicyFlag(self,
 	    EXPECT_HMIRESPONSE( RequestId1, {result = {code = 0, method = "SDL.GetUserFriendlyMessage"}})
 	    :Do(function(_,_)
 	      self.hmiConnection:SendNotification("SDL.OnAllowSDLFunctionality",
-	        {allowed = true, source = "GUI", device = {id = device_ID, name = ServerAddress, isSDLAllowed = true}})
+	        {allowed = true, source = "GUI"})
 	    end)
-		  EXPECT_HMICALL("BasicCommunication.ActivateApp")
-	    :Do(function() self.hmiConnection:SendResponse(data.id,"BasicCommunication.ActivateApp", "SUCCESS", {}) end)
+		  EXPECT_HMICALL("BasicCommunication.ActivateApp"):Times(AtLeast(1))
+	    :DoOnce(function() self.hmiConnection:SendResponse(data.id,"BasicCommunication.ActivateApp", "SUCCESS", {}) end)
 	  end
 
   end)

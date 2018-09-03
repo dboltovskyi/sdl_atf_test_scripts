@@ -57,8 +57,8 @@ function Test:TestStep_PTU_appPermissionsConsentNeeded_true()
       if(data.params.status == "UP_TO_DATE") then
 
         EXPECT_HMINOTIFICATION("SDL.OnAppPermissionChanged",
-          {appID = self.applications[config.application1.registerAppInterfaceParams.appName], appPermissionsConsentNeeded = true })
-        :Do(function(_,_)
+          {appID = self.applications[config.application1.registerAppInterfaceParams.appName], appPermissionsConsentNeeded = true }):Times(AtLeast(1))
+        :DoOnce(function(_,_)
             local RequestIdListOfPermissions = self.hmiConnection:SendRequest("SDL.GetListOfPermissions",
               { appID = self.applications[config.application1.registerAppInterfaceParams.appName]})
 
@@ -113,8 +113,8 @@ function Test:Precondition_PTU_revoke_app()
   EXPECT_HMINOTIFICATION("SDL.OnStatusUpdate"):Times(Between(2,3))
   :Do(function(_,data)
       if(data.params.status == "UP_TO_DATE") then
-        EXPECT_HMINOTIFICATION("SDL.OnAppPermissionChanged")
-        :Do(function(_,_)
+        EXPECT_HMINOTIFICATION("SDL.OnAppPermissionChanged"):Times(AtLeast(1))
+        :DoOnce(function(_,_)
             local RequestIdListOfPermissions = self.hmiConnection:SendRequest("SDL.GetListOfPermissions", { appID = HMIAppID })
             EXPECT_HMIRESPONSE(RequestIdListOfPermissions)
             :Do(function()

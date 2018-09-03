@@ -18,19 +18,19 @@ local testCasesForPerformAudioPassThru = {}
 --]]
 function testCasesForPerformAudioPassThru.Check_audioPassThruIcon_Existence(self, icon)
   local result = commonSteps:file_exists(PathToAppFolder .. icon)
-  
+
   if(result == true) then
     print("The audioPassThruIcon:"..icon.." exists at application's sandbox")
   else
-  	print("The audioPassThruIcon:"..icon.." doesn't exist at application's sandbox")  	
+  	print("The audioPassThruIcon:"..icon.." doesn't exist at application's sandbox")
     self:FailTestCase ("The audioPassThruIcon:"..icon.." doesn't exist at application's sandbox")
   end
 end
 
---[[@Check_ActivateAppDiffPolicyFlag: check that application is allowed by policy and activate it 
---! @parameters: 
+--[[@Check_ActivateAppDiffPolicyFlag: check that application is allowed by policy and activate it
+--! @parameters:
 --! app_name: name of application
---! device_ID - MAC address of device, usually config.deviceMAC 
+--! device_ID - MAC address of device, usually config.deviceMAC
 --]]
 function testCasesForPerformAudioPassThru:ActivateAppDiffPolicyFlag(self, app_name, device_ID)
 
@@ -47,10 +47,10 @@ function testCasesForPerformAudioPassThru:ActivateAppDiffPolicyFlag(self, app_na
         EXPECT_HMIRESPONSE( RequestId1, {result = {code = 0, method = "SDL.GetUserFriendlyMessage"}})
         :Do(function(_,_)
             self.hmiConnection:SendNotification("SDL.OnAllowSDLFunctionality",
-              {allowed = true, source = "GUI", device = {id = device_ID, name = ServerAddress, isSDLAllowed = true}})
+              {allowed = true, source = "GUI"})
           end)
-        EXPECT_HMICALL("BasicCommunication.ActivateApp")
-        :Do(function(_,data1) self.hmiConnection:SendResponse(data1.id,"BasicCommunication.ActivateApp", "SUCCESS", {}) end)
+        EXPECT_HMICALL("BasicCommunication.ActivateApp"):Times(AtLeast(1))
+        :DoOnce(function(_,data1) self.hmiConnection:SendResponse(data1.id,"BasicCommunication.ActivateApp", "SUCCESS", {}) end)
       end
 
     end)

@@ -49,7 +49,7 @@ function Test:TestStep_PTS_Timeout_wait_response_PTU()
       EXPECT_HMIRESPONSE( RequestId1, {result = {code = 0, method = "SDL.GetUserFriendlyMessage"}})
       :Do(function(_,_)
           self.hmiConnection:SendNotification("SDL.OnAllowSDLFunctionality",
-            {allowed = true, source = "GUI", device = {id = utils.getDeviceMAC(), name = utils.getDeviceName(), isSDLAllowed = true}})
+            {allowed = true, source = "GUI"})
       end)
 
       EXPECT_HMICALL("BasicCommunication.PolicyUpdate",{})

@@ -48,6 +48,7 @@ local function updatePTU(ptu)
   ptu.policy_table.app_policies["0000001"] = json.null
   ptu.policy_table.functional_groupings["DataConsent-2"].rpcs = json.null
   ptu.policy_table.module_config.preloaded_pt = nil
+  ptu.policy_table.module_config.preloaded_date = nil
 end
 
 local function storePTUInFile(ptu, ptu_file_name)
@@ -77,9 +78,9 @@ function Test:ActivateApp()
         EXPECT_HMIRESPONSE(requestId2)
         :Do(function()
             self.hmiConnection:SendNotification("SDL.OnAllowSDLFunctionality",
-              { allowed = true, source = "GUI", device = { id = utils.getDeviceMAC(), name = utils.getDeviceName() } })
-            EXPECT_HMICALL("BasicCommunication.ActivateApp")
-            :Do(function(_, data2)
+              { allowed = true, source = "GUI" })
+            EXPECT_HMICALL("BasicCommunication.ActivateApp"):Times(AtLeast(1))
+            :DoOnce(function(_, data2)
                 self.hmiConnection:SendResponse(data2.id,"BasicCommunication.ActivateApp", "SUCCESS", { })
               end)
             :Times(1)

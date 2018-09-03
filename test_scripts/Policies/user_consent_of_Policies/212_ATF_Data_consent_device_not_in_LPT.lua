@@ -43,7 +43,7 @@ function Test:Check_user_data_consent_is_requested()
         EXPECT_HMIRESPONSE(RequestIdGetMes)
         :Do(function()
             self.hmiConnection:SendNotification("SDL.OnAllowSDLFunctionality",
-              {allowed = true, source = "GUI", device = {id = utils.getDeviceMAC(), name = utils.getDeviceName()}})
+              {allowed = true, source = "GUI"})
           end)
       end
     end)

@@ -549,10 +549,10 @@ function commonSteps:ActivateAppInSpecificLevel(test, HMIAppID)
 	      :Do(function(_,_)
 	      	--hmi side: send request SDL.OnAllowSDLFunctionality
 	      	test.hmiConnection:SendNotification("SDL.OnAllowSDLFunctionality",
-	      		{allowed = true, source = "GUI", device = {id = utils.getDeviceMAC(), name = utils.getDeviceName()}})
+	      		{allowed = true, source = "GUI"})
 	      	--hmi side: expect BasicCommunication.ActivateApp request
-	      	EXPECT_HMICALL("BasicCommunication.ActivateApp")
-	      	:Do(function(_,data2)
+	      	EXPECT_HMICALL("BasicCommunication.ActivateApp"):Times(AtLeast(1))
+	      	:DoOnce(function(_,data2)
 	        	--hmi side: sending BasicCommunication.ActivateApp response
 	        	test.hmiConnection:SendResponse(data2.id,"BasicCommunication.ActivateApp", "SUCCESS", {})
 	        end)

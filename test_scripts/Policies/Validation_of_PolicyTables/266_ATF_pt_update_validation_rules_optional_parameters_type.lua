@@ -48,11 +48,11 @@ local function activateAppInSpecificLevel(self)
 
             --hmi side: send request SDL.OnAllowSDLFunctionality
             self.hmiConnection:SendNotification("SDL.OnAllowSDLFunctionality",
-              {allowed = true, source = "GUI", device = {id = utils.getDeviceMAC(), name = utils.getDeviceName()}})
+              {allowed = true, source = "GUI"})
 
             --hmi side: expect BasicCommunication.ActivateApp request
-            EXPECT_HMICALL("BasicCommunication.ActivateApp")
-            :Do(function(_,data2)
+            EXPECT_HMICALL("BasicCommunication.ActivateApp"):Times(AtLeast(1))
+            :DoOnce(function(_,data2)
 
                 --hmi side: sending BasicCommunication.ActivateApp response
                 self.hmiConnection:SendResponse(data2.id,"BasicCommunication.ActivateApp", "SUCCESS", {})

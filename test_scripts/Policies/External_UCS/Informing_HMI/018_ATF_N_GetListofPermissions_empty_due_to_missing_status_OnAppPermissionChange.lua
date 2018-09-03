@@ -57,8 +57,8 @@ function Test:Precondition_PTU_and_OnAppPermissionConsent_entityStatus_missing()
   EXPECT_NOTIFICATION("OnPermissionsChange")
   :Do(function() print("SDL->mob: OnPermissionsChange time: " .. timestamp()) end)
 
-  EXPECT_HMINOTIFICATION("SDL.OnAppPermissionChanged",{ appID = self.applications[config.application1.registerAppInterfaceParams.appName]})
-  :Do(function(_,data)
+  EXPECT_HMINOTIFICATION("SDL.OnAppPermissionChanged",{ appID = self.applications[config.application1.registerAppInterfaceParams.appName]}):Times(AtLeast(1))
+  :DoOnce(function(_,data)
       if (data.params.appPermissionsConsentNeeded== true) then
         local RequestIdListOfPermissions = self.hmiConnection:SendRequest("SDL.GetListOfPermissions", {appID = self.applications[config.application1.registerAppInterfaceParams.appName]})
         EXPECT_HMIRESPONSE(RequestIdListOfPermissions,{result = {code = 0, method = "SDL.GetListOfPermissions",

@@ -38,6 +38,16 @@ require('user_modules/AppTypes')
 --[[ Preconditions ]]
 commonFunctions:newTestCasesGroup("Preconditions")
 
+function Test:ConsentDevice()
+  local requestId2 = self.hmiConnection:SendRequest("SDL.GetUserFriendlyMessage",
+          { language = "EN-US", messageCodes = { "DataConsent" } })
+  EXPECT_HMIRESPONSE(requestId2)
+  :Do(function(_, _)
+      self.hmiConnection:SendNotification("SDL.OnAllowSDLFunctionality",
+        { allowed = true, source = "GUI" })
+    end)
+end
+
 function Test:Precondition_Register_app()
   self.mobileSession2 = mobile_session.MobileSession(self, self.mobileConnection)
   self.mobileSession2:StartService(7)
@@ -55,21 +65,6 @@ end
 function Test:Precondition_Activate_app()
   local RequestId = self.hmiConnection:SendRequest("SDL.ActivateApp", {appID =  self.HMIAppID2 })
   EXPECT_HMIRESPONSE(RequestId,{})
-  :Do(function(_,data)
-    if data.result.isSDLAllowed ~= true then
-      local RequestIdGetMes = self.hmiConnection:SendRequest("SDL.GetUserFriendlyMessage",
-      {language = "EN-US", messageCodes = {"DataConsent"}})
-      EXPECT_HMIRESPONSE(RequestIdGetMes)
-      :Do(function()
-        self.hmiConnection:SendNotification("SDL.OnAllowSDLFunctionality",
-        {allowed = true, source = "GUI", device = {id = utils.getDeviceMAC(), name = utils.getDeviceName()}})
-        EXPECT_HMICALL("BasicCommunication.ActivateApp")
-        :Do(function(_,data1)
-          self.hmiConnection:SendResponse(data1.id,"BasicCommunication.ActivateApp", "SUCCESS", {})
-        end)
-      end)
-    end
-  end)
   self.mobileSession2:ExpectNotification("OnHMIStatus", {hmiLevel = "FULL", systemContext = "MAIN"})
   EXPECT_NOTIFICATION("OnHMIStatus"):Times(0)
 end

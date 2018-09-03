@@ -152,11 +152,11 @@ local function activateAppInSpecificLevel(self, HMIAppID, hmi_level)
 
             --hmi side: send request SDL.OnAllowSDLFunctionality
             self.hmiConnection:SendNotification("SDL.OnAllowSDLFunctionality",
-              {allowed = true, source = "GUI", device = {id = utils.getDeviceMAC(), name = utils.getDeviceName()}})
+              {allowed = true, source = "GUI"})
 
             --hmi side: expect BasicCommunication.ActivateApp request
-            EXPECT_HMICALL("BasicCommunication.ActivateApp")
-            :Do(function(_,data2)
+            EXPECT_HMICALL("BasicCommunication.ActivateApp"):Times(AtLeast(1))
+            :DoOnce(function(_,data2)
 
                 --hmi side: sending BasicCommunication.ActivateApp response
                 self.hmiConnection:SendResponse(data2.id,"BasicCommunication.ActivateApp", "SUCCESS", {})
@@ -404,7 +404,7 @@ end
 
 function Test:TestStep_CheckSDLLogError()
   --TODO(istoimenova): Update in case specific rule how errors to be printed is created
-  local result = testCasesForPolicySDLErrorsStops.ReadSpecificMessage("PolicyManagerImpl::IsPTValid: Errors: policy_table.policy_table.consumer_friendly_messages.messages%[\"AppPermissions\"%]")--: no mandatory language 'en%-us' is present")
+  local result = testCasesForPolicySDLErrorsStops.ReadSpecificMessage("Errors: policy_table.policy_table.consumer_friendly_messages.messages%[\"AppPermissions\"%]")--: no mandatory language 'en%-us' is present")
   local result1 = testCasesForPolicySDLErrorsStops.ReadSpecificMessage("Policy table is not valid.")
   if (result == false) then
     self:FailTestCase("Error: message 'PolicyManagerImpl::IsPTValid: Errors: policy_table.policy_table.consumer_friendly_messages.messages[\"AppPermissions\"]' is not observed in smartDeviceLink.log.")

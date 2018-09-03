@@ -45,7 +45,7 @@ function Test:TestStep_ActivateApp_allowed_true_with_device()
       EXPECT_HMIRESPONSE( RequestId1, {result = {code = 0, method = "SDL.GetUserFriendlyMessage"}})
       :Do(function(_,_)
           self.hmiConnection:SendNotification("SDL.OnAllowSDLFunctionality",
-            {allowed = true, source = "GUI", device = {id = utils.getDeviceMAC(), name = utils.getDeviceName(), isSDLAllowed = true}})
+            {allowed = true, source = "GUI"})
         end)
 
       EXPECT_HMICALL("BasicCommunication.PolicyUpdate",{})
@@ -60,8 +60,8 @@ function Test:TestStep_ActivateApp_allowed_true_with_device()
         end)
     end)
 
-  EXPECT_HMICALL("BasicCommunication.ActivateApp")
-  :Do(function(_,data) self.hmiConnection:SendResponse(data.id,"BasicCommunication.ActivateApp", "SUCCESS", {}) end)
+  EXPECT_HMICALL("BasicCommunication.ActivateApp"):Times(AtLeast(1))
+  :DoOnce(function(_,data) self.hmiConnection:SendResponse(data.id,"BasicCommunication.ActivateApp", "SUCCESS", {}) end)
 
   EXPECT_NOTIFICATION("OnHMIStatus", {hmiLevel = "FULL", systemContext = "MAIN"})
 end

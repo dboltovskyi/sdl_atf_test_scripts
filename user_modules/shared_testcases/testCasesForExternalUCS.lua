@@ -92,6 +92,7 @@ local m = { }
     m.pts.policy_table.app_policies[appId]["groups"] = { "Base-4", "Base-6" }
     m.pts.policy_table.functional_groupings["DataConsent-2"].rpcs = json.null
     m.pts.policy_table.module_config.preloaded_pt = nil
+    m.pts.policy_table.module_config.preloaded_date = nil
   end
 
 --[[@ptu: Perform Policy Table Update process
@@ -175,9 +176,9 @@ local m = { }
           EXPECT_HMIRESPONSE(reqId2)
           :Do(function()
               test.hmiConnection:SendNotification("SDL.OnAllowSDLFunctionality",
-                { allowed = true, source = "GUI", device = { id = utils.getDeviceMAC(), name = utils.getDeviceName() } })
-              EXPECT_HMICALL("BasicCommunication.ActivateApp")
-              :Do(function(_, d2)
+                { allowed = true, source = "GUI" })
+              EXPECT_HMICALL("BasicCommunication.ActivateApp"):Times(AtLeast(1))
+              :DoOnce(function(_, d2)
                   test.hmiConnection:SendResponse(d2.id,"BasicCommunication.ActivateApp", "SUCCESS", { })
                   test["mobileSession"..id]:ExpectNotification("OnHMIStatus",
                     { hmiLevel = "FULL", audioStreamingState = "AUDIBLE", systemContext = "MAIN" })

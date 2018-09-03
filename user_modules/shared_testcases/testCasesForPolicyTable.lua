@@ -963,7 +963,7 @@ function testCasesForPolicyTable:trigger_user_request_update_from_HMI(self)
 
   testCasesForPolicyTable.time_trigger = timestamp()
 
-  EXPECT_HMINOTIFICATION("SDL.OnStatusUpdate", {status = "UPDATE_NEEDED"})
+  EXPECT_HMINOTIFICATION("SDL.OnStatusUpdate", {status = "UPDATE_NEEDED"}):Times(AtLeast(1))
   :Do(function(_,_) testCasesForPolicyTable.time_onstatusupdate = timestamp() end)
 
   EXPECT_HMICALL("BasicCommunication.PolicyUpdate", { file = "/tmp/fs/mp/images/ivsu_cache/sdl_snapshot.json"})
@@ -1018,7 +1018,7 @@ function testCasesForPolicyTable:trigger_getting_device_consent(self, app_name, 
       testCasesForPolicyTable.time_trigger = timestamp()
 
       self.hmiConnection:SendNotification("SDL.OnAllowSDLFunctionality",
-        {allowed = true, source = "GUI", device = {id = device_ID, name = utils.getDeviceName(), isSDLAllowed = true}})
+        {allowed = true, source = "GUI"})
     end)
 
     EXPECT_HMICALL("BasicCommunication.PolicyUpdate", {file = "/tmp/fs/mp/images/ivsu_cache/sdl_snapshot.json"})
@@ -1050,8 +1050,8 @@ function testCasesForPolicyTable:trigger_getting_device_consent(self, app_name, 
     end)
   end)
 
-  EXPECT_HMICALL("BasicCommunication.ActivateApp")
-  :Do(function(_,data) self.hmiConnection:SendResponse(data.id,"BasicCommunication.ActivateApp", "SUCCESS", {}) end)
+  EXPECT_HMICALL("BasicCommunication.ActivateApp"):Times(AtLeast(1))
+  :DoOnce(function(_,data) self.hmiConnection:SendResponse(data.id,"BasicCommunication.ActivateApp", "SUCCESS", {}) end)
 
   EXPECT_NOTIFICATION("OnHMIStatus", {hmiLevel = "FULL", systemContext = "MAIN"})
 end

@@ -50,7 +50,7 @@ function Test:TestStep_PTS_Creation_rule()
           testCasesForPolicyTable.time_trigger = timestamp()
 
           self.hmiConnection:SendNotification("SDL.OnAllowSDLFunctionality",
-            {allowed = true, source = "GUI", device = {id = utils.getDeviceMAC(), name = utils.getDeviceName(), isSDLAllowed = true}})
+            {allowed = true, source = "GUI"})
       end)
 
       EXPECT_HMICALL("BasicCommunication.PolicyUpdate", { file = "/tmp/fs/mp/images/ivsu_cache/sdl_snapshot.json" })
@@ -68,8 +68,8 @@ function Test:TestStep_PTS_Creation_rule()
       end)
     end)
 
-  EXPECT_HMICALL("BasicCommunication.ActivateApp")
-  :Do(function(_,data) self.hmiConnection:SendResponse(data.id,"BasicCommunication.ActivateApp", "SUCCESS", {}) end)
+  EXPECT_HMICALL("BasicCommunication.ActivateApp"):Times(AtLeast(1))
+  :DoOnce(function(_,data) self.hmiConnection:SendResponse(data.id,"BasicCommunication.ActivateApp", "SUCCESS", {}) end)
 
   EXPECT_NOTIFICATION("OnHMIStatus", {hmiLevel = "FULL", systemContext = "MAIN"})
 end

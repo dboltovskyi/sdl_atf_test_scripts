@@ -48,13 +48,13 @@ function Test:Test_1_UPDATE_NEEDED()
         EXPECT_HMIRESPONSE(requestId2)
         :Do(function()
             self.hmiConnection:SendNotification("SDL.OnAllowSDLFunctionality",
-              { allowed = true, source = "GUI", device = { id = utils.getDeviceMAC(), name = utils.getDeviceName() } })
+              { allowed = true, source = "GUI" })
 
             local reqId = self.hmiConnection:SendRequest("SDL.GetStatusUpdate")
             EXPECT_HMIRESPONSE(reqId, { status = "UPDATE_NEEDED" })
 
-            EXPECT_HMICALL("BasicCommunication.ActivateApp")
-            :Do(function(_, data2)
+            EXPECT_HMICALL("BasicCommunication.ActivateApp"):Times(AtLeast(1))
+            :DoOnce(function(_, data2)
                 self.hmiConnection:SendResponse(data2.id,"BasicCommunication.ActivateApp", "SUCCESS", { })
               end)
           end)

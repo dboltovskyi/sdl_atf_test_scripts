@@ -73,9 +73,9 @@ function Test:Precondition_ActivateApplication()
           local RequestId1 = self.hmiConnection:SendRequest("SDL.GetUserFriendlyMessage", {language = "EN-US", messageCodes = {"DataConsent"}})
           EXPECT_HMIRESPONSE(RequestId1,{result = {code = 0, method = "SDL.GetUserFriendlyMessage"}})
           :Do(function(_,_)
-              self.hmiConnection:SendNotification("SDL.OnAllowSDLFunctionality", {allowed = true, source = "GUI", device = {id = utils.getDeviceMAC(), name = utils.getDeviceName()}})
-              EXPECT_HMICALL("BasicCommunication.ActivateApp")
-              :Do(function(_,data1)
+              self.hmiConnection:SendNotification("SDL.OnAllowSDLFunctionality", {allowed = true, source = "GUI"})
+              EXPECT_HMICALL("BasicCommunication.ActivateApp"):Times(AtLeast(1))
+              :DoOnce(function(_,data1)
                   self.hmiConnection:SendResponse(data1.id,"BasicCommunication.ActivateApp", "SUCCESS", {})
                   EXPECT_NOTIFICATION("OnHMIStatus", {hmiLevel = "FULL", systemContext = "MAIN"})
                 end)
@@ -185,7 +185,7 @@ function Test:TestCase_SendRPC_with_STEAL_FOCUS_Value()
         {fieldName = "alertText3", fieldText = "alertText3"}
       },
       alertType = "BOTH",
-      duration = 0,
+      duration = 5000,
       progressIndicator = true,
       softButtons =
       {

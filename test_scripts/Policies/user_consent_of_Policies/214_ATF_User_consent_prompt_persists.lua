@@ -158,7 +158,7 @@ function Test:Precondition_IsPermissionsConsentNeeded_false_on_app_activation()
         EXPECT_HMIRESPONSE( RequestId1, {result = {code = 0, method = "SDL.GetUserFriendlyMessage"}})
         :Do(function(_,_)
             self.hmiConnection:SendNotification("SDL.OnAllowSDLFunctionality",
-              {allowed = true, source = "GUI", device = {id = utils.getDeviceMAC(), name = utils.getDeviceName(), isSDLAllowed = true}})
+              {allowed = true, source = "GUI"})
           end)
       end
 
@@ -168,8 +168,8 @@ function Test:Precondition_IsPermissionsConsentNeeded_false_on_app_activation()
       end
     end)
 
-  EXPECT_HMICALL("BasicCommunication.ActivateApp")
-  :Do(function(_,data) self.hmiConnection:SendResponse(data.id,"BasicCommunication.ActivateApp", "SUCCESS", {}) end)
+  EXPECT_HMICALL("BasicCommunication.ActivateApp"):Times(AtLeast(1))
+  :DoOnce(function(_,data) self.hmiConnection:SendResponse(data.id,"BasicCommunication.ActivateApp", "SUCCESS", {}) end)
 
   EXPECT_NOTIFICATION("OnHMIStatus", {hmiLevel = "FULL", systemContext = "MAIN"})
 
@@ -257,8 +257,8 @@ function Test:Precondition_PTU_user_consent_prompt_present()
                 end
               end)
 
-            EXPECT_HMINOTIFICATION("SDL.OnAppPermissionChanged", {appID = self.HMIAppID, appPermissionsConsentNeeded = true })
-            :Do(function()
+            EXPECT_HMINOTIFICATION("SDL.OnAppPermissionChanged", {appID = self.HMIAppID, appPermissionsConsentNeeded = true }):Times(AtLeast(1))
+            :DoOnce(function()
                 local RequestIdListOfPermissions = self.hmiConnection:SendRequest("SDL.GetListOfPermissions", { appID = self.HMIAppID })
                 EXPECT_HMIRESPONSE(RequestIdListOfPermissions,{result = {code = 0, method = "SDL.GetListOfPermissions"}})
                 :Do(function()
@@ -317,6 +317,7 @@ function Test:Precondition_PTU_user_consent_prompt_present()
     local RequestAlert = self.mobileSession:SendRPC("Alert", {alertText1 = "alertText1"})
 
     EXPECT_RESPONSE(RequestAlert, {success = false, resultCode = "GENERIC_ERROR"})
+    :Timeout(16000)
   end
 
   --Location-1 is disallowed by user

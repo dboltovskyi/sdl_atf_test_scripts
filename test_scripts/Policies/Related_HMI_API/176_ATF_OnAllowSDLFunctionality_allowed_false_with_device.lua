@@ -43,12 +43,12 @@ function Test:TestStep_RegisterApp_allowed_false_without_device()
       EXPECT_HMIRESPONSE( RequestId1, {result = {code = 0, method = "SDL.GetUserFriendlyMessage"}})
       :Do(function(_,_)
           self.hmiConnection:SendNotification("SDL.OnAllowSDLFunctionality",
-            {allowed = false, source = "GUI", device = {id = utils.getDeviceMAC(), name = utils.getDeviceName(), isSDLAllowed = false}})
+            {allowed = false, source = "GUI"})
         end)
     end)
 
-  EXPECT_HMICALL("BasicCommunication.ActivateApp", {appID = self.applications[config.application1.registerAppInterfaceParams.appName], level = "NONE"})
-  :Do(function(_,data)
+  EXPECT_HMICALL("BasicCommunication.ActivateApp", {appID = self.applications[config.application1.registerAppInterfaceParams.appName], level = "NONE"}):Times(AtLeast(1))
+  :DoOnce(function(_,data)
     self.hmiConnection:SendResponse(data.id,"BasicCommunication.ActivateApp", "SUCCESS", {})
   end)
 

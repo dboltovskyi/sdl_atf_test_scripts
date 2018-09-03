@@ -55,8 +55,8 @@ function Test:TestStep_PTU_appPermissionsConsentNeeded_true()
           if(data.params.status == "UP_TO_DATE") then
 
             EXPECT_HMINOTIFICATION("SDL.OnAppPermissionChanged",
-              {appID = self.applications[config.application1.registerAppInterfaceParams.appName], appPermissionsConsentNeeded = true })
-            :Do(function(_,_)
+              {appID = self.applications[config.application1.registerAppInterfaceParams.appName], appPermissionsConsentNeeded = true }):Times(AtLeast(1))
+            :DoOnce(function(_,_)
                 local RequestIdListOfPermissions = self.hmiConnection:SendRequest("SDL.GetListOfPermissions",
                   { appID = self.applications[config.application1.registerAppInterfaceParams.appName] })
 

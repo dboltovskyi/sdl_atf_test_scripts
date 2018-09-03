@@ -23,17 +23,16 @@ local testCasesForPolicyTableSnapshot = require('user_modules/shared_testcases/t
 local testCasesForPolicyTable = require('user_modules/shared_testcases/testCasesForPolicyTable')
 local utils = require ('user_modules/utils')
 
+--[[ General Precondition before ATF start ]]
+commonSteps:DeleteLogsFileAndPolicyTable()
+testCasesForPolicyTable:Precondition_updatePolicy_By_overwriting_preloaded_pt("files/PTU_GetUserFriendlyMessage_without_DE_DE.json")
+
 --[[ Local variables ]]
 local language = testCasesForPolicyTableSnapshot:get_data_from_Preloaded_PT("consumer_friendly_messages.messages.DataConsent.languages.en-us.tts")
 local line1 = testCasesForPolicyTableSnapshot:get_data_from_Preloaded_PT("consumer_friendly_messages.messages.DataConsent.languages.en-us.line1")
 local line2 = testCasesForPolicyTableSnapshot:get_data_from_Preloaded_PT("consumer_friendly_messages.messages.DataConsent.languages.en-us.line2")
 local textBody = testCasesForPolicyTableSnapshot:get_data_from_Preloaded_PT("consumer_friendly_messages.messages.DataConsent.languages.en-us.textBody")
 local label = testCasesForPolicyTableSnapshot:get_data_from_Preloaded_PT("consumer_friendly_messages.messages.DataConsent.languages.en-us.label")
-
---[[ General Precondition before ATF start ]]
-commonSteps:DeleteLogsFileAndPolicyTable()
-testCasesForPolicyTable:Precondition_updatePolicy_By_overwriting_preloaded_pt("files/PTU_GetUserFriendlyMessage_without_DE_DE.json")
-
 --[[ General Settings for configuration ]]
 Test = require('connecttest')
 require('cardinalities')
@@ -61,7 +60,7 @@ function Test:Precondition_Activate_app_EN_US()
         :Do(function(_,_)
             -- Do not allow SDL to have again message GetUserFriendlyMessage
             self.hmiConnection:SendNotification("SDL.OnAllowSDLFunctionality",
-              {allowed = false, source = "GUI", device = {id = utils.getDeviceMAC(), name = utils.getDeviceName(), isSDLAllowed = false}})
+              {allowed = false, source = "GUI"})
 
           end)
       end

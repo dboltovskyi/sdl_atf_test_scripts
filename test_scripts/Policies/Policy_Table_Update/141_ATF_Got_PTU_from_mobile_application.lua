@@ -72,7 +72,7 @@ function Test:TestStep_Sending_PTS_to_mobile_application()
   :Do(function(_,_)
       self.hmiConnection:SendNotification("BasicCommunication.OnSystemRequest",{ fileName = "PolicyTableUpdate", requestType = "PROPRIETARY", url = endpoints[1].url})
       EXPECT_NOTIFICATION("OnSystemRequest", { requestType = "PROPRIETARY", fileType = "JSON" })
-      :Do(function(_,_)
+      :Do(function(_,d)
           local CorIdSystemRequest = self.mobileSession:SendRPC("SystemRequest", {requestType = "PROPRIETARY", fileName = "PolicyTableUpdate"}, "files/ptu.json")
 
           EXPECT_HMICALL("BasicCommunication.SystemRequest",{

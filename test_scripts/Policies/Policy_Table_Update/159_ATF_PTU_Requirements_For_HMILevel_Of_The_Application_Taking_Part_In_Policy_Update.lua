@@ -88,23 +88,20 @@ for i = 2, 4 do
   end
 end
 
+function Test:ConsentDevice()
+  local requestId2 = self.hmiConnection:SendRequest("SDL.GetUserFriendlyMessage",
+          { language = "EN-US", messageCodes = { "DataConsent" } })
+  EXPECT_HMIRESPONSE(requestId2)
+  :Do(function(_, _)
+      self.hmiConnection:SendNotification("SDL.OnAllowSDLFunctionality",
+        { allowed = true, source = "GUI" })
+    end)
+end
+
 --Set particular HMILevel for each app
 function Test:TestStep_ActivateApp_2()
   local requestId1 = self.hmiConnection:SendRequest("SDL.ActivateApp", { appID = self.applications["App_2"] })
   EXPECT_HMIRESPONSE(requestId1)
-  :Do(function(_, data1)
-      if data1.result.isSDLAllowed ~= true then
-        local requestId2 = self.hmiConnection:SendRequest("SDL.GetUserFriendlyMessage",
-          { language = "EN-US", messageCodes = { "DataConsent" } })
-        EXPECT_HMIRESPONSE(requestId2)
-        :Do(function(_, _)
-            self.hmiConnection:SendNotification("SDL.OnAllowSDLFunctionality",
-              { allowed = true, source = "GUI", device = { id = utils.getDeviceMAC(), name = utils.getDeviceName() } })
-          end)
-      end
-    end)
-  EXPECT_HMICALL("BasicCommunication.ActivateApp")
-  :Do(function(_,data) self.hmiConnection:SendResponse(data.id,"BasicCommunication.ActivateApp", "SUCCESS", {}) end)
 
   EXPECT_NOTIFICATION("OnHMIStatus", {}):Times(0)
   self["mobileSession2"]:ExpectNotification("OnHMIStatus", {hmiLevel = "FULL", audioStreamingState = "AUDIBLE", systemContext = "MAIN"})

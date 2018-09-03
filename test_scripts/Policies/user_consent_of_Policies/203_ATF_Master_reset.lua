@@ -45,7 +45,7 @@ function Test:TestStep_CheckLocalPT()
     EXPECT_HMIRESPONSE( RequestId1, {result = {code = 0, method = "SDL.GetUserFriendlyMessage"}})
     :Do(function(_,_)
       self.hmiConnection:SendNotification("SDL.OnAllowSDLFunctionality",
-        {allowed = true, source = "GUI", device = {id = utils.getDeviceMAC(), name = utils.getDeviceName(), isSDLAllowed = true}})
+        {allowed = true, source = "GUI"})
     end)
 
     if ( commonSteps:file_exists('/tmp/fs/mp/images/ivsu_cache/sdl_snapshot.json')) then

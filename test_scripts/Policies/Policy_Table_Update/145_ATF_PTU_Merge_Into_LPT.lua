@@ -157,6 +157,7 @@ function Test:TestStep_ValidateResult()
   local pts = json_to_table(policy_file_path .. "/sdl_snapshot.json")
   local ptu = json_to_table(ptu_file)
   -- Reconcile expected vs actual
+  pts.policy_table.module_config.preloaded_date = nil
   ptu.policy_table.module_config.preloaded_pt = false
   ptu.policy_table.app_policies["0000002"] = "default"
   -- Compare

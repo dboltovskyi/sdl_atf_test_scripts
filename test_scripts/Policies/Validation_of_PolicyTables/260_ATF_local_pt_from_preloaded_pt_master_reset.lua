@@ -273,8 +273,8 @@ function Test:CheckLocalPT()
      expectedValues = {"NONE|"..tostring(TESTED_DATA[1].module_config.notifications_per_minute_by_priority.NONE)} },
       { query = 'select * from seconds_between_retry',
      expectedValues = {"0|"..tostring(TESTED_DATA[1].module_config.seconds_between_retries[1])} },
-     { query = 'select * from endpoint where service is "0x04"',
-     expectedValues = {"0x04|http://ivsu.software.ford.com/api/getsoftwareupdates|default"} },
+     { query = 'select * from endpoint where service is "4"',
+     expectedValues = {"4|http://ivsu.software.ford.com/api/getsoftwareupdates|default"} },
    }
 
   if not self.checkLocalPT(checks) then

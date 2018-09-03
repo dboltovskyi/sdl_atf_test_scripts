@@ -54,7 +54,7 @@ function Test:TestStep_ActivateApp_StatusNeeded()
       :Do(function()
 
           self.hmiConnection:SendNotification("SDL.OnAllowSDLFunctionality",
-            {allowed = true, source = "GUI", device = {id = utils.getDeviceMAC(), name = utils.getDeviceName(), isSDLAllowed = true}})
+            {allowed = true, source = "GUI"})
 
           -- EXPECT_HMINOTIFICATION("SDL.OnStatusUpdate", { status = "UPDATE_NEEDED" })
 
@@ -70,8 +70,8 @@ function Test:TestStep_ActivateApp_StatusNeeded()
         end)
     end)
 
-  EXPECT_HMICALL("BasicCommunication.ActivateApp")
-  :Do(function(_, data) self.hmiConnection:SendResponse(data.id,"BasicCommunication.ActivateApp", "SUCCESS", {}) end)
+  EXPECT_HMICALL("BasicCommunication.ActivateApp"):Times(AtLeast(1))
+  :DoOnce(function(_, data) self.hmiConnection:SendResponse(data.id,"BasicCommunication.ActivateApp", "SUCCESS", {}) end)
 
   EXPECT_NOTIFICATION("OnHMIStatus", { hmiLevel = "FULL", systemContext = "MAIN" })
 end

@@ -351,7 +351,8 @@ function module.getDefaultHMITable()
                 heatedSteeringWheelAvailable = true,
                 heatedWindshieldAvailable = true,
                 heatedRearWindowAvailable = true,
-                heatedMirrorsAvailable = true
+                heatedMirrorsAvailable = true,
+                climateEnable = true
               }
             },
           radioControlCapabilities = {

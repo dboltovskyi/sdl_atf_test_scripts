@@ -9,8 +9,11 @@ config.checkAllValidations = true
 config.application1.registerAppInterfaceParams.appHMIType = { "REMOTE_CONTROL" }
 config.application2.registerAppInterfaceParams.appHMIType = { "REMOTE_CONTROL" }
 config.application1.registerAppInterfaceParams.syncMsgVersion.majorVersion = 5
+config.application1.registerAppInterfaceParams.syncMsgVersion.minorVersion = 1
 config.application2.registerAppInterfaceParams.syncMsgVersion.majorVersion = 5
+config.application2.registerAppInterfaceParams.syncMsgVersion.minorVersion = 1
 config.application3.registerAppInterfaceParams.syncMsgVersion.majorVersion = 5
+config.application3.registerAppInterfaceParams.syncMsgVersion.minorVersion = 1
 
 --[[ Required Shared libraries ]]
 local test = require("user_modules/dummy_connecttest")
@@ -19,7 +22,6 @@ local commonTestCases = require("user_modules/shared_testcases/commonTestCases")
 local commonPreconditions = require('user_modules/shared_testcases/commonPreconditions')
 local json = require("modules/json")
 local hmi_values = require("user_modules/hmi_values")
-local events = require("events")
 local utils = require('user_modules/utils')
 local actions = require("user_modules/sequences/actions")
 
@@ -225,7 +227,8 @@ function commonRC.getModuleControlData(module_type)
       heatedSteeringWheelEnable = true,
       heatedWindshieldEnable = true,
       heatedRearWindowEnable = true,
-      heatedMirrorsEnable = true
+      heatedMirrorsEnable = true,
+      climateEnable = true
     }
   elseif module_type == "RADIO" then
     out.radioControlData = {
@@ -362,7 +365,8 @@ function commonRC.getAnotherModuleControlData(module_type)
       defrostZone = "ALL",
       dualModeEnable = true,
       acMaxEnable = false,
-      ventilationMode = "UPPER"
+      ventilationMode = "UPPER",
+      climateEnable = false
     }
   elseif module_type == "RADIO" then
     out.radioControlData = {
@@ -478,6 +482,14 @@ function commonRC.getAnotherModuleControlData(module_type)
     }
   end
   return out
+end
+
+function commonRC.getParamClimateEnableFalse()
+  local out = { moduleType = "CLIMATE" }
+    out.climateControlData = {
+      climateEnable = false
+    }
+    return out
 end
 
 function commonRC.getButtonNameByModule(pModuleType)
@@ -802,6 +814,15 @@ function commonRC.isUnsubscribed(pModuleType, pAppId)
   commonRC.setActualInteriorVD(pModuleType, commonRC.getHMIResponseParams(rpc, pModuleType).moduleData)
   mobSession:ExpectNotification(commonRC.getAppEventName(rpc), {}):Times(0)
   commonTestCases:DelayedExp(commonRC.timeout)
+end
+
+function commonRC.isUnsubscribedModuleClimete(pAppId)
+  local mobSession = commonRC.getMobileSession(pAppId)
+  local rpc = "OnInteriorVehicleData"
+  commonRC.getHMIConnection():SendNotification(commonRC.getHMIEventName(rpc), commonRC.getParamClimateEnableFalse())
+  commonRC.setActualInteriorVD("CLIMETE", commonRC.getParamClimateEnableFalse())
+  mobSession:ExpectNotification(commonRC.getAppEventName(rpc), {}):Times(0)
+  -- commonTestCases:DelayedExp(commonRC.timeout)
 end
 
 function commonRC.defineRAMode(pAllowed, pAccessMode)

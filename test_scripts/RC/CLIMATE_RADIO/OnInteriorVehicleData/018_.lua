@@ -1,0 +1,63 @@
+---------------------------------------------------------------------------------------------------
+-- User story:
+-- Use case:
+-- Item: Use Case 1: Main Flow
+--
+-- Requirement summary:
+-- [SDL_RC] Current module status data GetInteriorVehicleData
+--
+-- Description:
+-- Preconditions:
+-- SDL got RC.GetCapabilities for CLIMATE module with "climateEnableAvailable" = true parameter from HMI
+-- Mobile app is registered with SyncMsgVersion = 5.1
+-- Mobile app subscribed on getting RC.OnInteriorVehicleData notification for CLIMATE module
+-- In case:
+-- 1) HMI sends RC.OnInteriorVehicleData notification ("climateEnable" = 1) to SDL
+-- 2) HMI sends RC.OnInteriorVehicleData notification ("climateEnable" = "false") to SDL
+-- 3) HMI sends RC.OnInteriorVehicleData notification ("climateEnable" = "") to SDL
+-- SDL must:
+-- 1) does not send OnInteriorVehicleData notification to Mobile
+---------------------------------------------------------------------------------------------------
+--[[ Required Shared libraries ]]
+local runner = require('user_modules/script_runner')
+local commonRC = require('test_scripts/RC/commonRC')
+
+--[[ Test Configuration ]]
+runner.testSettings.isSelfIncluded = false
+
+--[[ Local Variables ]]
+local params = {
+  1,
+  "false",
+  ""
+}
+
+--[[ Local Functions ]]
+local function onInteriorVehicleData(pParams)
+  local paramsNotification = {
+    moduleData = {
+      moduleType = "CLIMATE",
+      climateControlData = { climateEnable = pParams}
+    }
+  }
+  commonRC.getHMIConnection():SendNotification("RC.OnInteriorVehicleData", paramsNotification)
+
+  commonRC.getMobileSession():ExpectNotification("OnInteriorVehicleData")
+  :Times(0)
+end
+
+--[[ Scenario ]]
+runner.Title("Preconditions")
+runner.Step("Clean environment", commonRC.preconditions)
+runner.Step("Start SDL, HMI, connect Mobile, start Session", commonRC.start)
+runner.Step("RAI", commonRC.registerAppWOPTU)
+runner.Step("Activate App", commonRC.activateApp)
+runner.Step("Subscribe app to module CLIMATE", commonRC.subscribeToModule, { "CLIMATE" })
+
+runner.Title("Test")
+for _, v in pairs(params) do
+  runner.Step("OnInteriorVehicleData with invalid param climateEnable " .. _, onInteriorVehicleData, { v })
+end
+
+runner.Title("Postconditions")
+runner.Step("Stop SDL", commonRC.postconditions)

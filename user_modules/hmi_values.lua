@@ -362,7 +362,7 @@ function module.getDefaultHMITable()
                 radioFrequencyAvailable = true,
                 hdChannelAvailable = true,
                 rdsDataAvailable = true,
-                availableHDsAvailable = true,
+                availableHdChannelsAvailable = true,
                 stateAvailable = true,
                 signalStrengthAvailable = true,
                 signalChangeThresholdAvailable = true,

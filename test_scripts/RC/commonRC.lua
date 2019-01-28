@@ -242,8 +242,8 @@ function commonRC.getModuleControlData(module_type)
         TA = true,
         REG = "US"
       },
-      availableHDs = 1,
-      hdChannel = 1,
+      availableHdChannels = {0, 1, 2, 3, 4, 5, 6, 7},
+      hdChannel = 7,
       signalStrength = 5,
       signalChangeThreshold = 10,
       radioEnable = true,

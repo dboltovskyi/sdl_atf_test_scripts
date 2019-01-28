@@ -1,17 +1,10 @@
 ---------------------------------------------------------------------------------------------------
--- User story:
--- Use case:
--- Item: Use Case 1: Main Flow
---
--- Requirement summary:
--- [SDL_RC] Current module status data GetInteriorVehicleData
---
+-- Proposal: https://github.com/smartdevicelink/sdl_evolution/blob/master/proposals/0213-rc-radio-climate-parameter-update.md
 -- Description:
 -- Preconditions:
--- Mobile app is registered with SyncMsgVersion = 5.1
--- SDL got RC.GetCapabilities for CLIMATE module  with new ("climateEnableAvailable" = true) parameter from HMI
+-- 1) SDL got RC.GetCapabilities("climateEnableAvailable" = true) for CLIMATE module parameter from HMI
 -- In case:
--- 1) Mobile app sends GetInteriorVehicleData (CLIMATE) to SDL.
+-- 1) Mobile app sends GetInteriorVehicleData (CLIMATE) to SDL
 -- 2) HMI sends response RC.GetInteriorVehicleData ("climateEnable" = false) to SDL
 -- SDL must:
 -- 1) send RC.GetInteriorVehicleData (CLIMATE) to HMI
@@ -24,17 +17,7 @@ local commonRC = require('test_scripts/RC/commonRC')
 --[[ Test Configuration ]]
 runner.testSettings.isSelfIncluded = false
 
-function commonRC.getModuleControlData(module_type)
-  local out = { moduleType = module_type }
-  if module_type == "CLIMATE" then
-    out.climateControlData = {
-      climateEnable = false
-    }
-  end
-  return out
-end
-
-commonRC.actualInteriorDataStateOnHMI = {CLIMATE = commonRC.cloneTable(commonRC.getModuleControlData("CLIMATE"))}
+commonRC.actualInteriorDataStateOnHMI.CLIMATE.climateControlData = { climateEnable = false }
 
 --[[ Scenario ]]
 runner.Title("Preconditions")

@@ -1,14 +1,9 @@
 ---------------------------------------------------------------------------------------------------
--- Proposal:
--- User story: TBD
---
--- Requirement summary:
--- TBD
---
+-- Proposal: https://github.com/smartdevicelink/sdl_evolution/blob/master/proposals/0213-rc-radio-climate-parameter-update.md
 -- Description:
 -- Preconditions:
 -- Mobile app is registered with SyncMsgVersion = 5.1
--- SDL got RC.GetCapabilities for CLIMATE module  with new ("climateEnableAvailable" = false) parameter from HMI
+-- SDL got RC.GetCapabilities("climateEnableAvailable" = false) for CLIMATE module parameter from HMI
 -- In case:
 -- 1) Mobile app send SetInteriorVehicleData with parameter ("climateEnable" = false) to SDL
 -- SDL must:
@@ -24,26 +19,25 @@ local hmi_values = require("user_modules/hmi_values")
 runner.testSettings.isSelfIncluded = false
 
 --[[ Local Variables ]]
-local hmiValues = hmi_values.getDefaultHMITable()
-hmiValues.RC.GetCapabilities.params.remoteControlCapability.climateControlCapabilities[1].climateEnable = false
+commonRC.actualInteriorDataStateOnHMI.CLIMATE.climateControlData = {
+  climateEnable = true
+}
 
 --[[ Local Functions ]]
-function commonRC.getModuleControlData(module_type)
-  local out = { moduleType = module_type }
-  if module_type == "CLIMATE" then
-    out.climateControlData = {
-      climateEnable = true
-    }
+local function updateDefaultHHMITable()
+local hmiValues = hmi_values.getDefaultHMITable()
+  for i, v in pairs(hmiValues.RC.GetCapabilities.params.remoteControlCapability.climateControlCapabilities) do
+    if v == hmiValues.RC.GetCapabilities.params.remoteControlCapability.climateControlCapabilities[i] then
+      hmiValues.RC.GetCapabilities.params.remoteControlCapability.climateControlCapabilities[i].climateEnableAvailable = false
+    end
   end
-  return out
+  return hmiValues
 end
-
-commonRC.actualInteriorDataStateOnHMI = {CLIMATE = commonRC.cloneTable(commonRC.getModuleControlData("CLIMATE"))}
 
 --[[ Scenario ]]
 runner.Title("Preconditions")
 runner.Step("Clean environment", commonRC.preconditions)
-runner.Step("Start SDL, HMI, connect Mobile, start Session", commonRC.start, { hmiValues })
+runner.Step("Start SDL, HMI, connect Mobile, start Session", commonRC.start, { updateDefaultHHMITable() })
 runner.Step("RAI", commonRC.registerAppWOPTU)
 runner.Step("Activate App", commonRC.activateApp)
 

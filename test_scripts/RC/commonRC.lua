@@ -203,7 +203,6 @@ function commonRC.unregisterApp(pAppId)
   mobSession:ExpectResponse(cid, { success = true, resultCode = "SUCCESS"})
 end
 
-
 function commonRC.getModuleControlData(module_type)
   local out = { moduleType = module_type }
   if module_type == "CLIMATE" then
@@ -795,6 +794,7 @@ end
 function commonRC.isSubscribed(pModuleType, pAppId)
   local mobSession = commonRC.getMobileSession(pAppId)
   local rpc = "OnInteriorVehicleData"
+
   commonRC.getHMIConnection():SendNotification(commonRC.getHMIEventName(rpc), commonRC.getHMIResponseParams(rpc, pModuleType))
   commonRC.setActualInteriorVD(pModuleType, commonRC.getHMIResponseParams(rpc, pModuleType).moduleData)
   mobSession:ExpectNotification(commonRC.getAppEventName(rpc), commonRC.getAppResponseParams(rpc, pModuleType))
@@ -822,7 +822,7 @@ function commonRC.isUnsubscribedModuleClimete(pAppId)
   commonRC.getHMIConnection():SendNotification(commonRC.getHMIEventName(rpc), commonRC.getParamClimateEnableFalse())
   commonRC.setActualInteriorVD("CLIMETE", commonRC.getParamClimateEnableFalse())
   mobSession:ExpectNotification(commonRC.getAppEventName(rpc), {}):Times(0)
-  -- commonTestCases:DelayedExp(commonRC.timeout)
+  commonTestCases:DelayedExp(commonRC.timeout)
 end
 
 function commonRC.defineRAMode(pAllowed, pAccessMode)

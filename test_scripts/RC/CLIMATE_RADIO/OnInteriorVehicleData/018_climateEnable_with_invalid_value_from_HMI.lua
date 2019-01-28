@@ -1,16 +1,9 @@
 ---------------------------------------------------------------------------------------------------
--- User story:
--- Use case:
--- Item: Use Case 1: Main Flow
---
--- Requirement summary:
--- [SDL_RC] Current module status data GetInteriorVehicleData
---
+-- Proposal: https://github.com/smartdevicelink/sdl_evolution/blob/master/proposals/0213-rc-radio-climate-parameter-update.md
 -- Description:
 -- Preconditions:
--- SDL got RC.GetCapabilities for CLIMATE module with "climateEnableAvailable" = true parameter from HMI
--- Mobile app is registered with SyncMsgVersion = 5.1
--- Mobile app subscribed on getting RC.OnInteriorVehicleData notification for CLIMATE module
+-- 1) SDL got RC.GetCapabilities for CLIMATE module with "climateEnableAvailable" = true parameter from HMI
+-- 2) Mobile app subscribed on getting RC.OnInteriorVehicleData notification for CLIMATE module
 -- In case:
 -- 1) HMI sends RC.OnInteriorVehicleData notification ("climateEnable" = 1) to SDL
 -- 2) HMI sends RC.OnInteriorVehicleData notification ("climateEnable" = "false") to SDL
@@ -27,23 +20,20 @@ runner.testSettings.isSelfIncluded = false
 
 --[[ Local Variables ]]
 local params = {
-  1,
-  "false",
-  ""
+  invalidTypeNumber = 1,
+  invalidTypeString = "false",
+  emptyValue = ""
 }
 
 --[[ Local Functions ]]
-local function onInteriorVehicleData(pParams)
-  local paramsNotification = {
-    moduleData = {
-      moduleType = "CLIMATE",
-      climateControlData = { climateEnable = pParams}
-    }
-  }
-  commonRC.getHMIConnection():SendNotification("RC.OnInteriorVehicleData", paramsNotification)
+function commonRC.getAnotherModuleControlData(module_type)
+  return commonRC.actualInteriorDataStateOnHMI[module_type]
+end
 
-  commonRC.getMobileSession():ExpectNotification("OnInteriorVehicleData")
-  :Times(0)
+local function updateActualInteriorDataStateOnHMI(isClimateEnable)
+  commonRC.actualInteriorDataStateOnHMI.CLIMATE.climateControlData = {
+    climateEnable = isClimateEnable
+  }
 end
 
 --[[ Scenario ]]
@@ -55,8 +45,9 @@ runner.Step("Activate App", commonRC.activateApp)
 runner.Step("Subscribe app to module CLIMATE", commonRC.subscribeToModule, { "CLIMATE" })
 
 runner.Title("Test")
-for _, v in pairs(params) do
-  runner.Step("OnInteriorVehicleData with invalid param climateEnable " .. _, onInteriorVehicleData, { v })
+for k, v in pairs(params) do
+  runner.Step("updateActualInteriorDataStateOnHMI", updateActualInteriorDataStateOnHMI, { v })
+  runner.Step("OnInteriorVehicleData climateEnable " .. k, commonRC.isUnsubscribed, { "CLIMATE" })
 end
 
 runner.Title("Postconditions")

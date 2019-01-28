@@ -78,15 +78,16 @@ end
 --[[ @wait: delay test step for specific timeout
 --! @parameters:
 --! pTimeOut - time to wait in ms
---! @return: none
+--! @return: callback
 --]]
 function m.wait(pTimeOut)
   if not pTimeOut then pTimeOut = m.timeout end
   local event = events.Event()
   event.matches = function(event1, event2) return event1 == event2 end
-  EXPECT_EVENT(event, "Delayed event")
+  local ret = EXPECT_EVENT(event, "Delayed event")
   :Timeout(pTimeOut + 60000)
   RUN_AFTER(function() RAISE_EVENT(event, event) end, pTimeOut)
+  return ret
 end
 
 --[[ @getDeviceName: provide device name

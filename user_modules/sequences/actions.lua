@@ -137,8 +137,10 @@ end
 --! @parameters: none
 --! @return: none
 --]]
-local function allowSDL(self)
-  self.hmiConnection:SendNotification("SDL.OnAllowSDLFunctionality", {
+function m.allowSDL()
+  local event = events.Event()
+  event.matches = function(e1, e2) return e1 == e2 end
+  m.getHMIConnection():SendNotification("SDL.OnAllowSDLFunctionality", {
     allowed = true,
     source = "GUI",
     device = {
@@ -146,6 +148,8 @@ local function allowSDL(self)
       name = utils.getDeviceName()
     }
   })
+  RUN_AFTER(function() m.getHMIConnection():RaiseEvent(event, "Allow SDL event") end, 100)
+  return m.getHMIConnection():ExpectEvent(event, "Allow SDL event")
 end
 
 --[[ @getConfigAppParams: return app's configuration from defined in config file
@@ -179,8 +183,8 @@ function m.activateApp(pAppId)
   m.getHMIConnection():ExpectResponse(requestId)
   local params = m.getConfigAppParams(pAppId)
   local audioStreamingState = "NOT_AUDIBLE"
-  if params.isMediaApplication or 
-      commonFunctions:table_contains(params.appHMIType, "NAVIGATION") or 
+  if params.isMediaApplication or
+      commonFunctions:table_contains(params.appHMIType, "NAVIGATION") or
       commonFunctions:table_contains(params.appHMIType, "COMMUNICATION") then
     audioStreamingState = "AUDIBLE"
   end
@@ -271,6 +275,7 @@ function m.registerAppWOPTU(pAppId)
           m.getMobileSession(pAppId):ExpectNotification("OnHMIStatus",
             { hmiLevel = "NONE", audioStreamingState = "NOT_AUDIBLE", systemContext = "MAIN" })
           m.getMobileSession(pAppId):ExpectNotification("OnPermissionsChange")
+          :Times(AnyNumber())
         end)
     end)
 end
@@ -295,8 +300,10 @@ function m.start(pHMIParams)
               test:connectMobile()
               :Do(function()
                   utils.cprint(35, "Mobile connected")
-                  allowSDL(test)
-                  m.getHMIConnection():RaiseEvent(event, "Start event")
+                  m.allowSDL()
+                  :Do(function()
+                      m.getHMIConnection():RaiseEvent(event, "Start event")
+                    end)
                 end)
             end)
         end)

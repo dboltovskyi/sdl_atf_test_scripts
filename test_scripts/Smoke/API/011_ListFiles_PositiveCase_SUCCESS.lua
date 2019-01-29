@@ -27,70 +27,66 @@
 
 --[[ Required Shared libraries ]]
 local runner = require('user_modules/script_runner')
-local commonSmoke = require('test_scripts/Smoke/commonSmoke')
-local commonFunctions = require("user_modules/shared_testcases/commonFunctions")
+local common = require('test_scripts/Smoke/commonSmoke')
+
+--[[ Test Configuration ]]
+runner.testSettings.isSelfIncluded = false
 
 --[[ Local Variables ]]
 local testFileNamesList = {
-	string.rep("a", 251)  .. ".png",
-	" SpaceBefore",
-	"icon.png"
+  string.rep("a", 251)  .. ".png",
+  " SpaceBefore",
+  "icon.png"
 }
 
 local putFileParams = {
-	requestParams = {
-	    syncFileName = "",
-	    fileType = "GRAPHIC_PNG",
-	    persistentFile = false,
-	    systemFile = false
-	},
-	filePath = "files/icon.png"
+  requestParams = {
+    syncFileName = "",
+    fileType = "GRAPHIC_PNG",
+    persistentFile = false,
+    systemFile = false
+  },
+  filePath = "files/icon.png"
 }
 
 local requestParams = {}
 
 local responseParams = {
-	success = true,
-    resultCode = "SUCCESS",
-	spaceAvailable = 103878520
+  success = true,
+  resultCode = "SUCCESS",
+  spaceAvailable = 103878520,
+  filenames = testFileNamesList
 }
 
 local allParams = {
-	requestParams = requestParams,
-	responseParams = responseParams
+  requestParams = requestParams,
+  responseParams = responseParams
 }
 
 --[[ Local Functions ]]
-local function putFile(fileName, self)
-	putFileParams.requestParams.syncFileName = fileName
-	commonSmoke.putFile(putFileParams, 1, self)
+local function putFile(pFileName)
+  putFileParams.requestParams.syncFileName = pFileName
+  common.putFile(putFileParams, 1)
 end
 
-local function listFiles(params, self)
-	local cid = self.mobileSession1:SendRPC("ListFiles", params.requestParams)
-
-	self.mobileSession1:ExpectResponse(cid, params.responseParams)
-  	:ValidIf(function(_, data)
-  		if not commonFunctions:is_table_equal(data.payload.filenames, testFileNamesList) then
-        	return false, "\nExpected files:\n" .. commonFunctions:convertTableToString(testFileNamesList, 1)
-          		.. "\nActual files:\n" .. commonFunctions:convertTableToString(data.payload.filenames, 1)
-      	end
-    	return true
-    end)
+local function listFiles(pParams)
+  local cid = common.getMobileSession():SendRPC("ListFiles", pParams.requestParams)
+  common.getMobileSession():ExpectResponse(cid, pParams.responseParams)
 end
 
 --[[ Scenario ]]
 runner.Title("Preconditions")
-runner.Step("Clean environment", commonSmoke.preconditions)
-runner.Step("Start SDL, HMI, connect Mobile, start Session", commonSmoke.start)
-runner.Step("RAI", commonSmoke.registerApp)
-runner.Step("Activate App", commonSmoke.activateApp)
+runner.Step("Clean environment", common.preconditions)
+runner.Step("Update Preloaded PT", common.updatePreloadedPT)
+runner.Step("Start SDL, HMI, connect Mobile, start Session", common.start)
+runner.Step("Register App", common.registerApp)
+runner.Step("Activate App", common.activateApp)
 for i, fileName in ipairs(testFileNamesList) do
-	runner.Step("Upload test file #" .. i, putFile, {fileName})
+  runner.Step("Upload test file #" .. i, putFile, { fileName })
 end
 
 runner.Title("Test")
-runner.Step("ListFiles Positive Case", listFiles, {allParams})
+runner.Step("ListFiles Positive Case", listFiles, { allParams })
 
 runner.Title("Postconditions")
-runner.Step("Stop SDL", commonSmoke.postconditions)
+runner.Step("Stop SDL", common.postconditions)

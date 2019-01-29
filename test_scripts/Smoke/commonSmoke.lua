@@ -2,248 +2,83 @@
 -- Smoke API common module
 ---------------------------------------------------------------------------------------------------
 --[[ General configuration parameters ]]
-config.mobileHost = "127.0.0.1"
 config.defaultProtocolVersion = 2
 
 --[[ Required Shared libraries ]]
-local mobile_session = require("mobile_session")
+local commonFunctions = require("user_modules/shared_testcases/commonFunctions")
+local commonPreconditions = require('user_modules/shared_testcases/commonPreconditions')
+local test = require("user_modules/dummy_connecttest")
+local utils = require('user_modules/utils')
 local json = require("modules/json")
 
-local consts = require("user_modules/consts")
-local commonFunctions = require("user_modules/shared_testcases/commonFunctions")
-local commonSteps = require("user_modules/shared_testcases/commonSteps")
-local commonTestCases = require("user_modules/shared_testcases/commonTestCases")
-local commonPreconditions = require('user_modules/shared_testcases/commonPreconditions')
-local utils = require('user_modules/utils')
+local mobileSession = require("mobile_session")
+local mobileConnection  = require('mobile_connection')
+local SDL = require("SDL")
+local tcp = require('tcp_connection')
+local file_connection  = require('file_connection')
+local events = require("events")
+local constants = require('protocol_handler/ford_protocol_constants')
+local expectations = require('expectations')
+local atf_logger = require("atf_logger")
+
+--[[ Module ]]
+local common = require('user_modules/sequences/actions')
+
+--[[ Mapped functions and constants ]]
+common.cloneTable = utils.cloneTable
+common.tableToString = utils.tableToString
+common.getDeviceName = utils.getDeviceName
+common.getDeviceMAC = utils.getDeviceMAC
+common.wait = utils.wait
+common.cprint = utils.cprint
+common.cprintTable = utils.cprintTable
+common.tableToJsonFile = utils.tableToJsonFile
+common.jsonFileToTable = utils.jsonFileToTable
+common.constants = constants
+common.json = { decode = json.decode, null = json.null }
+common.events = { disconnectedEvent = events.disconnectedEvent }
+common.SDL = { buildOptions = SDL.buildOptions }
+
+--[[ Module constants ]]
+common.timeout = 4000
+
+--[[ Module functions ]]
+function common.runAfter(pFunc, pDelay)
+  RUN_AFTER(pFunc, pDelay)
+end
+
+function common.failTestCase(pMsg)
+  test:FailTestCase(pMsg)
+end
+
+function common.readParameterFromSDLINI(pParamName)
+  return commonFunctions:read_parameter_from_smart_device_link_ini(pParamName)
+end
+
+function common.log(...)
+  local str = "[" .. atf_logger.formated_time(true) .. "]"
+  for i, p in pairs({...}) do
+    local delimiter = "\t"
+    if i == 1 then delimiter = " " end
+    str = str .. delimiter .. p
+  end
+  utils.cprint(35, str)
+end
 
 --[[ Local Variables ]]
-local hmiAppIds = {}
-local preloadedPT = commonFunctions:read_parameter_from_smart_device_link_ini("PreloadedPT")
+local preloadedPT = common.readParameterFromSDLINI("PreloadedPT")
+local isPreloadedUpdated = false
 
-local commonSmoke = {}
-
-commonSmoke.HMITypeStatus = {
-  NAVIGATION = false,
-  COMMUNICATION = false
-}
-commonSmoke.timeout = 5000
-commonSmoke.minTimeout = 500
-
-local function allowSDL(self)
-  self.hmiConnection:SendNotification("SDL.OnAllowSDLFunctionality",
-    { allowed = true, source = "GUI", device = { id = commonSmoke.getDeviceMAC(), name = commonSmoke.getDeviceName() }})
+function common.postconditions()
+  if SDL:CheckStatusSDL() == SDL.RUNNING then SDL:StopSDL() end
+  common.restoreSDLIniParameters()
+  if isPreloadedUpdated == true then commonPreconditions:RestoreFile(preloadedPT) end
 end
 
---[[Module functions]]
-
-function commonSmoke.preconditions()
-  commonFunctions:SDLForceStop()
-  commonSteps:DeletePolicyTable()
-  commonSteps:DeleteLogsFiles()
+function common.updatePreloadedPT()
+  isPreloadedUpdated = true
   commonPreconditions:BackupFile(preloadedPT)
-  commonSmoke.updatePreloadedPT()
-end
-
-function commonSmoke.getDeviceName()
-  return config.mobileHost .. ":" .. config.mobilePort
-end
-
-function commonSmoke.getDeviceMAC()
-  local cmd = "echo -n " .. commonSmoke.getDeviceName() .. " | sha256sum | awk '{printf $1}'"
-  local handle = io.popen(cmd)
-  local result = handle:read("*a")
-  handle:close()
-  return result
-end
-
-function commonSmoke.getPathToSDL()
-  return config.pathToSDL
-end
-
-function commonSmoke.getMobileAppId(pAppId)
-  if not pAppId then pAppId = 1 end
-  return config["application" .. pAppId].registerAppInterfaceParams.fullAppID
-end
-
-function commonSmoke.getSelfAndParams(...)
-  local out = { }
-  local selfIdx = nil
-  for i,v in pairs({...}) do
-    if type(v) == "table" and v.isTest then
-      table.insert(out, v)
-      selfIdx = i
-      break
-    end
-  end
-  local idx = 2
-  for i = 1, table.maxn({...}) do
-    if i ~= selfIdx then
-      out[idx] = ({...})[i]
-      idx = idx + 1
-    end
-  end
-  return table.unpack(out, 1, table.maxn(out))
-end
-
-function commonSmoke.getHMIAppId(pAppId)
-  if not pAppId then pAppId = 1 end
-  return hmiAppIds[config["application" .. pAppId].registerAppInterfaceParams.fullAppID]
-end
-
-function commonSmoke.getPathToFileInStorage(fileName)
-  return commonPreconditions:GetPathToSDL() .. "storage/"
-  .. commonSmoke.getMobileAppId() .. "_"
-  .. commonSmoke.getDeviceMAC() .. "/" .. fileName
-end
-
-function commonSmoke.getMobileSession(pAppId, self)
-  self, pAppId = commonSmoke.getSelfAndParams(pAppId, self)
-  if not pAppId then pAppId = 1 end
-  if not self["mobileSession" .. pAppId] then
-    self["mobileSession" .. pAppId] = mobile_session.MobileSession(self, self.mobileConnection)
-  end
-  return self["mobileSession" .. pAppId]
-end
-
-function commonSmoke.splitString(inputStr, sep)
-  if sep == nil then
-    sep = "%s"
-  end
-  local splitted, i = {}, 1
-  for str in string.gmatch(inputStr, "([^"..sep.."]+)") do
-    splitted[i] = str
-    i = i + 1
-  end
-  return splitted
-end
-
-function commonSmoke.expectOnHMIStatusWithAudioStateChanged(self, pAppId, request, level)
-  if pAppId == nil then pAppId = 1 end
-  if request == nil then request = "BOTH" end
-  if level == nil then level = "FULL" end
-
-  local mobSession = commonSmoke.getMobileSession(pAppId, self)
-  local appParams = config["application" .. pAppId].registerAppInterfaceParams
-
-  if appParams.isMediaApplication == true then
-    if request == "BOTH" then
-      mobSession:ExpectNotification("OnHMIStatus",
-        { systemContext = "ALERT", hmiLevel = level, audioStreamingState = "AUDIBLE" },
-        { systemContext = "ALERT", hmiLevel = level, audioStreamingState = "ATTENUATED" },
-        { systemContext = "ALERT", hmiLevel = level, audioStreamingState = "AUDIBLE" },
-        { systemContext = "MAIN", hmiLevel = level, audioStreamingState = "AUDIBLE" })
-      :Times(4)
-    elseif request == "speak" then
-      mobSession:ExpectNotification("OnHMIStatus",
-        { systemContext = "MAIN", hmiLevel = level, audioStreamingState = "ATTENUATED" },
-        { systemContext = "MAIN", hmiLevel = level, audioStreamingState = "AUDIBLE" })
-      :Times(2)
-    elseif request == "alert" then
-      mobSession:ExpectNotification("OnHMIStatus",
-        { systemContext = "ALERT", hmiLevel = level, audioStreamingState = "AUDIBLE" },
-        { systemContext = "MAIN", hmiLevel = level, audioStreamingState = "AUDIBLE" })
-      :Times(2)
-    end
-  elseif appParams.isMediaApplication == false then
-    if request == "BOTH" then
-      mobSession:ExpectNotification("OnHMIStatus",
-        { systemContext = "ALERT", hmiLevel = level, audioStreamingState = "NOT_AUDIBLE" },
-        { systemContext = "MAIN", hmiLevel = level, audioStreamingState = "NOT_AUDIBLE" })
-      :Times(2)
-    elseif request == "speak" then
-      mobSession:ExpectNotification("OnHMIStatus")
-      :Times(0)
-    elseif request == "alert" then
-      mobSession:ExpectNotification("OnHMIStatus",
-        { systemContext = "ALERT", hmiLevel = level, audioStreamingState = "NOT_AUDIBLE" },
-        { systemContext = "MAIN", hmiLevel = level, audioStreamingState = "NOT_AUDIBLE" })
-      :Times(2)
-    end
-  end
-
-end
-
-function commonSmoke.activateApp(pAppId, self)
-  self, pAppId = commonSmoke.getSelfAndParams(pAppId, self)
-  if not pAppId then pAppId = 1 end
-  local pHMIAppId = hmiAppIds[config["application" .. pAppId].registerAppInterfaceParams.fullAppID]
-  local mobSession = commonSmoke.getMobileSession(pAppId, self)
-  local requestId = self.hmiConnection:SendRequest("SDL.ActivateApp", { appID = pHMIAppId })
-  EXPECT_HMIRESPONSE(requestId)
-  mobSession:ExpectNotification("OnHMIStatus",
-    {hmiLevel = "FULL", audioStreamingState = commonSmoke.GetAudibleState(pAppId), systemContext = "MAIN"})
-  commonTestCases:DelayedExp(commonSmoke.minTimeout)
-end
-
-function commonSmoke.start(pHMIParams, self)
-  self, pHMIParams = commonSmoke.getSelfAndParams(pHMIParams, self)
-  self:runSDL()
-  commonFunctions:waitForSDLStart(self)
-  :Do(function()
-    self:initHMI(self)
-    :Do(function()
-      commonFunctions:userPrint(consts.color.magenta, "HMI initialized")
-      self:initHMI_onReady(pHMIParams)
-      :Do(function()
-        commonFunctions:userPrint(consts.color.magenta, "HMI is ready")
-        self:connectMobile()
-        :Do(function()
-          commonFunctions:userPrint(consts.color.magenta, "Mobile connected")
-          allowSDL(self)
-        end)
-      end)
-    end)
-  end)
-end
-
-function commonSmoke.putFile(params, pAppId, self)
-  if not pAppId then pAppId = 1 end
-  local mobileSession = commonSmoke.getMobileSession(pAppId, self);
-  local cid = mobileSession:SendRPC("PutFile", params.requestParams, params.filePath)
-
-  mobileSession:ExpectResponse(cid, { success = true, resultCode = "SUCCESS"})
-end
-
-function commonSmoke.SetAppType(HMIType)
-  for _,v in pairs(HMIType) do
-    if v == "NAVIGATION" then
-      commonSmoke.HMITypeStatus["NAVIGATION"] = true
-    elseif v == "COMMUNICATION" then
-      commonSmoke.HMITypeStatus["COMMUNICATION"] = true
-    end
-  end
-end
-
-function commonSmoke.GetAudibleState(pAppId)
-  if not pAppId then pAppId = 1 end
-  commonSmoke.SetAppType(config["application" .. pAppId].registerAppInterfaceParams.appHMIType)
-  if config["application" .. pAppId].registerAppInterfaceParams.isMediaApplication == true or
-    commonSmoke.HMITypeStatus.COMMUNICATION == true or
-    commonSmoke.HMITypeStatus.NAVIGATION == true then
-    return "AUDIBLE"
-  elseif
-    config["application" .. pAppId].registerAppInterfaceParams.isMediaApplication == false then
-    return "NOT_AUDIBLE"
-  end
-end
-
-function commonSmoke.GetAppMediaStatus(pAppId)
-  if not pAppId then pAppId = 1 end
-  local isMediaApplication = config["application" .. pAppId].registerAppInterfaceParams.isMediaApplication
-  return isMediaApplication
-end
-
-function commonSmoke.readParameterFromSmartDeviceLinkIni(paramName)
-  return commonFunctions:read_parameter_from_smart_device_link_ini(paramName)
-end
-
-function commonSmoke.postconditions()
-  StopSDL()
-  commonPreconditions:RestoreFile(preloadedPT)
-end
-
-function commonSmoke.updatePreloadedPT()
-  local preloadedFile = commonPreconditions:GetPathToSDL() .. preloadedPT
+  local preloadedFile = config.pathToSDL .. preloadedPT
   local pt = utils.jsonFileToTable(preloadedFile)
   pt.policy_table.functional_groupings["DataConsent-2"].rpcs = json.null
   local additionalRPCs = {
@@ -263,26 +98,272 @@ function commonSmoke.updatePreloadedPT()
   utils.tableToJsonFile(pt, preloadedFile)
 end
 
-function commonSmoke.registerApp(pAppId, self)
-  self, pAppId = commonSmoke.getSelfAndParams(pAppId, self)
+function common.createMobileSession(pAppId, pHBParams, pConId)
   if not pAppId then pAppId = 1 end
-  local mobSession = commonSmoke.getMobileSession(pAppId, self)
-  mobSession:StartService(7)
+  if not pHBParams then pHBParams = {} end
+  local connection = test.mobileConnection
+  if pConId then
+    connection = test.mobileConnection[pConId]
+  end
+  test.mobileSession[pAppId] = mobileSession.MobileSession(test, connection)
+  for k, v in pairs(pHBParams) do
+    test.mobileSession[pAppId][k] = v
+  end
+end
+
+function common.getMobileSession(pAppId)
+  if not pAppId then pAppId = 1 end
+  return test.mobileSession[pAppId]
+end
+
+function common.putFile(pParams)
+  local cid = common.getMobileSession():SendRPC("PutFile", pParams.requestParams, pParams.filePath)
+  common.getMobileSession():ExpectResponse(cid, { success = true, resultCode = "SUCCESS" })
+end
+
+function common.registerApp(pAppId, pHBParams)
+  common.createMobileSession(pAppId, pHBParams)
+  common.getMobileSession(pAppId):ExpectNotification("OnDriverDistraction", { state = "DD_OFF" })
+  common.registerAppWOPTU(pAppId)
+end
+
+function common.getPathToFileInAppStorage(pFileName, pAppId)
+  if not pAppId then pAppId = 1 end
+  local filePath = commonPreconditions:GetPathToSDL() .. "storage/"
+    .. common.getConfigAppParams(pAppId).fullAppID .. "_" .. utils.getDeviceMAC() .. "/" .. pFileName
+  return filePath
+end
+
+function common.isFileExistInAppStorage(pFileName)
+  local filePath = commonPreconditions:GetPathToSDL() .. "storage/" .. pFileName
+  return utils.isFileExist(filePath)
+end
+
+function common.unRegisterApp(pAppId)
+  if pAppId == nil then pAppId = 1 end
+  local cid = common.getMobileSession(pAppId):SendRPC("UnregisterAppInterface", {})
+  common.getMobileSession(pAppId):ExpectResponse(cid, { success = true, resultCode = "SUCCESS" })
   :Do(function()
-      local corId = mobSession:SendRPC("RegisterAppInterface", config["application" .. pAppId].registerAppInterfaceParams)
-      EXPECT_HMINOTIFICATION("BasicCommunication.OnAppRegistered",
-        { application = { appName = config["application" .. pAppId].registerAppInterfaceParams.appName } })
-      :Do(function(_, data)
-          hmiAppIds[config["application" .. pAppId].registerAppInterfaceParams.fullAppID] = data.params.application.appID
-        end)
-      mobSession:ExpectResponse(corId, { success = true, resultCode = "SUCCESS" })
-      :Do(function()
-          mobSession:ExpectNotification("OnHMIStatus",
-            { hmiLevel = "NONE", audioStreamingState = "NOT_AUDIBLE", systemContext = "MAIN" })
-          mobSession:ExpectNotification("OnPermissionsChange"):Times(AtLeast(1))
-          mobSession:ExpectNotification("OnDriverDistraction", { state = "DD_OFF" })
-        end)
+      common.deleteMobileSession(pAppId)
+    end)
+  common.getHMIConnection():ExpectNotification("BasicCommunication.OnAppUnregistered",
+    { unexpectedDisconnect = false, appID = common.getHMIAppId(pAppId) })
+  :Do(function()
+      common.setHMIAppId(nil, pAppId)
     end)
 end
 
-return commonSmoke
+function common.reRegisterApp(pResultCode, pExpResDataFunc, pExpResLvlFunc)
+  common.createMobileSession()
+  local params = common.cloneTable(common.getConfigAppParams())
+  params.hashID = common.hashId
+  common.getMobileSession():StartService(7)
+  :Do(function()
+      if pExpResDataFunc then pExpResDataFunc() end
+      if pExpResLvlFunc then pExpResLvlFunc() end
+      local cid = common.getMobileSession():SendRPC("RegisterAppInterface", params)
+      common.getHMIConnection():ExpectNotification("BasicCommunication.OnAppRegistered")
+      common.getMobileSession():ExpectResponse(cid, { success = true, resultCode = pResultCode })
+      :Do(function()
+          common.getMobileSession():ExpectNotification("OnPermissionsChange")
+          :Times(AnyNumber())
+        end)
+    end)
+  common.wait(common.timeout)
+end
+
+function common.deleteMobileSession(pAppId)
+  if pAppId == nil then pAppId = 1 end
+  common.getMobileSession(pAppId):Stop()
+  :Do(function()
+      test.mobileSession[pAppId] = nil
+    end)
+end
+
+function test.mobileConnection:Close()
+  for i = 1, common.getAppsCount() do
+    test.mobileSession[i] = nil
+  end
+  self.connection:Close()
+end
+
+common.resParams = {
+  AddCommand = {
+    mob = { cmdID = 1, vrCommands = { "OnlyVRCommand" }},
+    hmi = { cmdID = 1, type = "Command", vrCommands = { "OnlyVRCommand" }}
+  },
+  AddSubMenu = {
+    mob = { menuID = 1, position = 500, menuName = "SubMenu" },
+    hmi = { menuID = 1, menuParams = { position = 500, menuName = "SubMenu" }}
+  }
+}
+
+function common.addCommand()
+  local cid = common.getMobileSession():SendRPC("AddCommand", common.resParams.AddCommand.mob)
+  common.getHMIConnection():ExpectRequest("VR.AddCommand", common.resParams.AddCommand.hmi)
+  :Do(function(_, data)
+      common.getHMIConnection():SendResponse(data.id, data.method, "SUCCESS", {})
+    end)
+  common.getMobileSession():ExpectResponse(cid, { success = true, resultCode = "SUCCESS" })
+  common.getMobileSession():ExpectNotification("OnHashChange")
+  :Do(function(_, data)
+      common.hashId = data.payload.hashID
+    end)
+end
+
+function common.addSubMenu()
+  local cid = common.getMobileSession():SendRPC("AddSubMenu", common.resParams.AddSubMenu.mob)
+  common.getHMIConnection():ExpectRequest("UI.AddSubMenu", common.resParams.AddSubMenu.hmi)
+  :Do(function(_, data)
+      common.getHMIConnection():SendResponse(data.id, data.method, "SUCCESS", {})
+    end)
+  common.getMobileSession():ExpectResponse(cid, { success = true, resultCode = "SUCCESS" })
+  common.getMobileSession():ExpectNotification("OnHashChange")
+  :Do(function(_, data)
+      common.hashId = data.payload.hashID
+    end)
+end
+
+function common.ignitionOff(pExpFunc)
+  local isOnSDLCloseSent = false
+  if pExpFunc then pExpFunc() end
+  common.getHMIConnection():SendNotification("BasicCommunication.OnExitAllApplications", { reason = "SUSPEND" })
+  common.getHMIConnection():ExpectNotification("BasicCommunication.OnSDLPersistenceComplete")
+  :Do(function()
+      common.getHMIConnection():SendNotification("BasicCommunication.OnExitAllApplications", { reason = "IGNITION_OFF" })
+      common.getHMIConnection():ExpectNotification("BasicCommunication.OnSDLClose")
+      :Do(function()
+          isOnSDLCloseSent = true
+          SDL.DeleteFile()
+        end)
+      :Times(AtMost(1))
+    end)
+  common.wait(3000)
+  :Do(function()
+      if isOnSDLCloseSent == false then common.cprint(35, "BC.OnSDLClose was not sent") end
+      if SDL:CheckStatusSDL() == SDL.RUNNING then SDL:StopSDL() end
+      common.getMobileConnection():Close()
+    end)
+end
+
+function common.masterReset(pExpFunc)
+  local isOnSDLCloseSent = false
+  if pExpFunc then pExpFunc() end
+  common.getHMIConnection():SendNotification("BasicCommunication.OnExitAllApplications", { reason = "MASTER_RESET" })
+  common.getHMIConnection():ExpectNotification("BasicCommunication.OnSDLClose")
+  :Do(function()
+      isOnSDLCloseSent = true
+      SDL.DeleteFile()
+    end)
+  :Times(AtMost(1))
+  common.wait(3000)
+  :Do(function()
+      if isOnSDLCloseSent == false then common.cprint(35, "BC.OnSDLClose was not sent") end
+      if SDL:CheckStatusSDL() == SDL.RUNNING then SDL:StopSDL() end
+      common.getMobileConnection():Close()
+    end)
+end
+
+function common.unexpectedDisconnect(pAppId)
+  if pAppId == nil then pAppId = 1 end
+  common.getHMIConnection():ExpectNotification("BasicCommunication.OnAppUnregistered",
+    { unexpectedDisconnect = true, appID = common.getHMIAppId(pAppId) })
+  common.deleteMobileSession(pAppId)
+end
+
+function common.createEvent(pMatchFunc)
+  if pMatchFunc == nil then
+    pMatchFunc = function(e1, e2) return e1 == e2 end
+  end
+  local event = events.Event()
+  event.matches = pMatchFunc
+  return event
+end
+
+function common.createConnection(pConId, pDevices)
+  if pConId == nil then pConId = 1 end
+  if pDevices == nil then pDevices = { [1] = config.mobileHost } end
+  local filename = "mobile" .. pConId .. ".out"
+  local tcpConnection = tcp.Connection(pDevices[pConId], config.mobilePort)
+  local fileConnection = file_connection.FileConnection(filename, tcpConnection)
+  local connection = mobileConnection.MobileConnection(fileConnection)
+  test.mobileConnection[pConId] = connection
+  function connection:ExpectEvent(pEvent, pEventName)
+    if pEventName == nil then pEventName = "noname" end
+    local ret = expectations.Expectation(pEventName, self)
+    ret.event = pEvent
+    event_dispatcher:AddEvent(self, pEvent, ret)
+    test:AddExpectation(ret)
+    return ret
+  end
+  event_dispatcher:AddConnection(connection)
+  local ret = connection:ExpectEvent(events.connectedEvent, "Connection started")
+  ret:Do(function()
+      common.cprint(35, "Mobile #" .. pConId .. " connected")
+    end)
+  connection:Connect()
+  return ret
+end
+
+common.init = {}
+
+function common.init.SDL()
+  test:runSDL()
+  local ret = commonFunctions:waitForSDLStart(test)
+  ret:Do(function()
+      utils.cprint(35, "SDL started")
+    end)
+  return ret
+end
+
+function common.init.HMI()
+  local ret = test:initHMI()
+  ret:Do(function()
+      utils.cprint(35, "HMI initialized")
+    end)
+  return ret
+end
+
+function common.init.HMI_onReady()
+  local ret = test:initHMI_onReady()
+  ret:Do(function()
+      utils.cprint(35, "HMI is ready")
+    end)
+  return ret
+end
+
+function common.init.connectMobile()
+  local ret = test:connectMobile()
+  ret:Do(function()
+      utils.cprint(35, "Mobile connected")
+    end)
+  return ret
+end
+
+function common.init.allowSDL()
+  local ret = common.allowSDL()
+  ret:Do(function()
+      utils.cprint(35, "SDL allowed")
+    end)
+  return ret
+end
+
+function common.execCmd(pCmd)
+  local handle = io.popen(pCmd)
+  local result = handle:read("*a")
+  handle:close()
+  return result
+end
+
+common.dummyConnection = {}
+
+function common.dummyConnection.add(pId, pAddress)
+  os.execute("ifconfig lo:" .. pId .." " .. pAddress)
+end
+
+function common.dummyConnection.delete(pId)
+  os.execute("ifconfig lo:" .. pId .." down")
+  os.execute("rm -f " .. "mobile" .. pId .. ".out")
+end
+
+return common

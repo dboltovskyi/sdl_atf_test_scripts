@@ -27,102 +27,94 @@
 --  2. SDL assignes HMILevel after application registering:
 --     SDL->appID: OnHMIStatus(HMlLevel, audioStreamingState, systemContext)
 ---------------------------------------------------------------------------------------------------
---[[ General Precondition before ATF start ]]
-config.defaultProtocolVersion = 2
 
--- [[ Required Shared Libraries ]]
-local commonFunctions = require('user_modules/shared_testcases/commonFunctions')
-local commonSteps = require('user_modules/shared_testcases/commonSteps')
-local mobile_session = require('mobile_session')
-local mobile  = require('mobile_connection')
-local tcp = require('tcp_connection')
-local file_connection  = require('file_connection')
-local events = require("events")
+--[[ Required Shared Libraries ]]
+local runner = require('user_modules/script_runner')
+local common = require('test_scripts/Smoke/commonSmoke')
 
---[[ General Settings for configuration ]]
-Test = require('user_modules/dummy_connecttest')
-require('cardinalities')
-require('user_modules/AppTypes')
+--[[ Test Configuration ]]
+runner.testSettings.isSelfIncluded = false
 
--- [[Local variables]]
-local devicePort = 12345
-
+--[[ Local Variables ]]
 local devices = {
-  "127.0.0.1",
-  "192.168.100.199",
-  "10.42.0.1",
-  "1.0.0.1",
-  "8.8.8.8"
+  [1] = "1.0.0.1",
+  [2] = "192.168.100.199",
+  [3] = "10.42.0.1",
+  [4] = "2.0.0.2",
+  [5] = "8.8.8.8"
 }
 
---[[ Preconditions ]]
-commonFunctions:newTestCasesGroup("Preconditions")
-commonSteps:DeletePolicyTable()
-commonSteps:DeleteLogsFiles()
-
-local function createConnectionAndRegisterApp(self, device, filename, app)
-  local tcpConnection = tcp.Connection(device, devicePort)
-  local fileConnection = file_connection.FileConnection(filename, tcpConnection)
-  self.mobileConnection = mobile.MobileConnection(fileConnection)
-  self.mobileSession = mobile_session.MobileSession(self, self.mobileConnection, app)
-  event_dispatcher:AddConnection(self.mobileConnection)
-  self.mobileSession:ExpectEvent(events.connectedEvent, "Connection started")
-  self.mobileConnection:Connect()
-  self.mobileSession:StartService(7):Do(function()
-    local correlationId = self.mobileSession:SendRPC("RegisterAppInterface", app)
-    EXPECT_HMINOTIFICATION("BasicCommunication.OnAppRegistered", {application = { appName = app.appName}})
-    self.mobileSession:ExpectResponse(correlationId , { success = true, resultCode = "SUCCESS"})
-    self.mobileSession:ExpectNotification("OnHMIStatus",{hmiLevel = "NONE",
-          audioStreamingState = "NOT_AUDIBLE", systemContext = "MAIN"}):Do(function()
-      commonFunctions:userPrint(35, "App is successfully registered")
+--[[ Local Variables ]]
+local function start()
+  local event = common.createEvent()
+  common.init.SDL()
+  :Do(function()
+      common.init.HMI()
+      :Do(function()
+          common.init.HMI_onReady()
+          :Do(function()
+              common.getHMIConnection():RaiseEvent(event, "Start event")
+            end)
+        end)
     end)
-  end)
+  return common.getHMIConnection():ExpectEvent(event, "Start event")
 end
 
-function Test.CreateDummyConections()
-  for i = 1, 4 do
-    os.execute("ifconfig lo:" .. i .." " .. devices[i + 1])
-  end
+local function getDeviceName(pDevice)
+  return pDevice .. ":" .. config.mobilePort
 end
 
-function Test:Start_SDL()
-  self:runSDL()
-  commonFunctions:waitForSDLStart(self):Do(function()
-    self:initHMI():Do(function()
-      commonFunctions:userPrint(35, "HMI initialized")
-      self:initHMI_onReady():Do(function()
-        commonFunctions:userPrint(35, "HMI is ready")
-      end)
+local function getDeviceMAC(pDevice)
+  return common.execCmd("echo -n " .. getDeviceName(pDevice) .. " | sha256sum | awk '{printf $1}'")
+end
+
+local function registerApp(pAppId)
+  common.createMobileSession(pAppId, nil, pAppId)
+  common.getMobileSession(pAppId):StartService(7)
+  :Do(function()
+      local corId = common.getMobileSession(pAppId):SendRPC("RegisterAppInterface", common.getConfigAppParams(pAppId))
+      common.getHMIConnection():ExpectNotification("BasicCommunication.OnAppRegistered",
+        { application = {
+          appName = common.getConfigAppParams(pAppId).appName,
+          appID = common.getHMIAppId(pAppId),
+          deviceInfo = {
+            name = getDeviceName(devices[pAppId]),
+            id = getDeviceMAC(devices[pAppId])
+          }
+        }
+      })
+      common.getMobileSession(pAppId):ExpectResponse(corId, { success = true, resultCode = "SUCCESS" })
+      :Do(function()
+          common.getMobileSession(pAppId):ExpectNotification("OnHMIStatus",
+            { hmiLevel = "NONE", audioStreamingState = "NOT_AUDIBLE", systemContext = "MAIN" })
+        end)
     end)
-  end)
 end
 
---[[ Test ]]
-commonFunctions:newTestCasesGroup("Test")
-
-for i = 1, 5 do
-  Test["CreateConnection_" .. i] = function(self)
-    local filename = "mobile" .. i .. ".out"
-    local app = config["application"..i].registerAppInterfaceParams
-    createConnectionAndRegisterApp(self, devices[i], filename, app)
-  end
-end
--- [[ Postconditions ]]
-commonFunctions:newTestCasesGroup("Postcondition")
-function Test.Stop_SDL()
-  StopSDL()
-end
-
-function Test.ShutDownDummyConnections()
-  for i = 1, 4 do
-    os.execute("ifconfig lo:" .. i .." down")
+local function preconditions()
+  common.preconditions()
+  for i = 1, #devices do
+    common.dummyConnection.add(i, devices[i])
   end
 end
 
-function Test.CleanTemporaryFiles()
-  for i = 1, 5 do
-    os.execute("rm -f " .. "mobile" .. i .. ".out")
+local function postconditions()
+  common.postconditions()
+  for i = 1, #devices do
+    common.dummyConnection.delete(i)
   end
 end
 
-return Test
+--[[ Scenario ]]
+runner.Title("Preconditions")
+runner.Step("Clean environment", preconditions)
+runner.Step("Start SDL, HMI, connect Mobile", start)
+
+runner.Title("Test")
+for i = 1, #devices do
+  runner.Step("Create connection " .. i, common.createConnection, { i, devices })
+  runner.Step("Register App " .. i, registerApp, { i })
+end
+
+runner.Title("Postconditions")
+runner.Step("Stop SDL", postconditions)

@@ -5,8 +5,6 @@
 config.defaultProtocolVersion = 2
 
 --[[ Required Shared libraries ]]
-local commonFunctions = require("user_modules/shared_testcases/commonFunctions")
-local commonPreconditions = require('user_modules/shared_testcases/commonPreconditions')
 local test = require("user_modules/dummy_connecttest")
 local utils = require('user_modules/utils')
 local json = require("modules/json")
@@ -52,7 +50,7 @@ function common.failTestCase(pMsg)
 end
 
 function common.readParameterFromSDLINI(pParamName)
-  return commonFunctions:read_parameter_from_smart_device_link_ini(pParamName)
+  return SDL.INI.get(pParamName)
 end
 
 function common.log(...)
@@ -66,20 +64,18 @@ function common.log(...)
 end
 
 --[[ Local Variables ]]
-local preloadedPT = common.readParameterFromSDLINI("PreloadedPT")
 local isPreloadedUpdated = false
 
 function common.postconditions()
   if SDL:CheckStatusSDL() == SDL.RUNNING then SDL:StopSDL() end
   common.restoreSDLIniParameters()
-  if isPreloadedUpdated == true then commonPreconditions:RestoreFile(preloadedPT) end
+  if isPreloadedUpdated == true then SDL.PreloadedPT.restore() end
 end
 
 function common.updatePreloadedPT()
   isPreloadedUpdated = true
-  commonPreconditions:BackupFile(preloadedPT)
-  local preloadedFile = config.pathToSDL .. preloadedPT
-  local pt = utils.jsonFileToTable(preloadedFile)
+  SDL.PreloadedPT.backup()
+  local pt = SDL.PreloadedPT.get()
   pt.policy_table.functional_groupings["DataConsent-2"].rpcs = json.null
   local additionalRPCs = {
     "SendLocation", "SubscribeVehicleData", "UnsubscribeVehicleData", "GetVehicleData", "UpdateTurnList",
@@ -95,7 +91,7 @@ function common.updatePreloadedPT()
   pt.policy_table.app_policies["0000001"].groups = { "Base-4", "NewTestCaseGroup" }
   pt.policy_table.app_policies["0000001"].keep_context = true
   pt.policy_table.app_policies["0000001"].steal_focus = true
-  utils.tableToJsonFile(pt, preloadedFile)
+  SDL.PreloadedPT.set(pt)
 end
 
 function common.createMobileSession(pAppId, pHBParams, pConId)
@@ -128,15 +124,12 @@ function common.registerApp(pAppId, pHBParams)
 end
 
 function common.getPathToFileInAppStorage(pFileName, pAppId)
-  if not pAppId then pAppId = 1 end
-  local filePath = commonPreconditions:GetPathToSDL() .. "storage/"
-    .. common.getConfigAppParams(pAppId).fullAppID .. "_" .. utils.getDeviceMAC() .. "/" .. pFileName
-  return filePath
+  return SDL.AppStorage.path() .. common.getConfigAppParams(pAppId).fullAppID .. "_"
+    .. utils.getDeviceMAC() .. "/" .. pFileName
 end
 
 function common.isFileExistInAppStorage(pFileName)
-  local filePath = commonPreconditions:GetPathToSDL() .. "storage/" .. pFileName
-  return utils.isFileExist(filePath)
+  return SDL.AppStorage.isFileExist(pFileName)
 end
 
 function common.unRegisterApp(pAppId)
@@ -309,7 +302,7 @@ common.init = {}
 
 function common.init.SDL()
   test:runSDL()
-  local ret = commonFunctions:waitForSDLStart(test)
+  local ret = SDL.WaitForSDLStart(test)
   ret:Do(function()
       utils.cprint(35, "SDL started")
     end)

@@ -1,9 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 -- Utils
 ---------------------------------------------------------------------------------------------------
---[[ General configuration parameters ]]
-config.mobileHost = "127.0.0.1"
-
 --[[ Required Shared libraries ]]
 local json = require("modules/json")
 local events = require('events')

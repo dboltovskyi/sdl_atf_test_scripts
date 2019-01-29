@@ -1,10 +1,10 @@
+local ATF = require('ATF')
 require('atf.util')
 local module = require('testbase')
 local mobile = require("mobile_connection")
 local tcp = require("tcp_connection")
 local file_connection = require("file_connection")
 local mobile_session = require("mobile_session")
-local websocket = require('websocket_connection')
 local hmi_connection = require('hmi_connection')
 local events = require("events")
 local expectations = require('expectations')
@@ -17,15 +17,16 @@ local commonTestCases = require('user_modules/shared_testcases/commonTestCases')
 local hmi_values = require("user_modules/hmi_values")
 local mob_schema = load_schema.mob_schema
 local hmi_schema = load_schema.hmi_schema
-
+local hmi_adapter_controller = require("hmi_adapter/hmi_adapter_controller")
 local Event = events.Event
 
 local Expectation = expectations.Expectation
 local SUCCESS = expectations.SUCCESS
 local FAILED = expectations.FAILED
 
-module.hmiConnection = hmi_connection.Connection(websocket.WebSocketConnection(config.hmiUrl, config.hmiPort))
-local tcpConnection = tcp.Connection(config.mobileHost, config.mobilePort)
+module.hmiConnection = hmi_connection.Connection(hmi_adapter_controller.getHmiAdapter({connection = ATF.remoteConnection}))
+
+local tcpConnection = tcp.Connection(SDL.GetHostURL(), config.mobilePort)
 local fileConnection = file_connection.FileConnection("mobile.out", tcpConnection)
 module.mobileConnection = mobile.MobileConnection(fileConnection)
 event_dispatcher:AddConnection(module.hmiConnection)

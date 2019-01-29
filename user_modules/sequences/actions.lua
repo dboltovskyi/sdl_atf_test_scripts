@@ -4,14 +4,12 @@
 --[[ Required Shared libraries ]]
 local mobileSession = require("mobile_session")
 local json = require("modules/json")
-local commonFunctions = require("user_modules/shared_testcases/commonFunctions")
-local commonPreconditions = require('user_modules/shared_testcases/commonPreconditions')
-local commonSteps = require("user_modules/shared_testcases/commonSteps")
 local events = require("events")
 local test = require("user_modules/dummy_connecttest")
 local expectations = require('expectations')
 local reporter = require("reporter")
 local utils = require("user_modules/utils")
+local SDL = require("SDL")
 
 --[[ Module ]]
 local m = {}
@@ -33,24 +31,10 @@ test.mobileSession = {}
 --! @return: table with PTU
 --]]
 local function getPTUFromPTS()
-  local pTbl = {}
-  local ptsFileName = commonFunctions:read_parameter_from_smart_device_link_ini("SystemFilesPath") .. "/"
-    .. commonFunctions:read_parameter_from_smart_device_link_ini("PathToSnapshot")
-  if utils.isFileExist(ptsFileName) then
-    pTbl = utils.jsonFileToTable(ptsFileName)
-  else
+  local pTbl = SDL.PTS.get()
+  if pTbl == nil then
     utils.cprint(35, "PTS file was not found, PreloadedPT is used instead")
-    local appConfigFolder = commonFunctions:read_parameter_from_smart_device_link_ini("AppConfigFolder")
-    if appConfigFolder == nil or appConfigFolder == "" then
-      appConfigFolder = commonPreconditions:GetPathToSDL()
-    end
-    local preloadedPT = commonFunctions:read_parameter_from_smart_device_link_ini("PreloadedPT")
-    local ptsFile = appConfigFolder .. preloadedPT
-    if utils.isFileExist(ptsFile) then
-      pTbl = utils.jsonFileToTable(ptsFile)
-    else
-      utils.cprint(35, "PreloadedPT was not found, PTS is not created")
-    end
+    pTbl = SDL.PreloadedPT.get()
   end
   if next(pTbl) ~= nil then
     pTbl.policy_table.consumer_friendly_messages.messages = nil
@@ -90,8 +74,7 @@ function m.policyTableUpdate(pPTUpdateFunc, pExpNotificationFunc)
   if pExpNotificationFunc then
     pExpNotificationFunc()
   end
-  local ptsFileName = commonFunctions:read_parameter_from_smart_device_link_ini("SystemFilesPath") .. "/"
-    .. commonFunctions:read_parameter_from_smart_device_link_ini("PathToSnapshot")
+  local ptsFileName = SDL.PTS.file()
   local ptuFileName = os.tmpname()
   local requestId = m.getHMIConnection():SendRequest("SDL.GetURLS", { service = 7 })
   m.getHMIConnection():ExpectResponse(requestId)
@@ -167,9 +150,11 @@ end
 --! @return: none
 --]]
 function m.preconditions()
-  commonFunctions:SDLForceStop()
-  commonSteps:DeletePolicyTable()
-  commonSteps:DeleteLogsFiles()
+  SDL.ForceStopSDL()
+  SDL.PolicyDB.clean()
+  SDL.PTS.clean()
+  SDL.Log.clean()
+  SDL.AppStorage.clean()
 end
 
 --[[ @activateApp: activate application
@@ -181,15 +166,7 @@ function m.activateApp(pAppId)
   if not pAppId then pAppId = 1 end
   local requestId = m.getHMIConnection():SendRequest("SDL.ActivateApp", { appID = m.getHMIAppId(pAppId) })
   m.getHMIConnection():ExpectResponse(requestId)
-  local params = m.getConfigAppParams(pAppId)
-  local audioStreamingState = "NOT_AUDIBLE"
-  if params.isMediaApplication or
-      commonFunctions:table_contains(params.appHMIType, "NAVIGATION") or
-      commonFunctions:table_contains(params.appHMIType, "COMMUNICATION") then
-    audioStreamingState = "AUDIBLE"
-  end
-  m.getMobileSession(pAppId):ExpectNotification("OnHMIStatus",
-    { hmiLevel = "FULL", audioStreamingState = audioStreamingState, systemContext = "MAIN" })
+  m.getMobileSession(pAppId):ExpectNotification("OnHMIStatus", { hmiLevel = "FULL", systemContext = "MAIN" })
   utils.wait()
 end
 
@@ -289,8 +266,9 @@ function m.start(pHMIParams)
   local event = events.Event()
   event.matches = function(e1, e2) return e1 == e2 end
   test:runSDL()
-  commonFunctions:waitForSDLStart(test)
+  SDL.WaitForSDLStart(test)
   :Do(function()
+      utils.cprint(35, "SDL started")
       test:initHMI()
       :Do(function()
           utils.cprint(35, "HMI initialized")
@@ -460,8 +438,8 @@ end
 --! @return: none
 --]]
 function m.setSDLIniParameter(pParamName, pParamValue)
-  originalValuesInSDLIni[pParamName] = commonFunctions:read_parameter_from_smart_device_link_ini(pParamName)
-  commonFunctions:write_parameter_to_smart_device_link_ini(pParamName, pParamValue)
+  originalValuesInSDLIni[pParamName] = SDL.INI.get(pParamName)
+  SDL.INI.set(pParamName, pParamValue)
 end
 
 --[[ @restoreSDLConfigParameters: restore original values of parameters in SDL .ini file
@@ -470,7 +448,7 @@ end
 --]]
 function m.restoreSDLIniParameters()
   for pParamName, pParamValue in pairs(originalValuesInSDLIni) do
-    commonFunctions:write_parameter_to_smart_device_link_ini(pParamName, pParamValue)
+    SDL.INI.set(pParamName, pParamValue)
   end
 end
 
@@ -499,7 +477,7 @@ end
 --]]
 function m.getPathToFileInStorage(pFileName, pAppId)
   if not pAppId then pAppId = 1 end
-  return commonPreconditions:GetPathToSDL() .. "storage/" .. m.getConfigAppParams( pAppId ).fullAppID .. "_"
+  return SDL.AppStorage.path() .. m.getConfigAppParams(pAppId).fullAppID .. "_"
     .. utils.getDeviceMAC() .. "/" .. pFileName
 end
 

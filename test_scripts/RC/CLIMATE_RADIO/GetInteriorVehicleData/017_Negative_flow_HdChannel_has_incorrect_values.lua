@@ -28,11 +28,7 @@ runner.testSettings.isSelfIncluded = false
 local hmiValues = hmi_values.getDefaultHMITable()
 hmiValues.RC.GetCapabilities.params.remoteControlCapability.radioControlCapabilities[1].availableHdChannelsAvailable = true
 
-local incorrectParams = {
-  {0, 1, 2, 3, 4, 5, 6, 7,8},
-  {-1},
-  "String"
-}
+local incorrectParams = {8, -1, "String"}
 
 --[[ Local Functions ]]
 function commonRC.getModuleControlData(module_type)
@@ -40,7 +36,7 @@ function commonRC.getModuleControlData(module_type)
 end
 
 local function MobileRequestSuccessfull(invParam)
-  commonRC.actualInteriorDataStateOnHMI.RADIO.radioControlData = {availableHdChannels = invParam}
+  commonRC.actualInteriorDataStateOnHMI.RADIO.radioControlData.hdChannel = invParam
   pMod = "RADIO"
   local cid = commonRC.getMobileSession():SendRPC("GetInteriorVehicleData", {moduleType = pMod})
 

@@ -39,11 +39,8 @@ function commonRC.getModuleControlData(module_type)
   return commonRC.actualInteriorDataStateOnHMI[module_type]
 end
 
-local function UpdateInteriorDataStateOnHMI (invParam)
+local function MobileRequestSuccessfull(invParam)
   commonRC.actualInteriorDataStateOnHMI.RADIO.radioControlData = {availableHdChannels = invParam}
-end
-
-local function MobileRequestSuccessfull()
   pMod = "RADIO"
   local cid = commonRC.getMobileSession():SendRPC("GetInteriorVehicleData", {moduleType = pMod})
 
@@ -64,8 +61,7 @@ runner.Step("Activate App", commonRC.activateApp)
 runner.Title("Test")
 
 for _, v in pairs(incorrectParams) do
-  runner.Step("UpdateInteriorDataStateOnHMI", UpdateInteriorDataStateOnHMI, {v})
-  runner.Step("GetInteriorVehicleData RADIO", MobileRequestSuccessfull)
+  runner.Step("GetInteriorVehicleData RADIO", MobileRequestSuccessfull, {v})
 end
 
 runner.Title("Postconditions")

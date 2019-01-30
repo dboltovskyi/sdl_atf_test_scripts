@@ -47,9 +47,9 @@ runner.Step("RAI", commonRC.registerAppWOPTU)
 runner.Step("Activate App", commonRC.activateApp)
 
 runner.Title("Test")
-for k, v in pairs(params) do
+for _, v in pairs(params) do
   runner.Step("updateActualInteriorDataStateOnHMI", updateActualInteriorDataStateOnHMI, { v })
-  runner.Step("SetInteriorVehicleData climateEnable " .. k, commonRC.rpcAllowed,
+  runner.Step("SetInteriorVehicleData climateEnable " .. tostring(v), commonRC.rpcAllowed,
     { "CLIMATE", 1, "SetInteriorVehicleData" })
 end
 

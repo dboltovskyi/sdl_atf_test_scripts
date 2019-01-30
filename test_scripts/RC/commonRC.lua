@@ -483,14 +483,6 @@ function commonRC.getAnotherModuleControlData(module_type)
   return out
 end
 
-function commonRC.getParamClimateEnableFalse()
-  local out = { moduleType = "CLIMATE" }
-    out.climateControlData = {
-      climateEnable = false
-    }
-    return out
-end
-
 function commonRC.getButtonNameByModule(pModuleType)
   return commonRC.buttons[string.lower(pModuleType)]
 end
@@ -816,15 +808,6 @@ function commonRC.isUnsubscribed(pModuleType, pAppId)
   commonTestCases:DelayedExp(commonRC.timeout)
 end
 
-function commonRC.isUnsubscribedModuleClimete(pAppId)
-  local mobSession = commonRC.getMobileSession(pAppId)
-  local rpc = "OnInteriorVehicleData"
-  commonRC.getHMIConnection():SendNotification(commonRC.getHMIEventName(rpc), commonRC.getParamClimateEnableFalse())
-  commonRC.setActualInteriorVD("CLIMETE", commonRC.getParamClimateEnableFalse())
-  mobSession:ExpectNotification(commonRC.getAppEventName(rpc), {}):Times(0)
-  commonTestCases:DelayedExp(commonRC.timeout)
-end
-
 function commonRC.defineRAMode(pAllowed, pAccessMode)
   local rpc = "OnRemoteControlSettings"
   commonRC.getHMIConnection():SendNotification(commonRC.getHMIEventName(rpc), commonRC.getHMIResponseParams(rpc, pAllowed, pAccessMode))
@@ -854,7 +837,7 @@ function commonRC.rpcAllowed(pModuleType, pAppId, pRPC)
   :Do(function(_, data)
       commonRC.getHMIConnection():SendResponse(data.id, data.method, "SUCCESS", commonRC.getHMIResponseParams(pRPC, pModuleType))
     end)
-  mobSession:ExpectResponse(cid, { success = true, resultCode = "SUCCESS" })
+  mobSession:ExpectResponse(cid, commonRC.getAppResponseParams(pRPC, true, "SUCCESS", pModuleType))
 end
 
 function commonRC.rpcAllowedWithConsent(pModuleType, pAppId, pRPC)

@@ -2,12 +2,11 @@
 -- Proposal: https://github.com/smartdevicelink/sdl_evolution/blob/master/proposals/0213-rc-radio-climate-parameter-update.md
 -- Description:
 -- Preconditions:
--- Mobile app is registered with SyncMsgVersion = 5.1
--- SDL got RC.GetCapabilities("climateEnableAvailable" = false) for CLIMATE module parameter from HMI
+-- 1) SDL got RC.GetCapabilities("climateEnableAvailable" = false) for CLIMATE module parameter from HMI
 -- In case:
 -- 1) Mobile app send SetInteriorVehicleData with parameter ("climateEnable" = false) to SDL
 -- SDL must:
--- 1) rejects with ("resultCode" = UNSUPPORTED_RESOURCE)
+-- 1) rejects with "resultCode" = UNSUPPORTED_RESOURCE
 -- 2) not send RC.SetInteriorVehicleData to HMI
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
@@ -23,27 +22,20 @@ commonRC.actualInteriorDataStateOnHMI.CLIMATE.climateControlData = {
   climateEnable = true
 }
 
---[[ Local Functions ]]
-local function updateDefaultHHMITable()
+--[[ Local Variables ]]
 local hmiValues = hmi_values.getDefaultHMITable()
-  for i, v in pairs(hmiValues.RC.GetCapabilities.params.remoteControlCapability.climateControlCapabilities) do
-    if v == hmiValues.RC.GetCapabilities.params.remoteControlCapability.climateControlCapabilities[i] then
-      hmiValues.RC.GetCapabilities.params.remoteControlCapability.climateControlCapabilities[i].climateEnableAvailable = false
-    end
-  end
-  return hmiValues
-end
+hmiValues.RC.GetCapabilities.params.remoteControlCapability.climateControlCapabilities[1].climateEnableAvailable = false
 
 --[[ Scenario ]]
 runner.Title("Preconditions")
 runner.Step("Clean environment", commonRC.preconditions)
-runner.Step("Start SDL, HMI, connect Mobile, start Session", commonRC.start, { updateDefaultHHMITable() })
+runner.Step("Start SDL, HMI, connect Mobile, start Session", commonRC.start, { hmiValues })
 runner.Step("RAI", commonRC.registerAppWOPTU)
 runner.Step("Activate App", commonRC.activateApp)
 
 runner.Title("Test")
 
-runner.Step("SetInteriorVehicleData UNSUPPORTED_RESOURCE in case climateEnable false", commonRC.rpcDenied,
+runner.Step("SetInteriorVehicleData UNSUPPORTED_RESOURCE in case climateEnableAvailable false", commonRC.rpcDenied,
   {"CLIMATE", 1, "SetInteriorVehicleData", "UNSUPPORTED_RESOURCE"})
 
 runner.Title("Postconditions")

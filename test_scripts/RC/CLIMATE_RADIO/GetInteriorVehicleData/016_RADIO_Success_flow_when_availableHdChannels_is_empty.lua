@@ -11,8 +11,9 @@
 -- 1) RC app sends valid and allowed by policies GetInteriorvehicleData_request
 -- 2) and SDL received GetInteriorVehicledata_response with successful result code and current module data from HMI
 -- SDL must:
--- 1) transfer GetInteriorVehicleData_response with provided from HMI current module data for allowed module ("RADIO") and control items:
---    new parameter - "availableHdChannels" and the old one - "hdChannel"
+-- 1) transfer GetInteriorVehicleData_response with provided from HMI current module data for allowed module ("RADIO")
+-- and control items:
+-- new parameter - "availableHdChannels" and the old one - "hdChannel"
 ---------------------------------------------------------------------------------------------------
 
 --[[ Required Shared libraries ]]

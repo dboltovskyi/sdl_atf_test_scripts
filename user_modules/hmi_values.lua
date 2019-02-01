@@ -351,7 +351,8 @@ function module.getDefaultHMITable()
                 heatedSteeringWheelAvailable = true,
                 heatedWindshieldAvailable = true,
                 heatedRearWindowAvailable = true,
-                heatedMirrorsAvailable = true
+                heatedMirrorsAvailable = true,
+                climateEnableAvailable = true
               }
             },
           radioControlCapabilities = {
@@ -362,7 +363,7 @@ function module.getDefaultHMITable()
                 radioFrequencyAvailable = true,
                 hdChannelAvailable = true,
                 rdsDataAvailable = true,
-                availableHDsAvailable = true,
+                availableHdChannelsAvailable = true,
                 stateAvailable = true,
                 signalStrengthAvailable = true,
                 signalChangeThresholdAvailable = true,

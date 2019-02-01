@@ -9,8 +9,11 @@ config.checkAllValidations = true
 config.application1.registerAppInterfaceParams.appHMIType = { "REMOTE_CONTROL" }
 config.application2.registerAppInterfaceParams.appHMIType = { "REMOTE_CONTROL" }
 config.application1.registerAppInterfaceParams.syncMsgVersion.majorVersion = 5
+config.application1.registerAppInterfaceParams.syncMsgVersion.minorVersion = 1
 config.application2.registerAppInterfaceParams.syncMsgVersion.majorVersion = 5
+config.application2.registerAppInterfaceParams.syncMsgVersion.minorVersion = 1
 config.application3.registerAppInterfaceParams.syncMsgVersion.majorVersion = 5
+config.application3.registerAppInterfaceParams.syncMsgVersion.minorVersion = 1
 
 --[[ Required Shared libraries ]]
 local test = require("user_modules/dummy_connecttest")
@@ -19,7 +22,6 @@ local commonTestCases = require("user_modules/shared_testcases/commonTestCases")
 local commonPreconditions = require('user_modules/shared_testcases/commonPreconditions')
 local json = require("modules/json")
 local hmi_values = require("user_modules/hmi_values")
-local events = require("events")
 local utils = require('user_modules/utils')
 local actions = require("user_modules/sequences/actions")
 
@@ -201,7 +203,6 @@ function commonRC.unregisterApp(pAppId)
   mobSession:ExpectResponse(cid, { success = true, resultCode = "SUCCESS"})
 end
 
-
 function commonRC.getModuleControlData(module_type)
   local out = { moduleType = module_type }
   if module_type == "CLIMATE" then
@@ -225,7 +226,8 @@ function commonRC.getModuleControlData(module_type)
       heatedSteeringWheelEnable = true,
       heatedWindshieldEnable = true,
       heatedRearWindowEnable = true,
-      heatedMirrorsEnable = true
+      heatedMirrorsEnable = true,
+      climateEnable = true
     }
   elseif module_type == "RADIO" then
     out.radioControlData = {
@@ -242,8 +244,8 @@ function commonRC.getModuleControlData(module_type)
         TA = true,
         REG = "US"
       },
-      availableHDs = 1,
-      hdChannel = 1,
+      availableHdChannels = {0, 1, 2, 3, 4, 5, 6, 7},
+      hdChannel = 7,
       signalStrength = 5,
       signalChangeThreshold = 10,
       radioEnable = true,
@@ -362,7 +364,8 @@ function commonRC.getAnotherModuleControlData(module_type)
       defrostZone = "ALL",
       dualModeEnable = true,
       acMaxEnable = false,
-      ventilationMode = "UPPER"
+      ventilationMode = "UPPER",
+      climateEnable = false
     }
   elseif module_type == "RADIO" then
     out.radioControlData = {
@@ -505,7 +508,7 @@ function commonRC.getReadOnlyParamsByModule(pModuleType)
         TA = true,
         REG = "US"
       },
-      availableHDs = 2,
+      availableHdChannels = {2, 3, 4},
       signalStrength = 4,
       signalChangeThreshold = 22,
       state = "MULTICAST",
@@ -783,6 +786,7 @@ end
 function commonRC.isSubscribed(pModuleType, pAppId)
   local mobSession = commonRC.getMobileSession(pAppId)
   local rpc = "OnInteriorVehicleData"
+
   commonRC.getHMIConnection():SendNotification(commonRC.getHMIEventName(rpc), commonRC.getHMIResponseParams(rpc, pModuleType))
   commonRC.setActualInteriorVD(pModuleType, commonRC.getHMIResponseParams(rpc, pModuleType).moduleData)
   mobSession:ExpectNotification(commonRC.getAppEventName(rpc), commonRC.getAppResponseParams(rpc, pModuleType))
@@ -833,7 +837,7 @@ function commonRC.rpcAllowed(pModuleType, pAppId, pRPC)
   :Do(function(_, data)
       commonRC.getHMIConnection():SendResponse(data.id, data.method, "SUCCESS", commonRC.getHMIResponseParams(pRPC, pModuleType))
     end)
-  mobSession:ExpectResponse(cid, { success = true, resultCode = "SUCCESS" })
+  mobSession:ExpectResponse(cid, commonRC.getAppResponseParams(pRPC, true, "SUCCESS", pModuleType))
 end
 
 function commonRC.rpcAllowedWithConsent(pModuleType, pAppId, pRPC)

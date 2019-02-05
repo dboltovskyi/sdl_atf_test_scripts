@@ -3,7 +3,6 @@
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
 local commonRC = require('test_scripts/RC/commonRC')
-local commonFunctions = require("user_modules/shared_testcases/commonFunctions")
 local utils = require("user_modules/utils")
 
 --[[ Common Variables ]]
@@ -12,11 +11,11 @@ commonRC.cloneTable = utils.cloneTable
 
 --[[ Common Functions ]]
 function commonRC.getModules()
-  return commonFunctions:cloneTable({ "RADIO", "CLIMATE" })
+  return { "RADIO", "CLIMATE" }
 end
 
 function commonRC.getAllModules()
-  return commonFunctions:cloneTable({ "RADIO", "CLIMATE", "SEAT", "AUDIO", "LIGHT", "HMI_SETTINGS" })
+  return { "RADIO", "CLIMATE", "SEAT", "AUDIO", "LIGHT", "HMI_SETTINGS" }
 end
 
 function commonRC.getModulesArray(pModules)

@@ -332,7 +332,8 @@ function module:initHMI()
           "BasicCommunication.OnSDLClose",
           "SDL.OnSDLConsentNeeded",
           "BasicCommunication.OnResumeAudioSource",
-          "BasicCommunication.OnSystemTimeReady"
+          "BasicCommunication.OnSystemTimeReady",
+          "BasicCommunication.OnServiceUpdate"
         })
       registerComponent("UI",
         {

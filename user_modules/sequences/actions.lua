@@ -112,16 +112,16 @@ function m.policyTableUpdate(pPTUpdateFunc, pExpNotificationFunc)
       for id = 1, m.getAppsCount() do
         m.getMobileSession(id):ExpectNotification("OnSystemRequest", { requestType = "PROPRIETARY" })
         :Do(function()
-            if not pExpNotificationFunc then
-               m.getHMIConnection():ExpectRequest("VehicleInfo.GetVehicleData", { odometer = true })
-               m.getHMIConnection():ExpectNotification("SDL.OnStatusUpdate", { status = "UP_TO_DATE" })
-            end
             utils.cprint(35, "App ".. id .. " was used for PTU")
             m.getHMIConnection():RaiseEvent(event, "PTU event")
             local corIdSystemRequest = m.getMobileSession(id):SendRPC("SystemRequest", {
               requestType = "PROPRIETARY" }, ptuFileName)
             m.getHMIConnection():ExpectRequest("BasicCommunication.SystemRequest")
             :Do(function(_, d3)
+                if not pExpNotificationFunc then
+                   m.getHMIConnection():ExpectRequest("VehicleInfo.GetVehicleData", { odometer = true })
+                   m.getHMIConnection():ExpectNotification("SDL.OnStatusUpdate", { status = "UP_TO_DATE" })
+                end
                 m.getHMIConnection():SendResponse(d3.id, "BasicCommunication.SystemRequest", "SUCCESS", { })
                 m.getHMIConnection():SendNotification("SDL.OnReceivedPolicyUpdate", { policyfile = d3.params.fileName })
               end)
@@ -179,8 +179,8 @@ function m.activateApp(pAppId)
   m.getHMIConnection():ExpectResponse(requestId)
   local params = m.getConfigAppParams(pAppId)
   local audioStreamingState = "NOT_AUDIBLE"
-  if params.isMediaApplication or 
-      commonFunctions:table_contains(params.appHMIType, "NAVIGATION") or 
+  if params.isMediaApplication or
+      commonFunctions:table_contains(params.appHMIType, "NAVIGATION") or
       commonFunctions:table_contains(params.appHMIType, "COMMUNICATION") then
     audioStreamingState = "AUDIBLE"
   end

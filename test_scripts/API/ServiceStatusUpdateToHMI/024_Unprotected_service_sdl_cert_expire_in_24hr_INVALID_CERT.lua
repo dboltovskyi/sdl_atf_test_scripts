@@ -2,15 +2,15 @@
 -- Proposal:
 -- https://github.com/smartdevicelink/sdl_evolution/blob/master/proposals/0211-ServiceStatusUpdateToHMI.md
 -- Description: The attempt to open the protected Video, Audio, RPC services with unsuccessful OnStatusUpdate
--- (REQUEST_REJECTED, INVALID_CERT) notification in case certification in DB after update is not valid and services are
--- force protected
+--  (REQUEST_REJECTED, INVALID_CERT) notification in case certification in DB after update is not valid and
+--  services are not force protected and not force unprotected.
 -- Precondition:
 -- 1) App is registered with NAVIGATION appHMIType and activated.
 -- In case:
--- 1) Mobile app requests StartService (Video, encryption = true)
+-- 1) Mobile app requests StartService (SERVICETYPE, encryption = true)
 -- SDL does:
 -- 1) send StartSream() to HMI
--- 2) send OnServiceUpdate (VIDEO, REQUEST_RECEIVED) to HMI
+-- 2) send OnServiceUpdate (SERVICETYPE, REQUEST_RECEIVED) to HMI
 -- 3) send GetSystemTime_Rq() and wait response from HMI GetSystemTime_Res()
 -- 4) send OnStatusUpdate(UPDATE_NEEDED)
 -- In case:

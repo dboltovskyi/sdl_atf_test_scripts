@@ -5,7 +5,8 @@
 --  OnStatusUpdate(REQUEST_REJECTED, INVALID_TIME) notification by receiving GetSystemTime response with error code
 --  from HMI and services are force protected
 -- Precondition:
--- 1) App is registered with NAVIGATION appHMIType and activated.
+-- 1) Audio and Video services should be force protected.
+-- 2) App is registered with NAVIGATION appHMIType and activated.
 -- In case:
 -- 1) Mobile app requests StartService (SERVICETYPE, encryption = true)
 -- SDL does:
@@ -14,8 +15,8 @@
 -- 3) send GetSystemTime_Rq() and wait response from HMI GetSystemTime_Res()
 -- In case: HMI send GetSystemTime_Rq(REJECTED) to SDL
 -- SDL does:
--- 1) send StartServiceNACK(Video) to mobile app
--- 2) send OnServiceUpdate (VIDEO, INVALID_TIME) to HMI
+-- 1) send StartServiceNACK(SERVIETYPE) to mobile app
+-- 2) send OnServiceUpdate (SERVICETYPE, INVALID_TIME) to HMI
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
 local runner = require('user_modules/script_runner')

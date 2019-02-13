@@ -7,7 +7,7 @@
 -- In case:
 -- 1) Mobile app requests StartSream (Audio, encryption = true)
 -- SDL does:
--- 1) send StartSream() to HMI
+-- 1) send StartAudioStream() to HMI
 -- 2) send OnServiceUpdate (AUDIO, REQUEST_RECEIVED) to HMI
 -- 3) send GetSystemTime_Rq() and wait response from HMI GetSystemTime_Res()
 -- 4) send OnStatusUpdate(UPDATE_NEEDED)

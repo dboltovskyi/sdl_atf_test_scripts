@@ -14,7 +14,7 @@
 -- In case:
 -- 2) Policy Table Update is Successful
 -- SDL does:
--- 1) send OnStatusUpdate(UP_TO_DATE) if Policy Table Update is successful
+-- 1) send OnStatusUpdate(UP_TO_DATE)
 -- 2) send OnServiceUpdate (VIDEO, REQUEST_ACCEPTED) to HMI
 -- 3) send StartServiceACK(Video, encryption = true) to mobile app
 ---------------------------------------------------------------------------------------------------

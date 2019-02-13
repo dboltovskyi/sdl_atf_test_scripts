@@ -3,7 +3,7 @@
 -- https://github.com/smartdevicelink/sdl_evolution/blob/master/proposals/0211-ServiceStatusUpdateToHMI.md
 -- Description: Opening of the not protected RPC service with succeeded OnStatusUpdate notifications
 -- Precondition:
--- 1) App is conected with NAVIGATION appHMIType
+-- 1) App is connected with NAVIGATION appHMIType
 -- In case:
 -- 1) Mobile app requests StartService (RPC, encryption = false)
 -- SDL does:

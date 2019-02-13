@@ -8,7 +8,7 @@
 -- In case:
 -- 1) Mobile app requests StartService (RPC, encryption = true)
 -- SDL does:
--- 1) send OnServiceUpdate (AUDIO, REQUEST_RECEIVED) to HMI
+-- 1) send OnServiceUpdate (RPC, REQUEST_RECEIVED) to HMI
 -- 2) send GetSystemTime_Rq() and wait response from HMI GetSystemTime_Res()
 -- 3) send OnStatusUpdate(UPDATE_NEEDED)
 -- In case:

@@ -7,15 +7,15 @@
 -- Precondition:
 -- 1) App is registered with NAVIGATION appHMIType and activated.
 -- In case:
--- 1) Mobile app requests StartService (Video encryption = true)
+-- 1) Mobile app requests StartService (SERVICETYPE, encryption = true)
 -- SDL does:
 -- 1) send StartSream() to HMI
--- 2) send OnServiceUpdate (VIDEO, REQUEST_RECEIVED) to HMI
+-- 2) send OnServiceUpdate (SERVICETYPE, REQUEST_RECEIVED) to HMI
 -- 3) send GetSystemTime_Rq() and wait response from HMI GetSystemTime_Res()
 -- In case: HMI not send GetSystemTime_Rq() to SDL
 -- SDL does:
--- 1) send StartServiceNACK(Video) to mobile app
--- 2) send OnServiceUpdate (VIDEO, REQUEST_REJECTED, INVALID_TIME) to HMI
+-- 1) send StartServiceNACK(SERVICETYPE) to mobile app
+-- 2) send OnServiceUpdate (SERVICETYPE, REQUEST_REJECTED, INVALID_TIME) to HMI
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
 local runner = require('user_modules/script_runner')

@@ -16,7 +16,7 @@
 -- In case:
 -- 2) Policy Table Update is Successful
 -- SDL does:
--- 1) send OnStatusUpdate(UP_TO_DATE) if Policy Table Update is successful
+-- 1) send OnStatusUpdate(UP_TO_DATE)
 -- In case:
 -- 3) Mobile app asks SDL to provide client cert
 -- SDL does:

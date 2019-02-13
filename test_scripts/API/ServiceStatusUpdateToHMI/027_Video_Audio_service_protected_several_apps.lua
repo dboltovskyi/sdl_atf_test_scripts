@@ -5,10 +5,10 @@
 -- 1) App_1 is registered with NAVIGATION appHMIType and activated.
 -- 2) App_2 is registered with NAVIGATION appHMIType.
 -- In case:
--- 1) Mobile app_1 requests StartService (ServiceType, encryption = true)
+-- 1) Mobile app_1 requests StartService (SERVICETYPE, encryption = true)
 -- SDL does:
 -- 1) send StartSream() to HMI
--- 2) send OnServiceUpdate (SERVICETYPE, REQUEST_RECEIVED) to HMI
+-- 2) send OnServiceUpdate (SERVICETYPE, REQUEST_RECEIVED, AppID_1) to HMI
 -- 3) send GetSystemTime_Rq() and wait response from HMI GetSystemTime_Res()
 -- 4) send OnStatusUpdate(UPDATE_NEEDED)
 -- In case:
@@ -17,17 +17,17 @@
 -- 1) send OnStatusUpdate(UP_TO_DATE) if Policy Table Update is successful
 -- 2) send BC.DecryptCertificate_Rq() and wait response from HMI BC.DecryptCertificate_Rq()(only in EXTERNAL_PROPRIETARY
 --    flow)
--- 3) send OnServiceUpdate (SERVICETYPE, REQUEST_ACCEPTED) to HMI
--- 4) send StartServiceACK(ServiceType, encryption = true) to mobile app_1
+-- 3) send OnServiceUpdate (SERVICETYPE, REQUEST_ACCEPTED, AppID_1) to HMI
+-- 4) send StartServiceACK(SERVICETYPE, encryption = true) to mobile app_1
 -- In case:
--- 4) App_2 activated and requests StartService (Video, encryption = true)
+-- 3) App_2 activated and requests StartService (Video, encryption = true)
 -- SDL does:
 -- 1) send StartSream() to HMI
 -- 2) send OnServiceUpdate (SERVICETYPE, REQUEST_RECEIVED, AppID_2) to HMI
 -- 3) send GetSystemTime_Rq() and wait response from HMI GetSystemTime_Res()
 -- 4) send OnStatusUpdate(UP_TO_DATE) if Policy Table Update is successful
 -- 5) send OnServiceUpdate (SERVICETYPE, REQUEST_ACCEPTED, AppID_2) to HMI
--- 6) send StartServiceACK (ServiceType, encryption = true) to mobile app_2
+-- 6) send StartServiceACK (SERVICETYPE, encryption = true) to mobile app_2
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
 local runner = require('user_modules/script_runner')

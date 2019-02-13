@@ -76,12 +76,12 @@ function m.ptUpdate(pTbl)
 end
 
 local preconditionsOrig = common.preconditions
-function m.preconditions(pForceProtectedServices, pForceUnprotectedServices)
+function m.preconditions(pForceProtectedServices)
   preconditionsOrig()
   if not pForceProtectedServices then pForceProtectedServices = "Non" end
-  if not pForceUnprotectedServices then pForceUnprotectedServices = "Non" end
+  local ForceUnprotectedService = "Non"
   m.setSDLIniParameter("ForceProtectedService", pForceProtectedServices)
-  m.setSDLIniParameter("ForceUnprotectedService", pForceUnprotectedServices)
+  m.setSDLIniParameter("ForceUnprotectedService", ForceUnprotectedService)
 end
 
 local postconditionsOrig = common.postconditions

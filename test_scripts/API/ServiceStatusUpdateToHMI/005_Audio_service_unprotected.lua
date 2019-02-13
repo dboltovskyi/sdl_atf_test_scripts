@@ -7,7 +7,7 @@
 -- In case:
 -- 1) Mobile app requests StartService (Audio, encryption = false)
 -- SDL does:
--- 1) send StartSream() to HMI
+-- 1) send StartAudioStream() to HMI
 -- 2) send OnServiceUpdate (AUDIO, REQUEST_RECEIVED) to HMI
 -- 3) send StartServiceACK(Audio, encryption = false) to mobile app
 -- 3) send OnServiceUpdate (AUDIO, REQUEST_ACCEPTED) to HMI

@@ -10,7 +10,7 @@
 -- 1) Mobile app requests StartService (Video, encryption = true)
 -- SDL does:
 -- 1) send StartSream() to HMI
--- 2) send OnServiceUpdate (VIDEO, REQUEST_RECEIVED) to HMI
+-- 2) send OnServiceUpdate (SERVICETYPE, REQUEST_RECEIVED) to HMI
 -- 3) send GetSystemTime_Rq() and wait response from HMI GetSystemTime_Res()
 -- 4) send OnStatusUpdate(UPDATE_NEEDED)
 -- In case:

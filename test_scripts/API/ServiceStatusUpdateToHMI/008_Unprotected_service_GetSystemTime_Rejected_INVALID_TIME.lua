@@ -3,9 +3,10 @@
 -- https://github.com/smartdevicelink/sdl_evolution/blob/master/proposals/0211-ServiceStatusUpdateToHMI.md
 -- Description: The attempt to open the protected Video, Audio, RPC services with unsuccessful
 --  OnStatusUpdate(REQUEST_REJECTED, INVALID_TIME) notification by receiving GetSystemTime response with error code
---  from HMI and services are not force protected and not force unprotected
+--  from HMI
 -- Precondition:
--- 1) App is registered with NAVIGATION appHMIType and activated.
+-- 1) Audio and Video services are not force protected and not force unprotected
+-- 2) App is registered with NAVIGATION appHMIType and activated.
 -- In case:
 -- 1) Mobile app requests StartService (Video, encryption = true)
 -- SDL does:

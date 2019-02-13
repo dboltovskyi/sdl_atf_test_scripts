@@ -19,7 +19,7 @@
 -- 1) send OnStatusUpdate(UP_TO_DATE) if Policy Table Update is successful
 -- 2) send BC.DecryptCertificate_Rq() and wait response from HMI BC.DecryptCertificate_Rq()
 -- In case:
--- 3) Determines that cert is invalid
+-- 3) Certificate in DB is valid, but HMI responds with error result code to DecryptCertificate_Rq
 -- SDL does:
 -- 1) send OnServiceUpdate (SERVICETYPE, INVALID_CERT) to HMI
 -- 2) send StartServiceNACK (SERVICETYPE, encryption = false) to mobile app

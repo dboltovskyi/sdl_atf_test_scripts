@@ -7,10 +7,10 @@
 -- Precondition:
 -- 1) App is registered with NAVIGATION appHMIType and activated.
 -- In case:
--- 1) Mobile app requests StartService (Video, encryption = false)
+-- 1) Mobile app requests StartService (SERVICETYPE, encryption = false)
 -- SDL does:
 -- 1) send StartSream() to HMI
--- 2) send OnServiceUpdate (VIDEO, REQUEST_RECEIVED) to HMI
+-- 2) send OnServiceUpdate (SERVICETYPE, REQUEST_RECEIVED) to HMI
 -- 3) send GetSystemTime_Rq() and wait response from HMI GetSystemTime_Res()
 -- 4) send OnStatusUpdate(UPDATE_NEEDED)
 -- In case:
@@ -19,7 +19,7 @@
 -- 1) send OnStatusUpdate(UP_TO_DATE) if Policy Table Update is successful
 -- 2) send BC.DecryptCertificate_Rq() and wait response from HMI BC.DecryptCertificate_Rq()
 -- In case:
--- 3) Determines that cert is invalid
+-- 3) Certificate in DB is valid, but HMI responds with error result code to DecryptCertificate_Rq
 -- SDL does:
 -- 1) send OnServiceUpdate (RPC, INVALID_CERT) to HMI (for RPC ServiceType)
 -- 2) send StartServiceNACK (RPC, encryption = false) to mobile app

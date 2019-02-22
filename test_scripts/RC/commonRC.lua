@@ -2,7 +2,6 @@
 -- RC common module
 ---------------------------------------------------------------------------------------------------
 --[[ General configuration parameters ]]
-config.mobileHost = "127.0.0.1"
 config.defaultProtocolVersion = 2
 config.ValidateSchema = false
 config.checkAllValidations = true
@@ -14,14 +13,12 @@ config.application3.registerAppInterfaceParams.syncMsgVersion.majorVersion = 5
 
 --[[ Required Shared libraries ]]
 local test = require("user_modules/dummy_connecttest")
-local commonFunctions = require("user_modules/shared_testcases/commonFunctions")
-local commonTestCases = require("user_modules/shared_testcases/commonTestCases")
-local commonPreconditions = require('user_modules/shared_testcases/commonPreconditions')
 local json = require("modules/json")
 local hmi_values = require("user_modules/hmi_values")
 local events = require("events")
 local utils = require('user_modules/utils')
 local actions = require("user_modules/sequences/actions")
+local SDL = require('modules/SDL')
 
 --[[ Common Variables ]]
 
@@ -41,6 +38,10 @@ commonRC.jsonFileToTable = utils.jsonFileToTable
 commonRC.tableToJsonFile = utils.tableToJsonFile
 commonRC.cloneTable = utils.cloneTable
 commonRC.wait = utils.wait
+commonRC.cprint = utils.cprint
+commonRC.start = actions.start
+
+commonRC.json = json
 
 commonRC.modules = { "RADIO", "CLIMATE" }
 commonRC.allModules = { "RADIO", "CLIMATE", "SEAT", "AUDIO", "LIGHT", "HMI_SETTINGS" }
@@ -130,36 +131,9 @@ local function allowSDL()
   })
 end
 
-function commonRC.start(pHMIParams)
-  test:runSDL()
-  commonFunctions:waitForSDLStart(test)
-  :Do(function()
-      test:initHMI(test)
-      :Do(function()
-          commonFunctions:userPrint(35, "HMI initialized")
-          test:initHMI_onReady(pHMIParams)
-          :Do(function()
-              commonFunctions:userPrint(35, "HMI is ready")
-              test:connectMobile()
-              :Do(function()
-                  commonFunctions:userPrint(35, "Mobile connected")
-                  allowSDL()
-                end)
-            end)
-        end)
-    end)
-end
-
-local function backupPreloadedPT()
-  local preloadedFile = commonFunctions:read_parameter_from_smart_device_link_ini("PreloadedPT")
-  commonPreconditions:BackupFile(preloadedFile)
-end
-
 local function updatePreloadedPT(pCountOfRCApps)
   if not pCountOfRCApps then pCountOfRCApps = 2 end
-  local preloadedFile = commonPreconditions:GetPathToSDL()
-  .. commonFunctions:read_parameter_from_smart_device_link_ini("PreloadedPT")
-  local preloadedTable = commonRC.jsonFileToTable(preloadedFile)
+  local preloadedTable = SDL.PreloadedPT.get()
   preloadedTable.policy_table.functional_groupings["DataConsent-2"].rpcs = json.null
   preloadedTable.policy_table.functional_groupings["RemoteControl"].rpcs.OnRCStatus = {
     hmi_levels = { "FULL", "BACKGROUND", "LIMITED", "NONE" }
@@ -169,26 +143,21 @@ local function updatePreloadedPT(pCountOfRCApps)
     preloadedTable.policy_table.app_policies[appId] = commonRC.getRCAppConfig(preloadedTable)
     preloadedTable.policy_table.app_policies[appId].AppHMIType = nil
   end
-  commonRC.tableToJsonFile(preloadedTable, preloadedFile)
+  SDL.PreloadedPT.set(preloadedTable)
 end
 
 function commonRC.preconditions(isPreloadedUpdate, pCountOfRCApps)
   if isPreloadedUpdate == nil then isPreloadedUpdate = true end
   actions.preconditions()
   if isPreloadedUpdate == true then
-    backupPreloadedPT()
+    SDL.PreloadedPT.backup()
     updatePreloadedPT(pCountOfRCApps)
   end
 end
 
-local function restorePreloadedPT()
-  local preloadedFile = commonFunctions:read_parameter_from_smart_device_link_ini("PreloadedPT")
-  commonPreconditions:RestoreFile(preloadedFile)
-end
-
 function commonRC.postconditions()
   actions.postconditions()
-  restorePreloadedPT()
+  SDL.PreloadedPT.restore()
 end
 
 function commonRC.unregisterApp(pAppId)
@@ -801,13 +770,13 @@ function commonRC.isUnsubscribed(pModuleType, pAppId)
   commonRC.getHMIConnection():SendNotification(commonRC.getHMIEventName(rpc), commonRC.getHMIResponseParams(rpc, pModuleType))
   commonRC.setActualInteriorVD(pModuleType, commonRC.getHMIResponseParams(rpc, pModuleType).moduleData)
   mobSession:ExpectNotification(commonRC.getAppEventName(rpc), {}):Times(0)
-  commonTestCases:DelayedExp(commonRC.timeout)
+  utils.wait(commonRC.timeout)
 end
 
 function commonRC.defineRAMode(pAllowed, pAccessMode)
   local rpc = "OnRemoteControlSettings"
   commonRC.getHMIConnection():SendNotification(commonRC.getHMIEventName(rpc), commonRC.getHMIResponseParams(rpc, pAllowed, pAccessMode))
-  commonTestCases:DelayedExp(commonRC.minTimeout) -- workaround due to issue with SDL -> redundant OnHMIStatus notification is sent
+  utils.wait(commonRC.minTimeout) -- workaround due to issue with SDL -> redundant OnHMIStatus notification is sent
 end
 
 function commonRC.rpcDenied(pModuleType, pAppId, pRPC, pResultCode)
@@ -815,7 +784,7 @@ function commonRC.rpcDenied(pModuleType, pAppId, pRPC, pResultCode)
   local cid = mobSession:SendRPC(commonRC.getAppEventName(pRPC), commonRC.getAppRequestParams(pRPC, pModuleType))
   EXPECT_HMICALL(commonRC.getHMIEventName(pRPC), {}):Times(0)
   mobSession:ExpectResponse(cid, { success = false, resultCode = pResultCode })
-  commonTestCases:DelayedExp(commonRC.timeout)
+  utils.wait(commonRC.timeout)
 end
 
 function commonRC.rpcDeniedWithCustomParams(pParams, pAppId, pRPC, pResultCode)
@@ -823,7 +792,7 @@ function commonRC.rpcDeniedWithCustomParams(pParams, pAppId, pRPC, pResultCode)
   local cid = mobSession:SendRPC(commonRC.getAppEventName(pRPC), pParams)
   EXPECT_HMICALL(commonRC.getHMIEventName(pRPC), {}):Times(0)
   mobSession:ExpectResponse(cid, { success = false, resultCode = pResultCode })
-  commonTestCases:DelayedExp(commonRC.timeout)
+  utils.wait(commonRC.timeout)
 end
 
 function commonRC.rpcAllowed(pModuleType, pAppId, pRPC)
@@ -862,7 +831,7 @@ function commonRC.rpcRejectWithConsent(pModuleType, pAppId, pRPC)
       EXPECT_HMICALL(commonRC.getHMIEventName(pRPC)):Times(0)
     end)
   mobSession:ExpectResponse(cid, { success = false, resultCode = "REJECTED", info = info })
-  commonTestCases:DelayedExp(commonRC.timeout)
+  utils.wait(commonRC.timeout)
 end
 
 function commonRC.rpcRejectWithoutConsent(pModuleType, pAppId, pRPC)
@@ -871,7 +840,7 @@ function commonRC.rpcRejectWithoutConsent(pModuleType, pAppId, pRPC)
   EXPECT_HMICALL(commonRC.getHMIEventName("GetInteriorVehicleDataConsent")):Times(0)
   EXPECT_HMICALL(commonRC.getHMIEventName(pRPC)):Times(0)
   mobSession:ExpectResponse(cid, { success = false, resultCode = "REJECTED" })
-  commonTestCases:DelayedExp(commonRC.timeout)
+  utils.wait(commonRC.timeout)
 end
 
 function commonRC.rpcButtonPress(pParams, pAppId)
@@ -887,6 +856,8 @@ end
 function commonRC.buildButtonCapability(name, shortPressAvailable, longPressAvailable, upDownAvailable)
   return hmi_values.createButtonCapability(name, shortPressAvailable, longPressAvailable, upDownAvailable)
 end
+
+commonRC.getDefaultHMITable = hmi_values.getDefaultHMITable
 
 function commonRC.buildHmiRcCapabilities(pCapabilities)
   local hmiParams = hmi_values.getDefaultHMITable()
@@ -905,13 +876,11 @@ function commonRC.buildHmiRcCapabilities(pCapabilities)
 end
 
 function commonRC.backupHMICapabilities()
-  local hmiCapabilitiesFile = commonFunctions:read_parameter_from_smart_device_link_ini("HMICapabilities")
-  commonPreconditions:BackupFile(hmiCapabilitiesFile)
+  SDL.HMICap.backup()
 end
 
 function commonRC.restoreHMICapabilities()
-  local hmiCapabilitiesFile = commonFunctions:read_parameter_from_smart_device_link_ini("HMICapabilities")
-  commonPreconditions:RestoreFile(hmiCapabilitiesFile)
+  SDL.HMICap.restore()
 end
 
 function commonRC.getButtonIdByName(pArray, pButtonName)
@@ -946,16 +915,14 @@ function commonRC.activateApp(pAppId)
 end
 
 function commonRC.updateDefaultCapabilities(pDisabledModuleTypes)
-  local hmiCapabilitiesFile = commonPreconditions:GetPathToSDL()
-  .. commonFunctions:read_parameter_from_smart_device_link_ini("HMICapabilities")
-  local hmiCapTbl = commonRC.jsonFileToTable(hmiCapabilitiesFile)
+  local hmiCapTbl = SDL.HMICap.get()
   local rcCapTbl = hmiCapTbl.UI.systemCapabilities.remoteControlCapability
   for _, pDisabledModuleType in pairs(pDisabledModuleTypes) do
     local buttonId = commonRC.getButtonIdByName(rcCapTbl.buttonCapabilities, commonRC.getButtonNameByModule(pDisabledModuleType))
     table.remove(rcCapTbl.buttonCapabilities, buttonId)
     rcCapTbl[string.lower(pDisabledModuleType) .. "ControlCapabilities"] = nil
   end
-  commonRC.tableToJsonFile(hmiCapTbl, hmiCapabilitiesFile)
+  SDL.HMICap.set(hmiCapTbl)
 end
 
 commonRC.getHMIAppIds =  actions.getHMIAppIds
@@ -991,7 +958,7 @@ function commonRC.setActualInteriorVD(pModuleType, pParams)
         commonRC.actualInteriorDataStateOnHMI[pModuleType][moduleParams][key] = value
       end
     else
-      if false == commonFunctions:is_table_equal(value, commonRC.actualInteriorDataStateOnHMI[pModuleType][moduleParams][key]) then
+      if false == utils.isTableEqual(value, commonRC.actualInteriorDataStateOnHMI[pModuleType][moduleParams][key]) then
         commonRC.actualInteriorDataStateOnHMI[pModuleType][moduleParams][key] = value
       end
     end

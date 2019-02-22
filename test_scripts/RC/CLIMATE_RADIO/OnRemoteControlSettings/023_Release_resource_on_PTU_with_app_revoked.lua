@@ -16,14 +16,13 @@
 --[[ Required Shared libraries ]]
 local runner = require('user_modules/script_runner')
 local commonRC = require('test_scripts/RC/commonRC')
-local json = require("modules/json")
 
 --[[ Test Configuration ]]
 runner.testSettings.isSelfIncluded = false
 
 --[[ Local Functions ]]
 local function PTUfunc(tbl)
-  tbl.policy_table.app_policies[config.application1.registerAppInterfaceParams.fullAppID] = json.null
+  tbl.policy_table.app_policies[config.application1.registerAppInterfaceParams.fullAppID] = commonRC.json.null
   tbl.policy_table.app_policies[config.application2.registerAppInterfaceParams.fullAppID] = commonRC.getRCAppConfig()
 end
 

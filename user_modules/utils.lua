@@ -72,6 +72,68 @@ function m.cloneTable(pTbl)
   return copy
 end
 
+--[[ @isTableEqual: check tables equality
+--! @parameters:
+--! table1 - first table
+--! table2 - second table
+--! @return: true if tables are equal
+--]]
+function m.isTableEqual(table1, table2)
+
+  local function TableSize(T)
+    local count = 0
+    for _ in pairs(T) do count = count + 1 end
+    return count
+  end
+
+  -- compare value types
+  local type1 = type(table1)
+  local type2 = type(table2)
+  if type1 ~= type2 then return false end
+  if type1 ~= 'table' and type2 ~= 'table' then return table1 == table2 end
+  local size_tab1 = TableSize(table1)
+  local size_tab2 = TableSize(table2)
+  if size_tab1 ~= size_tab2 then return false end
+
+  --compare arrays
+  if json.isArray(table1) and json.isArray(table2) then
+    local found_element
+    local copy_table2 = m.cloneTable(table2)
+    for i, _  in pairs(table1) do
+      found_element = false
+      for j, _ in pairs(copy_table2) do
+        if m.isTableEqual(table1[i], copy_table2[j]) then
+          copy_table2[j] = nil
+          found_element = true
+          break
+        end
+      end
+      if found_element == false then
+        break
+      end
+    end
+    if TableSize(copy_table2) == 0 then
+      return true
+    else
+      return false
+    end
+  end
+
+  -- compare tables by elements
+  local already_compared = {} --optimization
+  for _,v1 in pairs(table1) do
+    for k2,v2 in pairs(table2) do
+      if not already_compared[k2] and m.isTableEqual(v1,v2) then
+        already_compared[k2] = true
+      end
+    end
+  end
+  if size_tab2 ~= TableSize(already_compared) then
+    return false
+  end
+  return true
+end
+
 --[[ @wait: delay test step for specific timeout
 --! @parameters:
 --! pTimeOut - time to wait in ms

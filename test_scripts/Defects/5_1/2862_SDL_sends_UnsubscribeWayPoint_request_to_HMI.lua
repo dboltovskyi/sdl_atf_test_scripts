@@ -2,7 +2,7 @@
 -- User story: https://github.com/smartdevicelink/sdl_core/issues/2862
 -- Description:
 -- SDL sends UnsubscribeWayPoint request to HMI for App1 when App2 is still subscribed to the WayPoint
---  Precondition: 
+--  Precondition:
 -- 1) SDL and HMI are started
 -- 2) App1 and App2 are registered
 -- 3) App1 and App2 are subscribed to SubscribeWayPoint
@@ -18,6 +18,7 @@
 --[[ Required Shared libraries ]]
 local runner = require('user_modules/script_runner')
 local common = require('test_scripts/AppServices/commonAppServices')
+local utils = require("user_modules/utils")
 
 --[[ Test Configuration ]]
 runner.testSettings.isSelfIncluded = false
@@ -41,6 +42,9 @@ unsubscribeRPC = {
 
 --[[ Local functions ]]
 local function PTUfunc(tbl)
+  tbl.policy_table.functional_groupings.WayPoints.rpcs.OnWayPointChange = {
+    hmi_levels = { "BACKGROUND", "LIMITED", "FULL" }
+  }
   pt_entry = common.getAppDataForPTU(1)
   pt_entry.groups = { "Base-4" , "WayPoints" }
   tbl.policy_table.app_policies[common.getConfigAppParams(1).fullAppID] = pt_entry
@@ -57,9 +61,9 @@ local function SubscribeWayPoints(app_id)
   if #sub_list == 0 then
     --Expect HMI call for the first app which sends a SubscribeWayPoints request
     EXPECT_HMICALL(subscribeRPC.hmi_name, nil):Do(function(_, data)
-      common.getHMIConnection():SendResponse(data.id, data.method, "SUCCESS", {})    
+      common.getHMIConnection():SendResponse(data.id, data.method, "SUCCESS", {})
     end)
-  end 
+  end
 
   table.insert(sub_list, app_id)
   mobileSession:ExpectResponse(cid, subscribeRPC.result)
@@ -73,29 +77,65 @@ local function UnsubscribeWayPoints(app_id)
   if #sub_list == 1 then
     --Expect HMI call for the last app which sends a UnsubscribeWayPoints request
     EXPECT_HMICALL(unsubscribeRPC.hmi_name, nil):Do(function(_, data)
-      common.getHMIConnection():SendResponse(data.id, data.method, "SUCCESS", {})    
+      common.getHMIConnection():SendResponse(data.id, data.method, "SUCCESS", {})
     end)
-  end 
-  
+  end
+
   table.remove(sub_list)
   mobileSession:ExpectResponse(cid, unsubscribeRPC.result)
+  mobileSession:ExpectNotification("OnHashChange")
+
+  utils.wait(2000)
+end
+
+local notifParams = {
+  wayPoints =
+  {
+    {
+      coordinate = {
+        latitudeDegrees = -90,
+        longitudeDegrees = -180
+       }
+    }
+  }
+}
+
+local function onWayPointChange_1_2()
+  common.getHMIConnection():SendNotification("Navigation.OnWayPointChange", notifParams)
+  common.getMobileSession(1):ExpectNotification("OnWayPointChange", notifParams)
+  common.getMobileSession(2):ExpectNotification("OnWayPointChange", notifParams)
+end
+
+local function onWayPointChange_2()
+  common.getHMIConnection():SendNotification("Navigation.OnWayPointChange", notifParams)
+  common.getMobileSession(1):ExpectNotification("OnWayPointChange"):Times(0)
+  common.getMobileSession(2):ExpectNotification("OnWayPointChange", notifParams)
+end
+
+local function onWayPointChange_0()
+  common.getHMIConnection():SendNotification("Navigation.OnWayPointChange", notifParams)
+  common.getMobileSession(1):ExpectNotification("OnWayPointChange"):Times(0)
+  common.getMobileSession(2):ExpectNotification("OnWayPointChange"):Times(0)
 end
 
 --[[ Scenario ]]
 runner.Title("Preconditions")
 runner.Step("Clean environment", common.preconditions)
-runner.Step("Start SDL, HMI, connect Mobile, start Session", common.start)    
+runner.Step("Start SDL, HMI, connect Mobile, start Session", common.start)
 runner.Step("RAI App 1", common.registerApp)
 runner.Step("PTU", common.policyTableUpdate, { PTUfunc })
 runner.Step("Activate App", common.activateApp, { 1 })
-runner.Step("SubscribeWayPoints App 1", SubscribeWayPoints, { 1 })   
+runner.Step("SubscribeWayPoints App 1", SubscribeWayPoints, { 1 })
 runner.Step("RAI App 2", common.registerAppWOPTU, { 2 })
-runner.Step("Activate App", common.activateApp, { 2 })   
-runner.Step("SubscribeWayPoints App 2", SubscribeWayPoints, { 2 })   
+runner.Step("Activate App", common.activateApp, { 2 })
+runner.Step("SubscribeWayPoints App 2", SubscribeWayPoints, { 2 })
 
-runner.Title("Test")       
+runner.Title("Test")
+runner.Step("OnWayPointChange App 1 & 2", onWayPointChange_1_2)
 runner.Step("UnSubscribeWayPoints App 1", UnsubscribeWayPoints, { 1 })
-runner.Step("UnSubscribeWayPoints App 2", UnsubscribeWayPoints, { 2 })   
+runner.Step("OnWayPointChange App 2 only", onWayPointChange_2)
+runner.Step("UnSubscribeWayPoints App 2", UnsubscribeWayPoints, { 2 })
+runner.Step("OnWayPointChange no app", onWayPointChange_0)
 
 runner.Title("Postconditions")
 runner.Step("Stop SDL", common.postconditions)

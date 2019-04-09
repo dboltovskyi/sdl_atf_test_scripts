@@ -1,0 +1,101 @@
+---------------------------------------------------------------------------------------------------
+--  Precondition:
+--  1) app1 and app2 are registered on SDL.
+--  2) AppServiceProvider permissions(with NAVIGATION AppService permissions to handle rpc SendLocation) are assigned for <app1ID>
+--  3) SendLocation permissions are assigned for <app2ID>
+--  4) app1 sends a PublishAppService (with {serviceType=NAVIGATION, handledRPC=SendLocation} in the manifest)
+--
+--  Steps:
+--  1) app2 sends a SendLocation request to core
+--
+--  Expected:
+--  1) Core forwards the request to app1
+--  2) app1 responds to core with { success = true, resultCode = "SUCCESS", info = "Request was handled by app services" }
+--  3) Core forwards the response from app1 to app2
+---------------------------------------------------------------------------------------------------
+--[[ Required Shared libraries ]]
+local runner = require('user_modules/script_runner')
+local common = require('test_scripts/AppServices/commonAppServices')
+
+--[[ Test Configuration ]]
+runner.testSettings.isSelfIncluded = false
+common.getConfigAppParams(2).appHMIType = { "REMOTE_CONTROL" }
+
+--[[ Local variables ]]
+local moduleType = "AUDIO"
+local buttons = { "OK", "SEEKLEFT", "SEEKRIGHT", "TUNEUP", "TUNEDOWN", "SHUFFLE", "REPEAT"}
+
+local manifest = {
+  serviceName = common.getConfigAppParams(1).appName,
+  serviceType = "MEDIA",
+  handledRPCs = { 41 },
+  allowAppConsumers = true,
+  rpcSpecVersion = common.getConfigAppParams(1).syncMsgVersion,
+  mediaServiceManifest = {}
+}
+
+local successResponse = {
+  success = true,
+  resultCode = "SUCCESS",
+  info = "Request was handled by app services"
+}
+
+local rpcRequest = {
+  name = "ButtonPress",
+  hmi_name = "Buttons.ButtonPress",
+  params = {
+    buttonPressMode = "SHORT"
+  }
+}
+
+local rpcResponse = {
+  params = successResponse
+}
+
+--[[ Local functions ]]
+local function PTUfunc(tbl)
+  --Add permissions for app1
+  local pt_entry = common.getAppServiceProducerConfig(1)
+  pt_entry.app_services.MEDIA = { handled_rpcs = {{ function_id = 41 }} }
+  tbl.policy_table.app_policies[common.getConfigAppParams(1).fullAppID] = pt_entry
+  --Add permissions for app2
+  pt_entry = common.getAppDataForPTU(2)
+  pt_entry.groups = { "Base-4" , "RemoteControl" }
+  pt_entry.AppHMIType = { "REMOTE_CONTROL" }
+  pt_entry.moduleType = { moduleType }
+  tbl.policy_table.app_policies[common.getConfigAppParams(2).fullAppID] = pt_entry
+end
+
+local function RPCPassThruTest(btn)
+  rpcRequest.params.moduleType = moduleType
+  rpcRequest.params.buttonName = btn
+  local cid = common.getMobileSession(2):SendRPC(rpcRequest.name, rpcRequest.params)
+
+  common.getMobileSession(1):ExpectRequest(rpcRequest.name, rpcRequest.params)
+  :Do(function(_, data)
+      common.getMobileSession(1):SendResponse(rpcRequest.name, data.rpcCorrelationId, successResponse)
+    end)
+  --Core will NOT handle the RPC
+  common.getHMIConnection():ExpectRequest(rpcRequest.hmi_name)
+  :Times(0)
+
+  common.getMobileSession(2):ExpectResponse(cid, rpcResponse.params)
+end
+
+--[[ Scenario ]]
+runner.Title("Preconditions")
+runner.Step("Clean environment", common.preconditions)
+runner.Step("Start SDL, HMI, connect Mobile, start Session", common.start)
+runner.Step("RAI App 1", common.registerApp)
+runner.Step("PTU", common.policyTableUpdate, { PTUfunc })
+runner.Step("PublishAppService", common.publishMobileAppService, { manifest, 1 })
+runner.Step("RAI App 2", common.registerAppWOPTU, { 2 })
+runner.Step("Activate App", common.activateApp, { 2 })
+
+runner.Title("Test")
+for _, btn in pairs(buttons) do
+  runner.Step("RPCPassThroughTest_SUCCESS " .. btn, RPCPassThruTest, { btn })
+end
+
+runner.Title("Postconditions")
+runner.Step("Stop SDL", common.postconditions)

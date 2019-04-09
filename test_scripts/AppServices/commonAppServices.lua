@@ -6,7 +6,7 @@ local commonAppServices = actions
 
 local serviceIDs = {}
 
-function commonAppServices.appServiceCapability(update_reason, manifest) 
+function commonAppServices.appServiceCapability(update_reason, manifest)
   local appService = {
     updateReason = update_reason,
     updatedAppServiceRecord = {
@@ -203,7 +203,7 @@ function commonAppServices.publishEmbeddedAppService(manifest)
         serviceManifest = manifest,
         servicePublished = true
       },
-      code = 0, 
+      code = 0,
       method = "AppService.PublishAppService"
     }
   }):Do(function(_, data)
@@ -211,6 +211,7 @@ function commonAppServices.publishEmbeddedAppService(manifest)
         serviceIDs[0] = data.result.appServiceRecord.serviceID
       end
     end)
+  utils.wait(2000)
 end
 
 function commonAppServices.publishMobileAppService(manifest, app_id)
@@ -257,6 +258,7 @@ function commonAppServices.publishMobileAppService(manifest, app_id)
         serviceIDs[app_id] = data.payload.appServiceRecord.serviceID
       end
     end)
+  utils.wait(2000)
 end
 
 function commonAppServices.publishSecondMobileAppService(manifest1, manifest2, app_id)
@@ -286,6 +288,7 @@ function commonAppServices.publishSecondMobileAppService(manifest1, manifest2, a
         serviceIDs[app_id] = data.payload.appServiceRecord.serviceID
       end
     end)
+  utils.wait(2000)
 end
 
 function commonAppServices.mobileSubscribeAppServiceData(provider_app_id, service_type, app_id)
@@ -302,7 +305,7 @@ function commonAppServices.mobileSubscribeAppServiceData(provider_app_id, servic
     serviceData = commonAppServices.appServiceDataByType(service_id, service_type)
   }
   if provider_app_id == 0 then
-    EXPECT_HMICALL("AppService.GetAppServiceData", requestParams):Do(function(_, data) 
+    EXPECT_HMICALL("AppService.GetAppServiceData", requestParams):Do(function(_, data)
         commonAppServices.getHMIConnection():SendResponse(data.id, data.method, "SUCCESS", responseParams)
       end)
   else
@@ -311,7 +314,7 @@ function commonAppServices.mobileSubscribeAppServiceData(provider_app_id, servic
     -- Fill out mobile response params
     responseParams.resultCode = "SUCCESS"
     responseParams.success = true
-    providerMobileSession:ExpectRequest("GetAppServiceData", requestParams):Do(function(_, data) 
+    providerMobileSession:ExpectRequest("GetAppServiceData", requestParams):Do(function(_, data)
         providerMobileSession:SendResponse("GetAppServiceData", data.rpcCorrelationId, responseParams)
       end)
   end
@@ -399,21 +402,21 @@ end
 function commonAppServices.getFileFromStorage(app_id, request_params, response_params)
   local mobileSession = commonAppServices.getMobileSession(app_id)
   if file_check("files/"..request_params.fileName) and response_params.crc == nil then
-    local file_crc = getFileCRC32(request_params.fileName)   
+    local file_crc = getFileCRC32(request_params.fileName)
     if response_params.success then
       response_params.crc = file_crc
     end
   end
   --mobile side: sending GetFile request
   local cid = mobileSession:SendRPC("GetFile", request_params)
-  --mobile side: expected GetFile response   
+  --mobile side: expected GetFile response
   mobileSession:ExpectResponse(cid, response_params)
 end
 
 function commonAppServices.getFileFromService(app_id, asp_app_id, request_params, response_params)
   local mobileSession = commonAppServices.getMobileSession(app_id)
   if file_check("files/"..request_params.fileName) and response_params.crc == nil then
-    local file_crc = getFileCRC32(request_params.fileName)   
+    local file_crc = getFileCRC32(request_params.fileName)
     if response_params.success then
       response_params.crc = file_crc
     end
@@ -423,22 +426,22 @@ function commonAppServices.getFileFromService(app_id, asp_app_id, request_params
 
   --mobile side: sending GetFile request
   local cid = mobileSession:SendRPC("GetFile", request_params)
-  if asp_app_id == 0 then 
+  if asp_app_id == 0 then
     --EXPECT_HMICALL
     commonAppServices.getHMIConnection():ExpectRequest("BasicCommunication.GetFilePath")
     :Do(function(_, d2)
       local cwd = getATFPath()
       file_path = cwd.."/files/"..request_params.fileName
       commonAppServices.getHMIConnection():SendResponse(d2.id, d2.method, "SUCCESS", {filePath = file_path})
-    end) 
+    end)
   end
 
-  --mobile side: expected GetFile response   
+  --mobile side: expected GetFile response
   mobileSession:ExpectResponse(cid, response_params)
 end
 
 function commonAppServices.putFileInStorage(app_id, request_params, response_params)
-  local mobileSession = commonAppServices.getMobileSession(app_id)      
+  local mobileSession = commonAppServices.getMobileSession(app_id)
   --mobile side: sending PutFile request
   local cid = mobileSession:SendRPC("PutFile", request_params, "files/"..request_params.syncFileName)
   --mobile side: expected PutFile response

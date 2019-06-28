@@ -183,12 +183,15 @@ function m.getExp(pApp, pFG)
   return app, fg
 end
 
-function m.getTransitions(pStates)
+function m.getTransitions(pStates, pStart, pFinish)
   local out = {}
   for i = 1, #pStates do
     for j = 1, #pStates do
       table.insert(out, { from = i, to = j })
     end
+  end
+  for i = 1, #out do
+    if i < pStart or i > pFinish then out[i] = nil end
   end
   return out
 end

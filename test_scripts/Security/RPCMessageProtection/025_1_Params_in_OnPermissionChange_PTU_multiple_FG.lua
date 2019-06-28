@@ -33,7 +33,7 @@ local states = {
   [9] = { fg1 = nil,   fg2 = nil }
 }
 
-local transitions = common.getTransitions(states)
+local transitions = common.getTransitions(states, 1, 20)
 
 -- transitions = { [001] = { from = 6, to = 1 } }
 

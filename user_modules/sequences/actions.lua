@@ -473,8 +473,9 @@ function m.ptu.policyTableUpdate(pPTUpdateFunc, pExpNotificationFunc)
   local ptsFileName = commonFunctions:read_parameter_from_smart_device_link_ini("SystemFilesPath") .. "/"
     .. commonFunctions:read_parameter_from_smart_device_link_ini("PathToSnapshot")
   local ptuFileName = os.tmpname()
-  local requestId = m.hmi.getConnection():SendRequest("SDL.GetURLS", { service = 7 })
-  m.hmi.getConnection():ExpectResponse(requestId)
+  local requestId = m.getHMIConnection():SendRequest("SDL.GetPolicyConfigurationData",
+      { policyType = "module_config", property = "endpoints" })
+  m.getHMIConnection():ExpectResponse(requestId)
   :Do(function()
       m.hmi.getConnection():SendNotification("BasicCommunication.OnSystemRequest",
         { requestType = "PROPRIETARY", fileName = ptsFileName })

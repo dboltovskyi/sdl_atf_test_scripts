@@ -459,16 +459,9 @@ function commonAppServices.getRpcPassThroughTimeoutFromINI()
   return tonumber(RpcPassThroughTimeout)
 end
 
-function commonAppServices:Request_PTU()
-  local is_test_fail = false
-  local hmi_app1_id = config.application1.registerAppInterfaceParams.appName
+function commonAppServices:Request_PTU()  
   commonAppServices.getHMIConnection():SendNotification("SDL.OnPolicyUpdate", {} )
-  EXPECT_HMINOTIFICATION("SDL.OnStatusUpdate", {status = "UPDATE_NEEDED"})
-
-  EXPECT_HMICALL("BasicCommunication.PolicyUpdate",{ file = "/tmp/fs/mp/images/ivsu_cache/sdl_snapshot.json" })
-  :Do(function(_,data)
-    commonAppServices.getHMIConnection():SendResponse(data.id, data.method, "SUCCESS", {})
-    end)
+  commonAppServices.isPTUStarted()
 end
 
 function commonAppServices.GetPolicySnapshot()

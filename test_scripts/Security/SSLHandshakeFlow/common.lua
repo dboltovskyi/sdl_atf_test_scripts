@@ -9,6 +9,7 @@ local test = require("user_modules/dummy_connecttest")
 local commonFunctions = require("user_modules/shared_testcases/commonFunctions")
 local commonPreconditions = require('user_modules/shared_testcases/commonPreconditions')
 local constants = require("protocol_handler/ford_protocol_constants")
+local events = require("events")
 
 --[[ General configuration parameters ]]
 config.SecurityProtocol = "DTLS"
@@ -47,7 +48,9 @@ local function registerGetSystemTimeResponse()
 end
 
 function m.allowSDL()
-  actions.getHMIConnection():SendNotification("SDL.OnAllowSDLFunctionality", {
+  local event = events.Event()
+  event.matches = function(e1, e2) return e1 == e2 end
+  m.getHMIConnection():SendNotification("SDL.OnAllowSDLFunctionality", {
     allowed = true,
     source = "GUI",
     device = {
@@ -55,6 +58,8 @@ function m.allowSDL()
       name = utils.getDeviceName()
     }
   })
+  RUN_AFTER(function() m.getHMIConnection():RaiseEvent(event, "Allow SDL event") end, 500)
+  return m.getHMIConnection():ExpectEvent(event, "Allow SDL event")
 end
 
 function m.start()
@@ -173,24 +178,29 @@ function m.postconditions()
   m.cleanUpCertificates()
 end
 
-function m.policyTableUpdateSuccess(pPTUpdateFunc)
-  local function expNotificationFunc()
-    m.getHMIConnection():ExpectRequest("BasicCommunication.DecryptCertificate")
-    :Do(function(_, d)
-        m.getHMIConnection():SendResponse(d.id, d.method, "SUCCESS", { })
-      end)
-    :Times(AnyNumber())
-    m.getHMIConnection():ExpectRequest("VehicleInfo.GetVehicleData", { odometer = true })
-  end
-  m.getHMIConnection():ExpectRequest("BasicCommunication.PolicyUpdate")
-  :Do(function(e, d)
-      if e.occurences == 1 then
-        m.getHMIConnection():SendResponse(d.id, d.method, "SUCCESS", { })
-        m.policyTableUpdate(pPTUpdateFunc, expNotificationFunc)
-      end
+function m.defaultExpNotificationFunc()
+  m.getHMIConnection():ExpectRequest("BasicCommunication.DecryptCertificate")
+  :Do(function(_, d)
+      m.getHMIConnection():SendResponse(d.id, d.method, "SUCCESS", { })
+      utils.wait(1000) -- time for SDL to save certificates
     end)
+  :Times(AnyNumber())
+  m.getHMIConnection():ExpectRequest("VehicleInfo.GetVehicleData", { odometer = true })
 end
 
+local policyTableUpdateOrig = m.policyTableUpdate
+function m.policyTableUpdate(pPTUpdateFunc, pExpNotificationFunc)
+  local func = m.defaultExpNotificationFunc
+  if pExpNotificationFunc then func = pExpNotificationFunc end
+  policyTableUpdateOrig(pPTUpdateFunc, func)
+end
+
+function m.policyTableUpdateSuccess(pPTUpdateFunc)
+  m.isPTUStarted()
+  :Do(function()
+      m.policyTableUpdate(pPTUpdateFunc)
+    end)
+end
 
 local function registerStartSecureServiceFunc(pMobSession)
   function pMobSession.mobile_session_impl.control_services:StartSecureService(pServiceId, pPayload)

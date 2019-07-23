@@ -42,6 +42,7 @@ m.gpsParams = {
 --[[ Functions ]]
 function m.pTUpdateFunc(tbl)
     tbl.policy_table.app_policies[config.application1.registerAppInterfaceParams.fullAppID].groups = {"Base-4", "Location-1"}
+    tbl.policy_table.functional_groupings["Location-1"].user_consent_prompt = nil
 end
 
 function m.checkShifted(data, pShiftValue)

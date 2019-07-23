@@ -18,6 +18,7 @@ local common = require('test_scripts/CloudAppRPCs/commonCloudAppRPCs')
 
  --[[ Test Configuration ]]
  runner.testSettings.isSelfIncluded = false
+ runner.testSettings.restrictions.sdlBuildOptions = { { extendedPolicy = { "PROPRIETARY", "EXTERNAL_PROPRIETARY" } } }
 
 --[[ Local Variables ]]
 local cloud_app_id = "cloudAppID123"

@@ -16,6 +16,7 @@ local common = require('test_scripts/AppServices/commonAppServices')
 
 --[[ Test Configuration ]]
 runner.testSettings.isSelfIncluded = false
+runner.testSettings.restrictions.sdlBuildOptions = { { extendedPolicy = { "PROPRIETARY", "EXTERNAL_PROPRIETARY" } } }
 
 --[[ Local Functions ]]
 local function PTUfunc(tbl)

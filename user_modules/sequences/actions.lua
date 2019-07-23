@@ -35,6 +35,13 @@ m.timeout = 2000
 --[[ Variables ]]
 local hmiAppIds = {}
 
+local policyModes = {
+  P  = "PROPRIETARY",
+  EP = "EXTERNAL_PROPRIETARY",
+  H  = "HTTP"
+}
+local ptuAppNum
+
 test.mobileConnections = {}
 test.mobileSession = {}
 
@@ -460,16 +467,7 @@ function m.ptu.getAppData(pAppId)
   }
 end
 
---[[ @ptu.getAppData: perform policy table update sequence
---! @parameters:
---! pPTUpdateFunc - function which contains updates for policy table
---! pExpNotificationFunc - specific notification function
---! @return: none
---]]
-function m.ptu.policyTableUpdate(pPTUpdateFunc, pExpNotificationFunc)
-  if pExpNotificationFunc then
-    pExpNotificationFunc()
-  end
+local function policyTableUpdateProprietary(pPTUpdateFunc, pExpNotificationFunc)
   local ptsFileName = commonFunctions:read_parameter_from_smart_device_link_ini("SystemFilesPath") .. "/"
     .. commonFunctions:read_parameter_from_smart_device_link_ini("PathToSnapshot")
   local ptuFileName = os.tmpname()
@@ -492,25 +490,63 @@ function m.ptu.policyTableUpdate(pPTUpdateFunc, pExpNotificationFunc)
       for id, _ in pairs(m.mobile.getApps()) do
         m.mobile.getSession(id):ExpectNotification("OnSystemRequest", { requestType = "PROPRIETARY" })
         :Do(function()
-            m.hmi.getConnection():ExpectRequest("BasicCommunication.SystemRequest")
+            m.getHMIConnection():ExpectRequest("BasicCommunication.SystemRequest")
             :Do(function(_, d3)
                 if not pExpNotificationFunc then
-                   m.hmi.getConnection():ExpectRequest("VehicleInfo.GetVehicleData", { odometer = true })
-                   m.hmi.getConnection():ExpectNotification("SDL.OnStatusUpdate", { status = "UP_TO_DATE" })
+                  m.getHMIConnection():ExpectRequest("VehicleInfo.GetVehicleData", { odometer = true })
+                  m.getHMIConnection():ExpectNotification("SDL.OnStatusUpdate", { status = "UP_TO_DATE" })
                 end
-                m.hmi.getConnection():SendResponse(d3.id, "BasicCommunication.SystemRequest", "SUCCESS", { })
-                m.hmi.getConnection():SendNotification("SDL.OnReceivedPolicyUpdate", { policyfile = d3.params.fileName })
+                m.getHMIConnection():SendResponse(d3.id, "BasicCommunication.SystemRequest", "SUCCESS", { })
+                m.getHMIConnection():SendNotification("SDL.OnReceivedPolicyUpdate", { policyfile = d3.params.fileName })
               end)
             utils.cprint(35, "App ".. id .. " was used for PTU")
-            m.hmi.getConnection():RaiseEvent(event, "PTU event")
-            local corIdSystemRequest = m.mobile.getSession(id):SendRPC("SystemRequest", {
+            m.getHMIConnection():RaiseEvent(event, "PTU event")
+            local corIdSystemRequest = m.getMobileSession(id):SendRPC("SystemRequest", {
               requestType = "PROPRIETARY" }, ptuFileName)
-            m.mobile.getSession(id):ExpectResponse(corIdSystemRequest, { success = true, resultCode = "SUCCESS" })
+            m.getMobileSession(id):ExpectResponse(corIdSystemRequest, { success = true, resultCode = "SUCCESS" })
             :Do(function() os.remove(ptuFileName) end)
           end)
         :Times(AtMost(1))
       end
     end)
+end
+
+local function policyTableUpdateHttp(pPTUpdateFunc, pExpNotificationFunc)
+  local ptuFileName = os.tmpname()
+  local ptuTable = getPTUFromPTS()
+  for i = 1, m.getAppsCount() do
+    ptuTable.policy_table.app_policies[m.getConfigAppParams(i).fullAppID] = m.ptu.getAppData(i)
+  end
+  if pPTUpdateFunc then
+    pPTUpdateFunc(ptuTable)
+  end
+  utils.tableToJsonFile(ptuTable, ptuFileName)
+  local cid = m.getMobileSession(ptuAppNum):SendRPC("SystemRequest",
+    { requestType = "HTTP", fileName = "PolicyTableUpdate" }, ptuFileName)
+  if not pExpNotificationFunc then
+    m.getHMIConnection():ExpectRequest("VehicleInfo.GetVehicleData", { odometer = true })
+    m.getHMIConnection():ExpectNotification("SDL.OnStatusUpdate", { status = "UP_TO_DATE" })
+  end
+  m.getMobileSession(ptuAppNum):ExpectResponse(cid, { success = true, resultCode = "SUCCESS" })
+  :Do(function() os.remove(ptuFileName) end)
+end
+
+--[[ @policyTableUpdate: perform PTU
+--! @parameters:
+--! pPTUpdateFunc - function with additional updates (optional)
+--! pExpNotificationFunc - function with specific expectations (optional)
+--! @return: none
+--]]
+function m.ptu.policyTableUpdate(pPTUpdateFunc, pExpNotificationFunc)
+  if pExpNotificationFunc then
+    pExpNotificationFunc()
+  end
+  local policyMode = SDL.buildOptions.extendedPolicy
+  if policyMode == policyModes.P or policyMode == policyModes.EP then
+    policyTableUpdateProprietary(pPTUpdateFunc, pExpNotificationFunc)
+  elseif policyMode == policyModes.H then
+    policyTableUpdateHttp(pPTUpdateFunc, pExpNotificationFunc)
+  end
 end
 
 --[[ Functions of app submodule ]]
@@ -528,10 +564,7 @@ local function registerApp(pAppId, pMobConnId, hasPTU)
       :Do(function(_, d1)
           m.app.setHMIId(d1.params.application.appID, pAppId)
           if hasPTU then
-            m.hmi.getConnection():ExpectRequest("BasicCommunication.PolicyUpdate")
-              :Do(function(_, d2)
-                m.hmi.getConnection():SendResponse(d2.id, d2.method, "SUCCESS", { })
-              end)
+            m.isPTUStarted()
           end
         end)
       session:ExpectResponse(corId, { success = true, resultCode = "SUCCESS" })
@@ -631,6 +664,42 @@ function m.app.getHMIId(pAppId)
     return id.hmiId
   end
   return nil
+end
+
+function m.isPTUStarted()
+  local event = events.Event()
+  event.matches = function(e1, e2) return e1 == e2 end
+  local function raisePtuEvent()
+    RUN_AFTER(function() m.getHMIConnection():RaiseEvent(event, "PTU start event") end, m.minTimeout)
+  end
+  local policyMode = SDL.buildOptions.extendedPolicy
+  if policyMode == policyModes.P or policyMode == policyModes.EP then
+    m.getHMIConnection():ExpectRequest("BasicCommunication.PolicyUpdate")
+    :Do(function(_, d2)
+        m.getHMIConnection():SendResponse(d2.id, d2.method, "SUCCESS", { })
+        raisePtuEvent()
+      end)
+  elseif policyMode == policyModes.H then
+    local function getAppNums()
+      local out = {}
+        for k in pairs(test.mobileSession) do
+          table.insert(out, k)
+        end
+      return out
+    end
+    for _, appNum in pairs(getAppNums()) do
+      m.getMobileSession(appNum):ExpectNotification("OnSystemRequest")
+      :Do(function(_, d3)
+          if d3.payload.requestType == "HTTP" then
+            utils.cprint(35, "App ".. appNum .. " will be used for PTU")
+            ptuAppNum = appNum
+            raisePtuEvent()
+          end
+        end)
+      :Times(AtMost(2))
+    end
+  end
+  return m.getHMIConnection():ExpectEvent(event, "PTU start event")
 end
 
 --[[ @app.setHMIId: set HMI application Id by script's mobile application id

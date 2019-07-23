@@ -39,16 +39,9 @@ function commonCloudAppRPCs.getCloudAppStoreConfig()
   }
 end
 
-function commonCloudAppRPCs:Request_PTU()
-  local is_test_fail = false
-  local hmi_app1_id = config.application1.registerAppInterfaceParams.appName
+function commonCloudAppRPCs:Request_PTU()  
   commonCloudAppRPCs.getHMIConnection():SendNotification("SDL.OnPolicyUpdate", {} )
-  EXPECT_HMINOTIFICATION("SDL.OnStatusUpdate", {status = "UPDATE_NEEDED"})
-
-  EXPECT_HMICALL("BasicCommunication.PolicyUpdate",{ file = "/tmp/fs/mp/images/ivsu_cache/sdl_snapshot.json" })
-  :Do(function(_,data)
-    commonCloudAppRPCs.getHMIConnection():SendResponse(data.id, data.method, "SUCCESS", {})
-    end)
+  commonCloudAppRPCs.isPTUStarted()
 end
 
 function commonCloudAppRPCs.test_assert(condition, msg)

@@ -7,6 +7,10 @@ local commonFunctions = require("user_modules/shared_testcases/commonFunctions")
 local utils = require("user_modules/utils")
 local events = require("events")
 local json = require("modules/json")
+local runner = require('user_modules/script_runner')
+
+-- Set applicalbe SDL policy mode
+runner.testSettings.restrictions.sdlBuildOptions = { { extendedPolicy = { "PROPRIETARY", "EXTERNAL_PROPRIETARY" } } }
 
 --[[ General configuration parameters ]]
 config.defaultProtocolVersion = 2

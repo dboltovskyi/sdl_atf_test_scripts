@@ -14,6 +14,9 @@ local sdl = require("SDL")
 local commonSteps = require("user_modules/shared_testcases/commonSteps")
 local commonSmoke = require('test_scripts/Smoke/commonSmoke')
 
+-- Set applicalbe SDL policy mode
+runner.testSettings.restrictions.sdlBuildOptions = { { extendedPolicy = { "PROPRIETARY" } } }
+
 --[[ Local Variables ]]
 
 local m = commonSteps

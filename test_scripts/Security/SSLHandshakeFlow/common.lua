@@ -203,7 +203,7 @@ function m.defaultExpNotificationFunc()
   m.getHMIConnection():ExpectRequest("BasicCommunication.DecryptCertificate")
   :Do(function(_, d)
       m.getHMIConnection():SendResponse(d.id, d.method, "SUCCESS", { })
-      utils.wait(1000) -- time for SDL to save certificates
+    utils.wait(1000) -- time for SDL to save certificates
     end)
   :Times(AnyNumber())
   m.getHMIConnection():ExpectRequest("VehicleInfo.GetVehicleData", { odometer = true })
@@ -217,12 +217,9 @@ function m.policyTableUpdate(pPTUpdateFunc, pExpNotificationFunc)
 end
 
 function m.policyTableUpdateSuccess(pPTUpdateFunc)
-  m.getHMIConnection():ExpectRequest("BasicCommunication.PolicyUpdate")
-  :Do(function(e, d)
-      if e.occurences == 1 then
-        m.getHMIConnection():SendResponse(d.id, d.method, "SUCCESS", { })
-        m.policyTableUpdate(pPTUpdateFunc)
-      end
+  m.isPTUStarted()
+  :Do(function()
+      m.policyTableUpdate(pPTUpdateFunc)
     end)
 end
 

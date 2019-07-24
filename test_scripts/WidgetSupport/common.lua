@@ -77,7 +77,7 @@ end
 function m.getOnSystemCapabilityParams()
   return {
     systemCapability = {
-      systemCapabilityType = "DISPLAY",
+      systemCapabilityType = "DISPLAYS",
       displayCapabilities = {
         {
           displayName = "displayName",

@@ -34,49 +34,18 @@ local states = {
   [9] = { app = nil,   fg = nil   }
 }
 
-local failedTCs = { }
+local rpcConfig = {
+  FG1 = {
+    isEncFlagDefined = false,
+    rpcs = { "AddCommand" }
+  },
+  FG2 = {
+    isEncFlagDefined = true,
+    rpcs = { "OnPermissionsChange" }
+  }
+}
 
 --[[ Local Functions ]]
-local function updatePreloadedPT(pAppPolicy, pFuncGroup)
-  local function pPTUpdateFunc(pTbl)
-    local pt = pTbl.policy_table
-    local levels = { "NONE", "BACKGROUND", "FULL", "LIMITED" }
-    pt.functional_groupings["FG0"] = {
-      rpcs = {
-        OnPermissionsChange = { hmi_levels = levels },
-        AddCommand = { hmi_levels = levels }
-      }
-    }
-
-    pt.app_policies["default"].groups = { "FG0" }
-    pTbl.policy_table.app_policies["default"].encryption_required = pAppPolicy
-    pt.functional_groupings["FG0"].encryption_required = pFuncGroup
-  end
-  common.preloadedPTUpdate(pPTUpdateFunc)
-end
-
-local function checkOnPermissionsChange(pExpApp, pExpRPCs, pActPayload, pTC)
-  local msg = ""
-  local isNewMsg = true
-  if pActPayload.requireEncryption ~= pExpApp then
-    msg = msg .. "Expected 'requireEncryption' on a Top level " .. "'" .. tostring(pExpApp) .. "'"
-      .. ", actual " .. "'" .. tostring(pActPayload.requireEncryption) .. "'\n"
-  end
-  for _, v in pairs(pActPayload.permissionItem) do
-    if v.requireEncryption ~= pExpRPCs and isNewMsg == true then
-      msg = msg .. "Expected 'requireEncryption' on an Item level for '" .. v.rpcName .. "': "
-        .. "'" .. tostring(pExpRPCs) .. "'"
-        .. ", actual " .. "'" .. tostring(v.requireEncryption) .. "'\n"
-      isNewMsg = false
-    end
-  end
-  if string.len(msg) > 0 then
-    if pTC then failedTCs[pTC] = msg end
-    return false, string.sub(msg, 1, -2)
-  end
-  return true
-end
-
 local function registerApp(pAppNew, pFGNew, pTC)
   common.getMobileSession():StartService(7)
   :Do(function()
@@ -88,7 +57,7 @@ local function registerApp(pAppNew, pFGNew, pTC)
           :ValidIf(function(e, data)
               if e.occurences == 1 then
                 local expApp, expFG = common.getExp(pAppNew, pFGNew)
-                return checkOnPermissionsChange(expApp, expFG, data.payload, pTC)
+                return common.checkOnPermissionsChange(rpcConfig, expApp, expFG, data.payload, pTC)
               end
               return true
             end)
@@ -99,10 +68,11 @@ end
 --[[ Scenario ]]
 for n, tc in common.spairs(states) do
   runner.Title("TC[" .. string.format("%03d", n) .. "/".. string.format("%03d", #states) .. "] set "
-    .. "' (App:" .. tostring(tc.app) .. ",FG0:" .. tostring(tc.fg) .. ")")
+    .. "(App:" .. tostring(tc.app) .. ",FG0:" .. tostring(tc.fg) .. ")")
   runner.Title("Preconditions")
   runner.Step("Clean environment", common.preconditions)
-  runner.Step("Preloaded update", updatePreloadedPT, { tc.app, tc.fg })
+  runner.Step("Preloaded update", common.updatePreloadedPTSpecific,
+    { rpcConfig, tc.app, { FG2 = tc.fg } })
   runner.Step("Start SDL, init HMI", common.start)
 
   runner.Title("Test")
@@ -113,4 +83,4 @@ for n, tc in common.spairs(states) do
   runner.Step("Stop SDL, restore SDL settings", common.postconditions)
 end
 
-runner.Step("Print failed TCs", common.printFailedTCs, { failedTCs })
+runner.Step("Print failed TCs", common.printFailedTCs)

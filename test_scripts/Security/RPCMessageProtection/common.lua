@@ -17,11 +17,13 @@ constants.FRAME_SIZE["P2"] = 1400
 
 --[[ Variables ]]
 local m = actions
+local failedTCs = { }
 
 m.cloneTable = utils.cloneTable
 m.spairs = utils.spairs
 m.cprint = utils.cprint
 m.wait = utils.wait
+m.printTable = utils.printTable
 
 --[[ Common Functions ]]
 function m.updatePreloadedPT(pAppPolicy, pFuncGroup)
@@ -69,7 +71,10 @@ function m.spairs(pTbl)
     keys[#keys+1] = k
   end
   local function getStringKey(pKey)
-    return tostring(string.format("%03d", pKey))
+    if type(pKey) == "number" then
+      return tostring(string.format("%03d", pKey))
+    end
+    return pKey
   end
   table.sort(keys, function(a, b) return getStringKey(a) < getStringKey(b) end)
   local i = 0
@@ -168,8 +173,8 @@ function m.subscribeToVD()
   m.getMobileSession():ExpectResponse(cid, { success = true, resultCode = "SUCCESS"})
 end
 
-function m.printFailedTCs(pFailedTCs)
-  for tc, msg in m.spairs(pFailedTCs) do
+function m.printFailedTCs()
+  for tc, msg in m.spairs(failedTCs) do
     local e = string.find(msg, "\n")
     if e > 80 then e = 80 end
     m.cprint(35, string.format("%03d", tc), string.sub(msg, 1, e - 1) .. " ...")
@@ -195,6 +200,103 @@ function m.getTransitions(pStates, pStart, pFinish)
     end
   end
   return out
+end
+
+function m.updatePreloadedPTSpecific(pRpcConfig, pAppPolicy, pFuncGroups)
+  local function pPTUpdateFunc(pTbl)
+    local pt = pTbl.policy_table
+    for fg, item in pairs(pRpcConfig) do
+      pt.functional_groupings[fg] = { rpcs = { } }
+      if item.isEncFlagDefined == true then
+        pt.functional_groupings[fg].encryption_required = pFuncGroups[fg]
+      end
+      for _, rpc in pairs(item.rpcs) do
+        pt.functional_groupings[fg].rpcs[rpc] = {
+          hmi_levels = { "NONE", "BACKGROUND", "FULL", "LIMITED" }
+        }
+      end
+    end
+    pt.functional_groupings["Base-4"].encryption_required = nil
+    pt.app_policies["default"].encryption_required = pAppPolicy
+    pt.app_policies["default"].groups = {}
+    for fg in m.spairs(pRpcConfig) do
+      table.insert(pt.app_policies["default"].groups, fg)
+    end
+  end
+  m.preloadedPTUpdate(pPTUpdateFunc)
+end
+
+function m.checkOnPermissionsChange(pRpcConfig, pExpApp, pExpRPC, pActPayload, pTC)
+  local function isItemInArray(pItem, pArray)
+    for _, i in pairs(pArray) do
+      if i == pItem then return true end
+    end
+    return false
+  end
+  local function getRPCs(pIsEncFlagDefined)
+    local out = {}
+    for _, item in pairs(pRpcConfig) do
+      for _, rpc in pairs(item.rpcs) do
+        if not (pIsEncFlagDefined ~= nil and pIsEncFlagDefined ~= item.isEncFlagDefined )
+          and not isItemInArray(rpc, out) then
+          table.insert(out, rpc)
+        end
+      end
+    end
+    return out
+  end
+  local msg = ""
+  -- check 'encryption' flag on Top level
+  if pActPayload.requireEncryption ~= pExpApp then
+    msg = msg .. "Expected 'requireEncryption' on a Top level " .. "'" .. tostring(pExpApp) .. "'"
+      .. ", actual " .. "'" .. tostring(pActPayload.requireEncryption) .. "'\n"
+  end
+  -- check 'encryption' flag value for expected RPCs on Item level
+  for _, rpc in pairs(getRPCs()) do
+    local permItem = nil
+    for _, v in pairs(pActPayload.permissionItem) do
+      if v.rpcName == rpc then permItem = v end
+    end
+    if permItem == nil then
+      msg = msg .. "Expected " .. rpc .. " is not found on an Item level\n"
+    else
+      local encAct = permItem.requireEncryption
+      local encExp = pExpRPC
+      if isItemInArray(rpc, getRPCs(false)) then encExp = nil end
+      if encAct ~= encExp then
+        msg = msg .. "Expected 'requireEncryption' on an Item level for '" .. rpc .. "': "
+          .. "'" .. tostring(encExp) .. "'"
+          .. ", actual " .. "'" .. tostring(encAct) .. "'\n"
+      end
+    end
+  end
+  -- check absence of unexpected RPCs on Item level
+  for _, item in pairs(pActPayload.permissionItem) do
+    if not isItemInArray(item.rpcName, getRPCs()) then
+      msg = msg .. "Unexpected " .. item.rpcName .. " is found on an Item level\n"
+    end
+  end
+  if string.len(msg) > 0 then
+    if pTC then failedTCs[pTC] = msg end
+    return false, string.sub(msg, 1, -2)
+  end
+  return true
+end
+
+function m.policyTableUpdateSpecific(pRpcConfig, pNotifQty, pUpdateFunc, pExpApp, pExpRPC, pTC)
+  local function expNotificationFunc()
+    m.defaultExpNotificationFunc()
+    m.getMobileSession():ExpectNotification("OnPermissionsChange")
+    :ValidIf(function(e, data)
+        if e.occurences == 1 and pNotifQty ~= 0 then
+          return m.checkOnPermissionsChange(pRpcConfig, pExpApp, pExpRPC, data.payload, pTC)
+        end
+        return true
+      end)
+    :Times(pNotifQty)
+  end
+  m.policyTableUpdate(pUpdateFunc, expNotificationFunc)
+  m.wait(1000)
 end
 
 return m

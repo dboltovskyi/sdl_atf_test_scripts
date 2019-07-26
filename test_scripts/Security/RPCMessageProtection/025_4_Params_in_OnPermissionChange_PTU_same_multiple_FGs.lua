@@ -33,11 +33,27 @@ local states = {
   [9] = { fg1 = nil,   fg2 = nil }
 }
 
-local transitions = common.getTransitions(states, 21, 40)
+local transitions = common.getTransitions(states, 61, 81)
 
--- transitions = { [001] = { from = 6, to = 1 } }
+-- local transitions = {
+--   [001] = { from = 9, to = 1 },
+--   [002] = { from = 1, to = 9 }
+-- }
 
-local failedTCs = { }
+local rpcConfig = {
+  FG0 = {
+    isEncFlagDefined = false,
+    rpcs = { "OnPermissionsChange", "OnSystemRequest", "SystemRequest", "OnHMIStatus" }
+  },
+  FG1 = {
+    isEncFlagDefined = true,
+    rpcs = { "AddCommand" }
+  },
+  FG2 = {
+    isEncFlagDefined = true,
+    rpcs = { "AddCommand" }
+  }
+}
 
 --[[ Local Functions ]]
 local function getExpValue(pFG1, pFG2)
@@ -47,8 +63,8 @@ local function getExpValue(pFG1, pFG2)
   return nil
 end
 
-local function getNotifQty(pPreFG1, pPreFG2, pNewFG1, pNewFG2)
-  local expPre = getExpValue(pPreFG1, pPreFG2)
+local function getNotifQty(pOldFG1, pOldFG2, pNewFG1, pNewFG2)
+  local expPre = getExpValue(pOldFG1, pOldFG2)
   local expNew = getExpValue(pNewFG1, pNewFG2)
   if expPre == expNew then
     common.cprint(35, string.format("OnPermissionsChange is not expected"))
@@ -57,74 +73,16 @@ local function getNotifQty(pPreFG1, pPreFG2, pNewFG1, pNewFG2)
   return 1
 end
 
-local function checkOnPermissionsChange(pExp, pActPayload, pTC)
-  local msg = ""
-  local isNewMsg = true
-  for _, v in pairs(pActPayload.permissionItem) do
-    if v.requireEncryption ~= pExp and isNewMsg == true  then
-      msg = msg .. "   Expected 'requireEncryption' on an Item level for '" .. v.rpcName .. "': "
-        .. "'" .. tostring(pExp) .. "'" .. ", actual " .. "'" .. tostring(v.requireEncryption) .. "'\n"
-      isNewMsg = false
-    end
-  end
-  if string.len(msg) > 0 then
-    if pTC then failedTCs[pTC] = msg end
-    return false, string.sub(msg, 1, -2)
-  end
-  return true
-end
-
-local function updatePreloadedPT(pFG1, pFG2)
-  local function pPTUpdateFunc(pTbl)
-    local pt = pTbl.policy_table
-    local levels = { "NONE", "BACKGROUND", "FULL", "LIMITED" }
-    pt.functional_groupings["FG0"] = {
-      rpcs = {
-        OnPermissionsChange = { hmi_levels = levels },
-        OnSystemRequest = { hmi_levels = levels },
-        SystemRequest = { hmi_levels = levels },
-        OnHMIStatus = { hmi_levels = levels }
-      }
-    }
-    local fgData = {
-      rpcs = {
-        AddCommand = { hmi_levels = levels }
-      }
-    }
-    pt.functional_groupings["FG1"] = common.cloneTable(fgData)
-    pt.functional_groupings["FG2"] = common.cloneTable(fgData)
-    pt.functional_groupings["FG1"].encryption_required = pFG1
-    pt.functional_groupings["FG2"].encryption_required = pFG2
-
-    pt.app_policies["default"].groups = { "FG0", "FG1", "FG2" }
-    pt.app_policies["default"].encryption_required = nil
-  end
-  common.preloadedPTUpdate(pPTUpdateFunc)
-end
-
-local function policyTableUpdate(pPreFG1, pPreFG2, pNewFG1, pNewFG2, pTC)
+local function policyTableUpdate(pRpcConfig, pOldFG1, pOldFG2, pNewFG1, pNewFG2, pTC)
   local function ptUpdate(pTbl)
     local pt = pTbl.policy_table
     pt.app_policies["spt"].groups = { "FG0", "FG1", "FG2" }
     pt.functional_groupings["FG1"].encryption_required = pNewFG1
     pt.functional_groupings["FG2"].encryption_required = pNewFG2
   end
-  local function expNotificationFunc()
-    local notifQty = getNotifQty(pPreFG1, pPreFG2, pNewFG1, pNewFG2)
-    common.defaultExpNotificationFunc()
-    common.getMobileSession():ExpectNotification("OnPermissionsChange")
-    :ValidIf(function(e, data)
-        if e.occurences == 1 and notifQty ~= 0 then
-          local exp = getExpValue(pNewFG1, pNewFG2)
-          local act = data.payload
-          return checkOnPermissionsChange(exp, act, pTC)
-        end
-        return true
-      end)
-    :Times(notifQty)
-  end
-  common.policyTableUpdate(ptUpdate, expNotificationFunc)
-  common.wait(1000)
+  local notifQty = getNotifQty(pOldFG1, pOldFG2, pNewFG1, pNewFG2)
+  local expFG = getExpValue(pNewFG1, pNewFG2)
+  common.policyTableUpdateSpecific(pRpcConfig, notifQty, ptUpdate, nil, expFG, pTC)
 end
 
 --[[ Scenario ]]
@@ -136,17 +94,18 @@ for n, tr in common.spairs(transitions) do
     .. ",FG2:" .. tostring(states[tr.to].fg2) .. ")")
   runner.Title("Preconditions")
   runner.Step("Clean environment", common.preconditions)
-  runner.Step("Preloaded update", updatePreloadedPT, { states[tr.from].fg1, states[tr.from].fg2 })
+  runner.Step("Preloaded update", common.updatePreloadedPTSpecific,
+    { rpcConfig, nil, { FG1 = states[tr.from].fg1, FG2 = states[tr.from].fg2 } })
   runner.Step("Start SDL, init HMI", common.start)
 
   runner.Title("Test")
   runner.Step("Register App", common.registerApp)
   runner.Step("Policy Table Update", policyTableUpdate,
-    { states[tr.from].fg1, states[tr.from].fg2, states[tr.to].fg1, states[tr.to].fg2, n })
+    { rpcConfig, states[tr.from].fg1, states[tr.from].fg2, states[tr.to].fg1, states[tr.to].fg2, n })
 
   runner.Title("Postconditions")
   runner.Step("Clean sessions", common.cleanSessions)
   runner.Step("Stop SDL, restore SDL settings", common.postconditions)
 end
 
-runner.Step("Print failed TCs", common.printFailedTCs, { failedTCs })
+runner.Step("Print failed TCs", common.printFailedTCs)

@@ -19,6 +19,7 @@ local hmi_values = require("user_modules/hmi_values")
 local utils = require('user_modules/utils')
 local actions = require("user_modules/sequences/actions")
 local apiLoader = require("modules/api_loader")
+local events = require("events")
 
 --[[ Common Variables ]]
 
@@ -117,6 +118,8 @@ function actions.getAppDataForPTU(pAppId)
 end
 
 local function allowSDL()
+  local event = events.Event()
+  event.matches = function(e1, e2) return e1 == e2 end
   commonRC.getHMIConnection():SendNotification("SDL.OnAllowSDLFunctionality", {
     allowed = true,
     source = "GUI",
@@ -125,6 +128,8 @@ local function allowSDL()
       name = utils.getDeviceName()
     }
   })
+  RUN_AFTER(function() commonRC.getHMIConnection():RaiseEvent(event, "Allow SDL event") end, 500)
+  return commonRC.getHMIConnection():ExpectEvent(event, "Allow SDL event")
 end
 
 function commonRC.start(pHMIParams)

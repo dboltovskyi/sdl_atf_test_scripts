@@ -19,6 +19,7 @@ local hmi_values = require("user_modules/hmi_values")
 local utils = require('user_modules/utils')
 local actions = require("user_modules/sequences/actions")
 local apiLoader = require("modules/api_loader")
+local events = require("events")
 
 --[[ Common Variables ]]
 
@@ -119,18 +120,6 @@ function actions.ptu.getAppData(pAppId)
   }
 end
 
-local function allowSDL()
-  commonRC.getHMIConnection():SendNotification("SDL.OnAllowSDLFunctionality", {
-    allowed = true,
-    source = "GUI",
-    device = {
-      id = utils.getDeviceMAC(),
-      name = utils.getDeviceName()
-    }
-  })
-  actions.run.wait(500) -- stabilization delay
-end
-
 function commonRC.start(pHMIParams)
   test:runSDL()
   commonFunctions:waitForSDLStart(test)
@@ -144,7 +133,7 @@ function commonRC.start(pHMIParams)
               test:connectMobile()
               :Do(function()
                   commonFunctions:userPrint(35, "Mobile connected")
-                  allowSDL()
+                  actions.init.allowSDL()
                 end)
             end)
         end)

@@ -2,7 +2,7 @@
 -- Proposal: https://github.com/smartdevicelink/sdl_evolution/blob/master/proposals/0216-widget-support.md
 --
 -- Description: Check that SDL ignores subscribe/unsubscribe flag in case App sends `GetSystemCapability`
--- with DISPLAY type and always contains display capability in GetSystemCapability response
+-- with DISPLAYS type and always contains display capability in GetSystemCapability response
 --
 -- Preconditions:
 -- 1) SDL and HMI are started
@@ -11,10 +11,10 @@
 -- 1) HMI sends `OnSystemCapabilityUpdated` to SDL for display capabilities
 -- SDL does:
 --  - transfer `OnSystemCapabilityUpdated` notification to App
--- 2) App sends `GetSystemCapability` request to SDL (with or without`subscribe` flag) for DISPLAY capabilities
+-- 2) App sends `GetSystemCapability` request to SDL (with or without`subscribe` flag) for DISPLAYS capabilities
 -- SDL does:
 --  - proceed with request successfully
---  - provide up-to-date DISPLAY data to App in response
+--  - provide up-to-date DISPLAYS data to App in response
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
 local common = require('test_scripts/WidgetSupport/common')
@@ -56,13 +56,13 @@ common.Step("App activation", common.activateApp)
 
 common.Title("Test")
 common.Step("SDL transfers OnSCU notification", sendOnSCU, { 1 })
-common.Step("App sends GetSC RPC for DISPLAY, no subscribe", sendGetSC, { "DISPLAY", nil })
+common.Step("App sends GetSC RPC for DISPLAYS, no subscribe", sendGetSC, { "DISPLAYS", nil })
 common.Step("SDL transfers OnSCU notification", sendOnSCU, { 2 })
-common.Step("App sends GetSC RPC for DISPLAY, subscribe=true", sendGetSC, { "DISPLAY", true })
+common.Step("App sends GetSC RPC for DISPLAYS, subscribe=true", sendGetSC, { "DISPLAYS", true })
 common.Step("SDL transfers OnSCU notification", sendOnSCU, { 3 })
-common.Step("App sends GetSC RPC for DISPLAY, subscribe=false", sendGetSC, { "DISPLAY", false })
+common.Step("App sends GetSC RPC for DISPLAYS, subscribe=false", sendGetSC, { "DISPLAYS", false })
 common.Step("SDL transfers OnSCU notification", sendOnSCU, { 4 })
-common.Step("App sends GetSC RPC for DISPLAY, no subscribe", sendGetSC, { "DISPLAY", nil })
+common.Step("App sends GetSC RPC for DISPLAYS, no subscribe", sendGetSC, { "DISPLAYS", nil })
 
 common.Title("Postconditions")
 common.Step("Stop SDL, restore SDL settings and PPT", common.postcondition)

@@ -9,10 +9,10 @@
 -- 2) 2 Apps are registered
 -- 3) HMI provides different display capabilities data through `OnSystemCapabilityUpdated` notification to each App
 -- Steps:
--- 1) Each App sends `GetSystemCapability` request to SDL for DISPLAY capabilities
+-- 1) Each App sends `GetSystemCapability` request to SDL for DISPLAYS capabilities
 -- SDL does:
 --  - proceed with request successfully
---  - provide up-to-date corresponding DISPLAY data to each App in response
+--  - provide up-to-date corresponding DISPLAYS data to each App in response
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
 local common = require('test_scripts/WidgetSupport/common')
@@ -35,7 +35,7 @@ local function sendOnSCU(pAppId, pParams)
 end
 
 local function sendGetSC(pAppId, pParams)
-  local cid = common.getMobileSession(pAppId):SendRPC("GetSystemCapability", { systemCapabilityType = "DISPLAY" })
+  local cid = common.getMobileSession(pAppId):SendRPC("GetSystemCapability", { systemCapabilityType = "DISPLAYS" })
   common.getMobileSession(pAppId):ExpectResponse(cid, {
     success = true,
     resultCode = "SUCCESS",
@@ -53,8 +53,8 @@ common.Step("SDL transfers OnSCU notification for 1st app", sendOnSCU, { 1, appP
 common.Step("SDL transfers OnSCU notification for 2nd app", sendOnSCU, { 2, appParams[2] })
 
 common.Title("Test")
-common.Step("App 1 sends GetSC RPC for DISPLAY", sendGetSC, { 1, appParams[1] })
-common.Step("App 2 sends GetSC RPC for DISPLAY", sendGetSC, { 2, appParams[2] })
+common.Step("App 1 sends GetSC RPC for DISPLAYS", sendGetSC, { 1, appParams[1] })
+common.Step("App 2 sends GetSC RPC for DISPLAYS", sendGetSC, { 2, appParams[2] })
 
 common.Title("Postconditions")
 common.Step("Stop SDL, restore SDL settings and PPT", common.postcondition)

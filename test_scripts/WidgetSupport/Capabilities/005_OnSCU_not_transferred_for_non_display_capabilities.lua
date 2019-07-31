@@ -40,7 +40,7 @@ local systemCapabilityParams = {
     appServicesCapabilities = { }
   },
   [6] = {
-    systemCapabilityType = "DISPLAY",
+    systemCapabilityType = "DISPLAYS",
     displayCapabilities = { { } }
   }
 }
@@ -52,7 +52,7 @@ local function sendOnSCU(pParams)
     systemCapability = pParams
   }
   local qty = 0
-  if pParams.systemCapabilityType == "DISPLAY" then qty = 1 end
+  if pParams.systemCapabilityType == "DISPLAYS" then qty = 1 end
   common.getHMIConnection():SendNotification("BasicCommunication.OnSystemCapabilityUpdated", params)
   common.getMobileSession():ExpectNotification("OnSystemCapabilityUpdated")
   :Times(qty)

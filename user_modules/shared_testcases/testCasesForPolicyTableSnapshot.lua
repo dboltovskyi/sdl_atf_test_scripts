@@ -177,7 +177,8 @@ function testCasesForPolicyTableSnapshot:verify_PTS(is_created, app_IDs, device_
     { name = "app_policies.pre_consent_passengersRC.certificate", elem_required = "optional"},
     { name = "app_policies.pre_consent_passengersRC.priority", elem_required = "optional"},
     { name = "app_policies.pre_consent_passengersRC.groups.1", elem_required = "optional"},
-    { name = "app_policies.pre_consent_passengersRC.AppHMIType.1", elem_required = "optional"}
+    { name = "app_policies.pre_consent_passengersRC.AppHMIType.1", elem_required = "optional"},
+    { name = "module_config.lock_screen_dismissal_enabled", elem_required = "optional"}
   }
 
   if(flag ~= "PROPRIETARY" and flag ~= "HTTP") then

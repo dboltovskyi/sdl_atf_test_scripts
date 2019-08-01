@@ -216,16 +216,18 @@ function m.activateApp(pAppId)
   if not pAppId then pAppId = 1 end
   local requestId = m.getHMIConnection():SendRequest("SDL.ActivateApp", { appID = m.getHMIAppId(pAppId) })
   m.getHMIConnection():ExpectResponse(requestId)
-  local params = m.getConfigAppParams(pAppId)
-  local audioStreamingState = "NOT_AUDIBLE"
-  if params.isMediaApplication or
-      commonFunctions:table_contains(params.appHMIType, "NAVIGATION") or
-      commonFunctions:table_contains(params.appHMIType, "COMMUNICATION") then
-    audioStreamingState = "AUDIBLE"
-  end
   m.getMobileSession(pAppId):ExpectNotification("OnHMIStatus",
-    { hmiLevel = "FULL", audioStreamingState = audioStreamingState, systemContext = "MAIN" })
-  utils.wait()
+    { hmiLevel = "FULL", systemContext = "MAIN" })
+  local function getRegisteredSessionIds()
+    local out = {}
+    for k in pairs(test.mobileSession) do
+      table.insert(out, k)
+    end
+    return out
+  end
+  if #getRegisteredSessionIds() > 1 then
+    utils.wait(500)
+  end
 end
 
 --[[ @getHMIAppId: get HMI application identifier

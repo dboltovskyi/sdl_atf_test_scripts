@@ -606,18 +606,20 @@ end
 --]]
 function m.app.activate(pAppId)
   if not pAppId then pAppId = 1 end
-  local requestId = m.hmi.getConnection():SendRequest("SDL.ActivateApp", { appID = m.app.getHMIId(pAppId) })
-  m.hmi.getConnection():ExpectResponse(requestId)
-  local params = m.app.getParams(pAppId)
-  local audioStreamingState = "NOT_AUDIBLE"
-  if params.isMediaApplication or
-      utils.isTableContains(params.appHMIType, "NAVIGATION") or
-      utils.isTableContains(params.appHMIType, "COMMUNICATION") then
-    audioStreamingState = "AUDIBLE"
+  local requestId = m.getHMIConnection():SendRequest("SDL.ActivateApp", { appID = m.getHMIAppId(pAppId) })
+  m.getHMIConnection():ExpectResponse(requestId)
+  m.getMobileSession(pAppId):ExpectNotification("OnHMIStatus",
+    { hmiLevel = "FULL", systemContext = "MAIN" })
+  local function getRegisteredSessionIds()
+    local out = {}
+    for k in pairs(test.mobileSession) do
+      table.insert(out, k)
+    end
+    return out
   end
-  m.mobile.getSession(pAppId):ExpectNotification("OnHMIStatus",
-    { hmiLevel = "FULL", audioStreamingState = audioStreamingState, systemContext = "MAIN" })
-  m.run.wait()
+  if #getRegisteredSessionIds() > 1 then
+    utils.wait(500)
+  end
 end
 
 --[[ @app.unRegister: perform unregistration of application sequence

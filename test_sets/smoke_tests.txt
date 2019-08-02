@@ -46,9 +46,9 @@
 ./test_scripts/Smoke/API/046_NavApp_SubscribeButtonRequest_SUCCESS.lua
 ./test_scripts/Smoke/API/047_NonNavApp_SubscribeButtonRequest_REJECTED.lua
 ./test_scripts/Smoke/API/048_GetSystemCapabilityRequest_SUCCESS.lua
-<<<<<<< HEAD
 ./test_scripts/Smoke/API/049_SetMenuLayout_SUCCESS.lua
 ./test_scripts/Smoke/API/050_SetMenuLayout_unsupported_WARNINGS.lua
+./test_scripts/Smoke/API/051_GetPolicyConfigurationData_SUCCESS.lua
 ./test_scripts/AppServices/PublishAppService/001_Mobile_success_flow.lua
 ./test_scripts/AppServices/PublishAppService/002_HMI_success_flow.lua
 ./test_scripts/AppServices/GetAppServiceData/001_M2M_success_flow.lua
@@ -64,9 +64,6 @@
 ./test_scripts/AppServices/GetAppServiceRecords/001_GetAppServiceRecords_MOBILE.lua
 ./test_scripts/AppServices/GetFile/001_GetFile_Success.lua
 ./test_scripts/AppServices/RPCPassThrough/001_SendLocation_Handled_Request.lua
-=======
-./test_scripts/Smoke/API/049_GetPolicyConfigurationData_SUCCESS.lua
->>>>>>> Update for smoke according to generic data feature
 ./test_scripts/API/CloseApplication/001_Success_flow.lua
 ./test_scripts/Smoke/HeartBeat/001_HeartBeat_App_does_not_send_HB_and_does_not_respond.lua
 ./test_scripts/Smoke/HeartBeat/002_HeartBeat_App_does_not_send_HB_but_respond.lua

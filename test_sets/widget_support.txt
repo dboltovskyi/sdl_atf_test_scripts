@@ -57,6 +57,8 @@
 ./test_scripts/WidgetSupport/Policies/002_window_specific_RPCs_evaluation.lua
 ./test_scripts/WidgetSupport/Policies/003_persistence_of_widget_permissions_after_PTU.lua
 ./test_scripts/WidgetSupport/Policies/004_absence_of_widget_permissions_after_PTU.lua
+./test_scripts/WidgetSupport/Policies/005_ok_button_events_for_main_window.lua
+./test_scripts/WidgetSupport/Policies/006_custom_button_events_for_main_and_widget_windows.lua
 ./test_scripts/WidgetSupport/Show/001_Show_RPC_to_Main_Window_without_WindowID.lua
 ./test_scripts/WidgetSupport/Show/002_Show_RPC_to_Main_Window_with_WindowID.lua
 ./test_scripts/WidgetSupport/Show/003_Show_RPC_to_Widget_Window.lua

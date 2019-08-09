@@ -134,8 +134,7 @@ function commonAppServices.getAppServiceConsumerConfig(app_id)
     steal_focus = false,
     priority = "NONE",
     default_hmi = "NONE",
-    groups = { "Base-4" , "AppServiceConsumer" },
-    nicknames = { config["application" .. app_id].registerAppInterfaceParams.appName }
+    groups = { "Base-4" , "AppServiceConsumer" }
   }
 end
 
@@ -146,7 +145,6 @@ function commonAppServices.getAppServiceProducerConfig(app_id, service_type)
     priority = "NONE",
     default_hmi = "NONE",
     groups = { "Base-4" , "AppServiceProvider" },
-    nicknames = { config["application" .. app_id].registerAppInterfaceParams.appName },
     app_services = {}
   }
   local service_info = {
@@ -289,6 +287,7 @@ function commonAppServices.publishSecondMobileAppService(manifest1, manifest2, a
         serviceIDs[app_id] = data.payload.appServiceRecord.serviceID
       end
     end)
+  EXPECT_HMINOTIFICATION("BasicCommunication.OnSystemCapabilityUpdated")
 end
 
 function commonAppServices.mobileSubscribeAppServiceData(provider_app_id, service_type, app_id)

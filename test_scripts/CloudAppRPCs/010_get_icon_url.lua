@@ -1,5 +1,5 @@
 ---------------------------------------------------------------------------------------------------
---  Precondition: 
+--  Precondition:
 --  1) Application with <appID> is registered on SDL.
 --  2) Specific permissions are assigned for a cloud app with an icon_url
 --
@@ -35,7 +35,7 @@ local rpc = {
 
 --[[ Local Functions ]]
 local function PTUfunc(tbl)
-    params = {
+    local params = {
         keep_context = false,
         steal_focus = false,
         priority = "NONE",
@@ -54,9 +54,9 @@ local function PTUfunc(tbl)
 end
 
 local function processRPCSuccess()
-    local mobileSession = common.getMobileSession(self, 1)
+    local mobileSession = common.getMobileSession()
     local cid = mobileSession:SendRPC(rpc.name, rpc.params, icon_image_path)
-    EXPECT_HMICALL("BasicCommunication.UpdateAppList"):Times(AtLeast(1))
+    EXPECT_HMICALL("BasicCommunication.UpdateAppList"):Times(1)
     :ValidIf(function(self, data)
       if data.params == nil then
         return false
@@ -75,6 +75,14 @@ local function processRPCSuccess()
     mobileSession:ExpectResponse(cid, responseParams)
   end
 
+local function ptu()
+  common.policyTableUpdateWithIconUrl(PTUfunc, nil, url)
+  EXPECT_HMICALL("BasicCommunication.UpdateAppList")
+  :Do(function(_, data)
+      common.getHMIConnection():SendResponse(data.id, data.method, "SUCCESS")
+    end)
+end
+
 --[[ Scenario ]]
 runner.Title("Preconditions")
 runner.Step("Clean environment", common.preconditions)
@@ -84,8 +92,7 @@ runner.Step("Start SDL, HMI, connect Mobile, start Session", common.start)
 
 runner.Title("Test")
 runner.Step("RAI", common.registerApp)
-runner.Step("PTU", common.policyTableUpdateWithIconUrl, { PTUfunc, nil, url })
-
+runner.Step("PTU", ptu)
 runner.Step("Send App Icon SystemRequest", processRPCSuccess)
 
 runner.Title("Postconditions")

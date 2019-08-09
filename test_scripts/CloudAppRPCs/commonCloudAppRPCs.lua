@@ -158,21 +158,21 @@ function commonCloudAppRPCs.policyTableUpdateWithIconUrl(pPTUpdateFunc, pExpNoti
         end)
         :Do(function(_, data)
             if data.payload.requestType == "PROPRIETARY" then
-              if not pExpNotificationFunc then
-                commonCloudAppRPCs.getHMIConnection():ExpectRequest("VehicleInfo.GetVehicleData", { odometer = true })
-                commonCloudAppRPCs.getHMIConnection():ExpectNotification("SDL.OnStatusUpdate", { status = "UP_TO_DATE" })
-              end
+              commonCloudAppRPCs.getHMIConnection():ExpectRequest("BasicCommunication.SystemRequest")
+              :Do(function(_, d3)
+                  if not pExpNotificationFunc then
+                    commonCloudAppRPCs.getHMIConnection():ExpectRequest("VehicleInfo.GetVehicleData", { odometer = true })
+                    commonCloudAppRPCs.getHMIConnection():ExpectNotification("SDL.OnStatusUpdate", { status = "UP_TO_DATE" })
+                  end
+                  commonCloudAppRPCs.getHMIConnection():SendResponse(d3.id, "BasicCommunication.SystemRequest", "SUCCESS", { })
+                  commonCloudAppRPCs.getHMIConnection():SendNotification("SDL.OnReceivedPolicyUpdate", { policyfile = d3.params.fileName })
+                end)
               utils.cprint(35, "App ".. id .. " was used for PTU")
               commonCloudAppRPCs.getHMIConnection():RaiseEvent(event, "PTU event")
               local corIdSystemRequest = commonCloudAppRPCs.getMobileSession(id):SendRPC("SystemRequest", {
                 requestType = "PROPRIETARY" }, ptuFileName)
-              commonCloudAppRPCs.getHMIConnection():ExpectRequest("BasicCommunication.SystemRequest")
-              :Do(function(_, d3)
-                  commonCloudAppRPCs.getHMIConnection():SendResponse(d3.id, "BasicCommunication.SystemRequest", "SUCCESS", { })
-                  commonCloudAppRPCs.getHMIConnection():SendNotification("SDL.OnReceivedPolicyUpdate", { policyfile = d3.params.fileName })
-                end)
               commonCloudAppRPCs.getMobileSession(id):ExpectResponse(corIdSystemRequest, { success = true, resultCode = "SUCCESS" })
-              :Do(function() 
+              :Do(function()
                 os.remove(ptuFileName) end)
             end
           end)

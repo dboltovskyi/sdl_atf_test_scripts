@@ -77,9 +77,9 @@ local function processRPCSuccess(self)
   local combinedParams = onSystemCapabilityParams1
   combinedParams.systemCapability.appServicesCapabilities.appServices[2] = onSystemCapabilityParams2.systemCapability.appServicesCapabilities.appServices[1]
 
-  EXPECT_HMINOTIFICATION("BasicCommunication.OnSystemCapabilityUpdated", combinedParams):Times(AtLeast(1))
-  mobileSession:ExpectNotification("OnSystemCapabilityUpdated", combinedParams):Times(AtLeast(1))
-  mobileSession2:ExpectNotification("OnSystemCapabilityUpdated", combinedParams):Times(AtLeast(1))
+  EXPECT_HMINOTIFICATION("BasicCommunication.OnSystemCapabilityUpdated", combinedParams)
+  mobileSession:ExpectNotification("OnSystemCapabilityUpdated", combinedParams)
+  mobileSession2:ExpectNotification("OnSystemCapabilityUpdated", combinedParams)
 end
 
 --[[ Scenario ]]

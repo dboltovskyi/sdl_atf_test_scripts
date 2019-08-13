@@ -45,6 +45,17 @@ local function sendGetSC(pType, pSubscribe)
     resultCode = "SUCCESS",
     systemCapability = systemCapabilityParams.systemCapability
   })
+  :ValidIf(function(_, data)
+      local info = "Subscribe parameter is ignored. "
+        .. "Auto Subscription/Unsubscription is used for DISPLAY capability type."
+      if pSubscribe ~= nil and data.payload.info ~= info then
+        return false, "Info parameter is missing or has unexpected value"
+      end
+      if pSubscribe == nil and data.payload.info ~= nil then
+        return false, "Info parameter is unexpected"
+      end
+      return true
+    end)
 end
 
 --[[ Scenario ]]

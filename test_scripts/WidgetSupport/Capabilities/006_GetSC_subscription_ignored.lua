@@ -20,18 +20,15 @@
 local common = require('test_scripts/WidgetSupport/common')
 
 --[[ Local Variables ]]
-local systemCapabilityParams
+local systemCapabilityParams = common.getOnSystemCapabilityParams()
 
 --[[ Local Functions ]]
-local function sendOnSCU(pId)
-  systemCapabilityParams = common.getOnSystemCapabilityParams()
-  local disCap = systemCapabilityParams.systemCapability.displayCapabilities[1]
-  disCap.windowTypeSupported[1].maximumNumberOfWindows = pId
-  disCap.windowCapabilities[1].windowID = pId
-  local paramsToSDL = common.cloneTable(systemCapabilityParams)
-  paramsToSDL.appID = common.getHMIAppId()
-  common.getHMIConnection():SendNotification("BasicCommunication.OnSystemCapabilityUpdated", paramsToSDL)
-  common.getMobileSession():ExpectNotification("OnSystemCapabilityUpdated", systemCapabilityParams)
+local function getWidgetParams(pId)
+  return {
+    windowID = pId,
+    windowName = "Widget" .. pId,
+    type = "WIDGET"
+  }
 end
 
 local function sendGetSC(pType, pSubscribe)
@@ -58,6 +55,20 @@ local function sendGetSC(pType, pSubscribe)
     end)
 end
 
+local function createWindow(pId)
+  local disCap = systemCapabilityParams.systemCapability.displayCapabilities[1]
+  disCap.windowCapabilities[pId] = common.cloneTable(disCap.windowCapabilities[1])
+  disCap.windowCapabilities[pId].windowID = pId
+  function common.getOnSystemCapabilityParams()
+    local caps = common.cloneTable(systemCapabilityParams)
+    caps.systemCapability.displayCapabilities[1].windowCapabilities = {
+      [1] = caps.systemCapability.displayCapabilities[1].windowCapabilities[pId]
+    }
+    return caps
+  end
+  common.createWindow(getWidgetParams(pId))
+end
+
 --[[ Scenario ]]
 common.Title("Precondition")
 common.Step("Clean environment and Back-up/update PPT", common.precondition)
@@ -66,13 +77,16 @@ common.Step("App registration", common.registerAppWOPTU)
 common.Step("App activation", common.activateApp)
 
 common.Title("Test")
-common.Step("SDL transfers OnSCU notification", sendOnSCU, { 1 })
+common.Step("Create 1st widget", createWindow, { 1 })
 common.Step("App sends GetSC RPC for DISPLAYS, no subscribe", sendGetSC, { "DISPLAYS", nil })
-common.Step("SDL transfers OnSCU notification", sendOnSCU, { 2 })
+
+common.Step("Create 2nd widget", createWindow, { 2 })
 common.Step("App sends GetSC RPC for DISPLAYS, subscribe=true", sendGetSC, { "DISPLAYS", true })
-common.Step("SDL transfers OnSCU notification", sendOnSCU, { 3 })
+
+common.Step("Create 3rd widget", createWindow, { 3 })
 common.Step("App sends GetSC RPC for DISPLAYS, subscribe=false", sendGetSC, { "DISPLAYS", false })
-common.Step("SDL transfers OnSCU notification", sendOnSCU, { 4 })
+
+common.Step("Create 4th widget", createWindow, { 4 })
 common.Step("App sends GetSC RPC for DISPLAYS, no subscribe", sendGetSC, { "DISPLAYS", nil })
 
 common.Title("Postconditions")

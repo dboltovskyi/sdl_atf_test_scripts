@@ -693,7 +693,9 @@ end
 --! @return: none
 --]]
 function m.sdl.setSDLIniParameter(pParamName, pParamValue)
-  originalValuesInSDLIni[pParamName] = m.sdl.getSDLIniParameter(pParamName)
+  if originalValuesInSDLIni[pParamName] == nil then
+    originalValuesInSDLIni[pParamName] = m.sdl.getSDLIniParameter(pParamName)
+  end
   commonFunctions:write_parameter_to_smart_device_link_ini(pParamName, pParamValue)
 end
 

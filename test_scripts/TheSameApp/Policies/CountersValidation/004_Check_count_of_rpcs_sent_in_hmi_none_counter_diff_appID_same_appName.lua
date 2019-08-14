@@ -142,7 +142,7 @@ runner.Step("PTU", common.ptu.policyTableUpdate, {modificationOfPreloadedPT})
 runner.Title("Test")
 runner.Step("Disallowed AddCommand in NONE from App1 from device 1", common.addCommand,
     {1, contentData[1].addCommand, "DISALLOWED"})
-runner.Step("Succeed AddCommand in NONE from App2 from device 2", common.addCommand,
+runner.Step("Successful AddCommand in NONE from App2 from device 2", common.addCommand,
     {2, contentData[2].addCommand, "SUCCESS"})
 runner.Step("Disallowed AddSubMenu in NONE from App1 from device 1", common.addSubMenu,
     {1, contentData[1].addSubMenu, "DISALLOWED"})

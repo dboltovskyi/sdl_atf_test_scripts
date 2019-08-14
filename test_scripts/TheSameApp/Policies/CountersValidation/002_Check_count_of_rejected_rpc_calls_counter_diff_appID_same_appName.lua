@@ -156,12 +156,12 @@ runner.Title("Test")
 runner.Step("Activate App1 from device 1", common.app.activate, {1})
 runner.Step("Disallowed AddCommand from App1 from device 1", common.addCommand,
     {1, contentData[1].addCommand, "DISALLOWED"})
-runner.Step("Succeed AddSubMenu from App1 from device 1", common.addSubMenu,
+runner.Step("Successful AddSubMenu from App1 from device 1", common.addSubMenu,
     {1, contentData[1].addSubMenu, "SUCCESS"})
 runner.Step("Activate App2 from device 2", common.app.activate, {2})
 runner.Step("Disallowed AddSubMenu from App2 from device 2", common.addSubMenu,
     {2, contentData[2].addSubMenu, "DISALLOWED"})
-runner.Step("Succeed AddCommand from App2 from device 2", common.addCommand,
+runner.Step("Successful AddCommand from App2 from device 2", common.addCommand,
     {2, contentData[2].addCommand, "SUCCESS"})
 runner.Step("Disallowed AddSubMenu from App2 from device 2", common.addSubMenu,
     {2, contentData[2].addSubMenu, "DISALLOWED"})

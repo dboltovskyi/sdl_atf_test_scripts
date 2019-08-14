@@ -128,7 +128,7 @@ local function allowSDL()
       name = utils.getDeviceName()
     }
   })
-  utils.wait(500)
+  actions.run.wait(500) -- stabilization delay
 end
 
 function commonRC.start(pHMIParams)

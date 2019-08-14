@@ -116,7 +116,7 @@ runner.Title("Preconditions")
 runner.Step("Clean environment", common.preconditions)
 runner.Step("Prepare preloaded PT", common.modifyPreloadedPt, {modificationOfPreloadedPT})
 runner.Step("Start SDL and HMI", common.start)
-runner.Step("Connect two mobile devices to SDL", connectMobDevices, {devices})
+runner.Step("Connect two mobile devices to SDL", connectMobDevices)
 runner.Step("Register App1 from device 1", common.registerAppEx, {1, appParams[1], 1})
 runner.Step("Register App1 from device 2", common.registerAppEx, {2, appParams[1], 2})
 

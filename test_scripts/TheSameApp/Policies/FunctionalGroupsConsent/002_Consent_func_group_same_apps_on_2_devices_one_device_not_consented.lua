@@ -131,7 +131,7 @@ runner.Step("Disallowed SendLocation from App1 from device 2", common.sendLocati
 
 runner.Step("Allow group Group001 for App1 on Device 1", common.funcGroupConsentForApp,
     {{{name = "ConsentGroup001", allowed = true}}, 1})
-runner.Step("Succeed SendLocation from App1 from device 1", common.sendLocation, {1, "SUCCESS"})
+runner.Step("Successful SendLocation from App1 from device 1", common.sendLocation, {1, "SUCCESS"})
 runner.Step("Disallowed SendLocation from App1 from device 2", common.sendLocation, {2, "DISALLOWED"})
 
 runner.Step("Disallow group Group001 for App1 on Device 1", common.funcGroupConsentForApp,

@@ -164,9 +164,9 @@ runner.Step("Register App1 from device 2", common.registerAppEx, {3, appParams[1
 runner.Title("Test")
 runner.Step("Allow group Group001 for all Apps", common.funcGroupConsentForApp,
     {{{name = "ConsentGroup001", allowed = true}}})
-runner.Step("Succeed Show from App1 from device 1", common.show, {1, "SUCCESS"})
-runner.Step("Succeed Show from App2 from device 1", common.show, {2, "SUCCESS"})
-runner.Step("Succeed Show from App1 from device 2", common.show, {3, "SUCCESS"})
+runner.Step("Successful Show from App1 from device 1", common.show, {1, "SUCCESS"})
+runner.Step("Successful Show from App2 from device 1", common.show, {2, "SUCCESS"})
+runner.Step("Successful Show from App1 from device 2", common.show, {3, "SUCCESS"})
 
 runner.Step("Disallow group Group001 for all Apps", common.funcGroupConsentForApp,
     {{{name = "ConsentGroup001", allowed = false}}})

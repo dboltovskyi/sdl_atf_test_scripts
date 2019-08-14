@@ -117,12 +117,12 @@ runner.Step("Disallowed GetSystemCapability from App1 from device 1", common.get
 runner.Step("Disallowed GetSystemCapability from App1 from device 2", common.getSystemCapability, {2, "DISALLOWED"})
 
 runner.Step("Allow SDL for Device 1", common.mobile.allowSDL, {1})
-runner.Step("Succeed GetSystemCapability from App1 from device 1", common.getSystemCapability, {1, "SUCCESS"})
+runner.Step("Successful GetSystemCapability from App1 from device 1", common.getSystemCapability, {1, "SUCCESS"})
 runner.Step("Disallowed GetSystemCapability from App1 from device 2", common.getSystemCapability, {2, "DISALLOWED"})
 
 runner.Step("Allow SDL for Device 2", common.mobile.allowSDL, {2})
-runner.Step("Succeed GetSystemCapability from App1 from device 1", common.getSystemCapability, {1, "SUCCESS"})
-runner.Step("Succeed GetSystemCapability from App1 from device 2", common.getSystemCapability, {2, "SUCCESS"})
+runner.Step("Successful GetSystemCapability from App1 from device 1", common.getSystemCapability, {1, "SUCCESS"})
+runner.Step("Successful GetSystemCapability from App1 from device 2", common.getSystemCapability, {2, "SUCCESS"})
 
 runner.Step("Disallow SDL for Device 1", common.mobile.disallowSDL, {1})
 runner.Step("Disallowed GetSystemCapability from App1 from device 1", common.getSystemCapability, {1, "DISALLOWED"})

@@ -83,10 +83,10 @@ runner.Step("Connect mobile device 1 to SDL", common.connectMobDevice, {1, devic
 runner.Step("Register App1 from device 1", common.registerAppEx, {1, appParams[1], 1})
 
 runner.Title("Test")
-runner.Step("Succeed GetSystemCapability from App1 from device 1", common.getSystemCapability, {1, "SUCCESS"})
+runner.Step("Successful GetSystemCapability from App1 from device 1", common.getSystemCapability, {1, "SUCCESS"})
 runner.Step("Connect mobile device 2 to SDL", common.connectMobDevice, {2, devices[2], false})
 runner.Step("Register App1 from device 2", common.registerAppEx, {2, appParams[1], 2})
-runner.Step("Succeed GetSystemCapability from App1 from device 1", common.getSystemCapability, {1, "SUCCESS"})
+runner.Step("Successful GetSystemCapability from App1 from device 1", common.getSystemCapability, {1, "SUCCESS"})
 runner.Step("Disallowed GetSystemCapability from App1 from device 2", common.getSystemCapability, {2, "DISALLOWED"})
 
 runner.Title("Postconditions")

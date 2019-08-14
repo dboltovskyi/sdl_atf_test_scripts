@@ -103,11 +103,11 @@ runner.Step("Register App1 from device 1", common.registerAppEx, {1, appParams[1
 runner.Title("Test")
 runner.Step("Allow group Group001 for App1 on Device 1", common.funcGroupConsentForApp,
     {{{name = "ConsentGroup001", allowed = true}}, 1})
-runner.Step("Succeed SendLocation from App1 from device 1", common.sendLocation, {1, "SUCCESS"})
+runner.Step("Successful SendLocation from App1 from device 1", common.sendLocation, {1, "SUCCESS"})
 
 runner.Step("Connect mobile device 2 to SDL", common.connectMobDevice, {2, devices[2], true})
 runner.Step("Register App1 from device 2", common.registerAppEx, {2, appParams[1], 2})
-runner.Step("Succeed SendLocation from App1 from device 1", common.sendLocation, {1, "SUCCESS"})
+runner.Step("Successful SendLocation from App1 from device 1", common.sendLocation, {1, "SUCCESS"})
 runner.Step("Disallowed SendLocation from App1 from device 2", common.sendLocation, {2, "DISALLOWED"})
 
 runner.Title("Postconditions")

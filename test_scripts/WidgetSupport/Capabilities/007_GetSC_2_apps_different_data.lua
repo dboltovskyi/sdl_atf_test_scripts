@@ -20,9 +20,8 @@ local common = require('test_scripts/WidgetSupport/common')
 --[[ Local Variables ]]
 local appParams = {}
 for i = 1, 2 do
-  appParams[i] = common.getOnSystemCapabilityParams()
+  appParams[i] = common.getOnSystemCapabilityParams(i)
   local disCap = appParams[i].systemCapability.displayCapabilities[1]
-  disCap.windowTypeSupported[1].maximumNumberOfWindows = i
   disCap.windowCapabilities[1].windowID = i
 end
 

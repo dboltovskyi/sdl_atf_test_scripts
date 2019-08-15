@@ -72,9 +72,11 @@ end
 
 --[[ @getOnSystemCapabilityParams: Provide default parameters for 'OnSystemCapabilityParams' RPC
 --! @parameters:
+--! pMaxNumOfWidgetWindows: maximum number of widget windows
 --! @return: parameters for 'OnSystemCapabilityParams' RPC
 --]]
-function m.getOnSystemCapabilityParams()
+function m.getOnSystemCapabilityParams(pMaxNumOfWidgetWindows)
+  if not pMaxNumOfWidgetWindows then pMaxNumOfWidgetWindows = 5 end
   return {
     systemCapability = {
       systemCapabilityType = "DISPLAYS",
@@ -83,8 +85,12 @@ function m.getOnSystemCapabilityParams()
           displayName = "displayName",
           windowTypeSupported = {
             {
-              type = "WIDGET",
+              type = "MAIN",
               maximumNumberOfWindows = 1
+            },
+            {
+              type = "WIDGET",
+              maximumNumberOfWindows = pMaxNumOfWidgetWindows
             }
           },
           windowCapabilities = {

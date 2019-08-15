@@ -17,9 +17,7 @@
 ---------------------------------------------------------------------------------------------------
 
 --[[ Required Shared libraries ]]
-local runner = require('user_modules/script_runner')
 local common = require('test_scripts/API/VehicleData/commonVehicleData')
-local commonTestCases = require('user_modules/shared_testcases/commonTestCases')
 
 --[[ Local Variables ]]
 local rpc1 = {
@@ -61,65 +59,67 @@ local rpc2 = {
 
 local vehicleDataResults = {
   engineOilLife = {
-    dataType = "VEHICLEDATA_ENGINEOILLIFE", 
+    dataType = "VEHICLEDATA_ENGINEOILLIFE",
     resultCode = "SUCCESS"
   },
   fuelRange = {
-    dataType = "VEHICLEDATA_FUELRANGE", 
+    dataType = "VEHICLEDATA_FUELRANGE",
     resultCode = "SUCCESS"
   },
   tirePressure = {
-    dataType = "VEHICLEDATA_TIREPRESSURE", 
+    dataType = "VEHICLEDATA_TIREPRESSURE",
     resultCode = "SUCCESS"
-  }, 
+  },
   electronicParkBrakeStatus = {
     dataType = "VEHICLEDATA_ELECTRONICPARKBRAKESTATUS",
-    resultCode = "SUCCESS" 
+    resultCode = "SUCCESS"
   },
   turnSignal = {
-    dataType = "VEHICLEDATA_TURNSIGNAL", 
+    dataType = "VEHICLEDATA_TURNSIGNAL",
     resultCode = "SUCCESS"
   }
 }
 
 --[[ Local Functions ]]
-local function ptu_update_func(tbl)
-  local params = tbl.policy_table.functional_groupings["Emergency-1"].rpcs["OnVehicleData"].parameters
-  local newParams = {}
-  for index, value in pairs(params) do
-    if not (("engineOilLife" == value) or ("fuelRange" == value) or ("tirePressure" == value) or ("turnSignal" == value) or  ("electronicParkBrakeStatus" == value)) then table.insert(newParams, value) end
-  end
-  tbl.policy_table.functional_groupings["Emergency-1"].rpcs["OnVehicleData"].parameters = newParams
-end
-
-local function processRPCSubscribeSuccess(self)
-  local mobileSession = common.getMobileSession(self, 1)
-  local cid = mobileSession:SendRPC(rpc1.name, rpc1.params)
-  EXPECT_HMICALL("VehicleInfo." .. rpc1.name, rpc1.params)
+local function processRPCSubscribeSuccess()
+  local cid = common.getMobileSession():SendRPC(rpc1.name, rpc1.params)
+  common.getHMIConnection():ExpectRequest("VehicleInfo." .. rpc1.name, rpc1.params)
   :Do(function(_, data)
-      self.hmiConnection:SendResponse(data.id, data.method, "SUCCESS", 
+      common.getHMIConnection():SendResponse(data.id, data.method, "SUCCESS",
         vehicleDataResults)
-    end)  
+    end)
   local responseParams = vehicleDataResults
   responseParams.success = true
   responseParams.resultCode = "SUCCESS"
-  mobileSession:ExpectResponse(cid, responseParams)
+  common.getMobileSession():ExpectResponse(cid, responseParams)
 end
 
-local function checkNotificationIgnored(self)
-  local mobileSession = common.getMobileSession(self, 1)
-  self.hmiConnection:SendNotification("VehicleInfo." .. rpc2.name, rpc2.params)
-  mobileSession:ExpectNotification("OnVehicleData", rpc2.params):Times(0)
-  commonTestCases:DelayedExp(common.timeout)
+local function checkNotificationIgnored()
+  common.getHMIConnection():SendNotification("VehicleInfo." .. rpc2.name, rpc2.params)
+  common.getMobileSession():ExpectNotification("OnVehicleData", rpc2.params):Times(0)
+end
+
+local function ptUpdate(pTbl)
+  pTbl.policy_table.app_policies[common.getConfigAppParams().fullAppID].groups = { "Base-4", "Emergency-1" }
+  local grp = pTbl.policy_table.functional_groupings["Emergency-1"]
+  for _, v in pairs(grp.rpcs) do
+    v.parameters = { "gps" }
+  end
 end
 
 --[[ Scenario ]]
-runner.Title("Preconditions")
-runner.Step("Clean environment", common.preconditions)
-runner.Step("Start SDL, HMI, connect Mobile, start Session", common.start)
-runner.Step("RAI with PTU", common.registerAppWithPTU)
-runner.Step("Activate App", common.activateApp)
+common.Title("Preconditions")
+common.Step("Clean environment", common.preconditions)
+common.Step("Start SDL, HMI, connect Mobile, start Session", common.start)
+common.Step("RAI", common.registerApp)
+common.Step("PTU", common.policyTableUpdate, { common.ptUpdate })
+common.Step("Activate App", common.activateApp)
 
-runner.Title("Test")
-runner.Step("RPC " .. rpc1.name, processRPCSubscribeSuccess)
-runner.Step("RAI 2nd app with PTU", common.registerAppWithPTU, 
+common.Title("Test")
+common.Step("RPC " .. rpc1.name, processRPCSubscribeSuccess)
+common.Step("RAI", common.registerApp, { 2 })
+common.Step("PTU", common.policyTableUpdate, { ptUpdate })
+common.Step("RPC " .. rpc2.name, checkNotificationIgnored)
+
+common.Title("Postconditions")
+common.Step("Stop SDL", common.postconditions)

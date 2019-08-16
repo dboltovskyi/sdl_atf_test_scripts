@@ -34,7 +34,6 @@ m.timeout = 2000
 
 --[[ Variables ]]
 local hmiAppIds = {}
-local originalValuesInSDLIni = {}
 
 test.mobileConnections = {}
 test.mobileSession = {}
@@ -693,19 +692,28 @@ end
 --! @return: none
 --]]
 function m.sdl.setSDLIniParameter(pParamName, pParamValue)
-  if originalValuesInSDLIni[pParamName] == nil then
-    originalValuesInSDLIni[pParamName] = m.sdl.getSDLIniParameter(pParamName)
-  end
+  m.sdl.backupSDLIniFile()
   commonFunctions:write_parameter_to_smart_device_link_ini(pParamName, pParamValue)
 end
 
---[[ @restoreSDLIniParameters: restore original values of parameters in SDL .ini file
+--[[ @sdl.backupSDLIniFile: backup SDL .ini file
 --! @parameters: none
 --! @return: none
 --]]
-function m.sdl.restoreSDLIniParameters()
-  for pParamName, pParamValue in pairs(originalValuesInSDLIni) do
-    commonFunctions:write_parameter_to_smart_device_link_ini(pParamName, pParamValue)
+function m.sdl.backupSDLIniFile()
+  if not m.sdl.isSdlIniBackuped then
+    commonPreconditions:BackupFile("smartDeviceLink.ini")
+    m.sdl.isSdlIniBackuped = true
+  end
+end
+
+--[[ @sdl.restoreSDLIniFile: restore backuped SDL .ini file
+--! @parameters: none
+--! @return: none
+--]]
+function m.sdl.restoreSDLIniFile()
+  if m.sdl.isSdlIniBackuped then
+    commonPreconditions:RestoreFile("smartDeviceLink.ini")
   end
 end
 
@@ -1016,7 +1024,7 @@ end
 --]]
 function m.postconditions()
   StopSDL()
-  m.sdl.restoreSDLIniParameters()
+  m.sdl.restoreSDLIniFile()
   m.sdl.restorePreloadedPT()
 end
 
@@ -1100,6 +1108,6 @@ m.setSDLIniParameter = m.sdl.setSDLIniParameter
 --! @parameters: none
 --! @return: none
 --]]
-m.restoreSDLIniParameters = m.sdl.restoreSDLIniParameters
+m.restoreSDLIniParameters = m.sdl.restoreSDLIniFile
 
 return m

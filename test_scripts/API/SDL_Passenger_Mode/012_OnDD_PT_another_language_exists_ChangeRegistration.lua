@@ -38,19 +38,28 @@ local function updatePreloadedPT()
   common.updatePreloadedPT(lockScreenDismissalEnabled, updatePT)
 end
 
+local function expHMIChangeRegistration(pLang)
+  for _, iface in pairs({ "UI", "VR", "TTS" }) do
+    common.getHMIConnection():ExpectRequest(iface .. ".ChangeRegistration", { language = pLang })
+    :Do(function(_, data)
+        common.getHMIConnection():SendResponse(data.id, data.method, "SUCCESS", {})
+      end)
+  end
+end
+
 local function changeRegistration()
   local params = {
     language = common.language,
     hmiDisplayLanguage = common.language,
   }
   local cid = common.getMobileSession():SendRPC("ChangeRegistration", params)
-  for _, iface in pairs({ "UI", "VR", "TTS" }) do
-    common.getHMIConnection():ExpectRequest(iface .. ".ChangeRegistration")
-    :Do(function(_, data)
-        common.getHMIConnection():SendResponse(data.id, data.method, "SUCCESS", {})
-      end)
-  end
+  expHMIChangeRegistration("DE-DE")
   common.getMobileSession():ExpectResponse(cid, { success = true, resultCode = "SUCCESS" })
+end
+
+local function registerApp()
+  expHMIChangeRegistration("EN-US")
+  common.registerAppWOPTU()
 end
 
 --[[ Scenario ]]
@@ -58,7 +67,7 @@ runner.Title("Preconditions")
 runner.Step("Clean environment", common.preconditions)
 runner.Step("Set LockScreenDismissalEnabled", updatePreloadedPT)
 runner.Step("Start SDL, HMI, connect Mobile, start Session", common.start)
-runner.Step("Register App", common.registerAppWOPTU)
+runner.Step("Register App", registerApp)
 runner.Step("Change language for App", changeRegistration)
 runner.Step("Activate App to FULL", common.activateApp)
 

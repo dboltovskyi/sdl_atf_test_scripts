@@ -132,7 +132,7 @@ local function performAudioPassThru(pAppId, pParams)
       hmi:SendResponse(data.id, data.method, "SUCCESS", {})
       hmi:SendNotification("TTS.Stopped")
     end
-    common.run.runAfter(ttsSpeakResponse, common.minTimeout)
+    common.run.runAfter(ttsSpeakResponse, 50)
   end)
   hmi:ExpectRequest("UI.PerformAudioPassThru", params.requestUiParams)
   :Do(function(_,data)

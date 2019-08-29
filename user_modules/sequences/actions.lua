@@ -693,7 +693,32 @@ end
 --]]
 function m.sdl.setSDLIniParameter(pParamName, pParamValue)
   m.sdl.backupSDLIniFile()
-  commonFunctions:write_parameter_to_smart_device_link_ini(pParamName, pParamValue)
+  local fileName = commonPreconditions:GetPathToSDL() .. "smartDeviceLink.ini"
+  local f = io.open(fileName, "r")
+  local content = f:read("*all")
+  f:close()
+  local function setParamValue(pContent, pParam, pValue)
+    pValue = string.gsub(pValue, "%%", "%%%%")
+    local out = ""
+    local find = false
+    for line in pContent:gmatch("([^\r\n]*)[\r\n]") do
+      local ptrn = "^%s*".. pParam .. "%s*=.*"
+      if string.find(line, ptrn) then
+        if not find then
+          line = string.gsub(line, ptrn, pParam .. " = " .. tostring(pValue))
+          find = true
+        else
+          line  = ";" .. line
+        end
+      end
+      out = out .. line .. "\n"
+    end
+    return out
+  end
+  content = setParamValue(content, pParamName, pParamValue)
+  f = io.open(fileName, "w")
+  f:write(content)
+  f:close()
 end
 
 --[[ @sdl.backupSDLIniFile: backup SDL .ini file

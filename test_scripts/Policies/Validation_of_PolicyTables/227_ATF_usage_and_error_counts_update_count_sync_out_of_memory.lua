@@ -194,10 +194,10 @@ end
 --[[ Test ]]
 commonFunctions:newTestCasesGroup("Test")
 function Test:HMIsendOnSystemError()
-  for _ = 1, 5 do
-    os.execute("sleep 2")
-    self:onSystemError("SYNC_OUT_OF_MEMMORY")
+  for i = 1, 5 do
+    RUN_AFTER(function() self:onSystemError("SYNC_OUT_OF_MEMMORY") end, 100 * i)
   end
+  commonTestCases:DelayedExp(1000)
 end
 
 function Test:StopSDL()
@@ -217,10 +217,10 @@ function Test:InitHMI_OnReady2()
   commonTestCases:DelayedExp(10000)
 end
 function Test:HMIsendOnSystemError2()
-  for _ = 1, 4 do
-    commonTestCases:DelayedExp(2000)
-    self:onSystemError("SYNC_OUT_OF_MEMMORY")
+  for i = 1, 4 do
+    RUN_AFTER(function() self:onSystemError("SYNC_OUT_OF_MEMMORY") end, 100 * i)
   end
+  commonTestCases:DelayedExp(1000)
 end
 
 function Test:StopSDL2()
@@ -228,6 +228,7 @@ function Test:StopSDL2()
 end
 
 function Test:CheckPTUinLocalPT()
+  os.execute("sleep 5")
   --TestData:store("Store LocalPT after SDL.onSystemError", constructPathToDatabase(), "policy.sqlite" )
   local checks = {
     {

@@ -26,6 +26,7 @@ local testCasesForPolicyTable = require ('user_modules/shared_testcases/testCase
 local mobile_session = require('mobile_session')
 local sdl = require('SDL')
 local utils = require ('user_modules/utils')
+local commonTestCases = require ('user_modules/shared_testcases/commonTestCases')
 
 --[[ Local Functions ]]
 
@@ -33,7 +34,7 @@ local function ReplacePreloadedFile()
   os.execute('cp ' .. config.pathToSDL .. 'sdl_preloaded_pt.json' .. ' ' .. config.pathToSDL .. 'backup_sdl_preloaded_pt.json')
   --os.execute('cp -f ' .. 'files/jsons/Policy/Related_HMI_API/OnAppPermissionConsent.json' .. ' ' .. config.pathToSDL .. 'sdl_preloaded_pt.json')
   os.execute('cp files/jsons/Policies/Related_HMI_API/OnAppPermissionConsent.json ' .. config.pathToSDL .. 'sdl_preloaded_pt.json')
-  os.execute('rm ' .. config.pathToSDL .. 'policy.sqlite')
+  os.execute('rm ' .. config.pathToSDL .. 'storage/policy.sqlite')
 end
 
 local function RestorePreloadedPT()
@@ -42,15 +43,14 @@ local function RestorePreloadedPT()
 end
 
 local function FACTORY_DEFAULTS(self)--, appNumber)
-  -- if appNumber == nil then
-  -- appNumber = 1
-  -- end
   self.hmiConnection:SendNotification("BasicCommunication.OnExitAllApplications",
     {
       reason = "FACTORY_DEFAULTS"
     })
-  --EXPECT_HMINOTIFICATION("BasicCommunication.OnSDLClose", {})
-  --DelayedExp(1000)
+  EXPECT_HMINOTIFICATION("BasicCommunication.OnAppUnregistered")
+  EXPECT_HMINOTIFICATION("BasicCommunication.OnSDLClose")
+  EXPECT_NOTIFICATION("OnAppInterfaceUnregistered", { reason = "IGNITION_OFF" })
+  commonTestCases:DelayedExp(5000)
 end
 
 --[[ General preconditions before ATF start]]
@@ -118,10 +118,6 @@ end
 
 function Test:Precondition_Execute_Factory_reset()
   FACTORY_DEFAULTS(self)
-end
-
-function Test.Precondition_Wait_SDL_stop()
-  os.execute("sleep 15")
 end
 
 --TODO(istoimenova): Remove when "[ATF] ATF stops execution of scripts at IGNITION_OFF." is resolved.

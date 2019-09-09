@@ -257,6 +257,7 @@ function Test:StopSDL2()
 end
 
 function Test:CheckPTUinLocalPT()
+  os.execute("sleep 5")
   TestData:store("Store LocalPT after SDL.onSystemError", constructPathToDatabase(), "policy.sqlite" )
   local checks = {
     {

@@ -126,6 +126,7 @@ function Test:TestStep_Send_OnPolicyUpdate_from_HMI()
   self.hmiConnection:SendNotification("SDL.OnPolicyUpdate")
   EXPECT_HMINOTIFICATION("SDL.OnStatusUpdate", {status = "UPDATE_NEEDED"})
   EXPECT_HMICALL("BasicCommunication.PolicyUpdate", {file = "/tmp/fs/mp/images/ivsu_cache/sdl_snapshot.json"})
+  utils.wait(2000)
 end
 
 --[[ Postconditions ]]

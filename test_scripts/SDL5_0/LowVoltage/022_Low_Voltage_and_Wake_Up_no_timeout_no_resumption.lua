@@ -41,7 +41,6 @@ local function checkAppId(pAppId, pData)
 end
 
 local function sendWakeUpSignal()
-  common.cleanSessions()
   common.sendWakeUpSignal()
   common.getHMIConnection():ExpectNotification("BasicCommunication.OnAppUnregistered")
   :Times(0)
@@ -58,6 +57,8 @@ runner.Step("Add command data for App ", addCommand)
 
 runner.Title("Test")
 runner.Step("Send LOW_VOLTAGE signal", common.sendLowVoltageSignal)
+runner.Step("Wait 5s", common.wait, { 5000 })
+runner.Step("Close mobile connection", common.cleanSessions)
 runner.Step("Send WAKE_UP signal", sendWakeUpSignal)
 runner.Step("Re-connect Mobile", common.connectMobile)
 runner.Step("Re-register App, check resumption data and HMI level", common.reRegisterApp, {

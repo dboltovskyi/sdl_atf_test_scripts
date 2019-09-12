@@ -49,6 +49,7 @@ end
 local grammarId = {}
 local hashId = {}
 local origGetMobileSession = actions.getMobileSession
+local isLowVoltageState = false
 
 -- Override functions of Actions module
 
@@ -238,7 +239,10 @@ end
 --! @return: none
 --]]
 function m.sendLowVoltageSignal()
+  m.getHMIConnection():ExpectEvent(events.disconnectedEvent, "HMI Disonnected")
+  :Do(function() utils.cprint(35, "HMI disconnected") end)
   m.sendSignal("LOW_VOLTAGE")
+  isLowVoltageState = true
   m.wait()
 end
 
@@ -258,6 +262,7 @@ end
 function m.sendIgnitionOffSignal()
   local isSDLStoppedByItself = true
   m.sendSignal("IGNITION_OFF")
+  isLowVoltageState = false
   os.execute("sleep 1")
   local count = 0
   while SDL:CheckStatusSDL() == SDL.RUNNING do
@@ -280,7 +285,12 @@ end
 --]]
 function m.sendWakeUpSignal()
   m.sendSignal("WAKE_UP")
-  utils.wait()
+  if isLowVoltageState == true then
+    m.init.HMI()
+    isLowVoltageState = false
+  else
+    utils.wait()
+  end
 end
 
 --[[ @waitUntilResumptionDataIsStored: wait some time until SDL saves resumption data

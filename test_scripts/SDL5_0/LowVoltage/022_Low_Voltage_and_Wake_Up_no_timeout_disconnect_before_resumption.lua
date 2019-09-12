@@ -3,7 +3,8 @@
 -- 1. Mobile app is in FULL HMILevel
 -- 2. App sends AddCommand, however SDL is not saved resumption data since timer (10s) has not expired yet
 -- 3. SDL get LOW_VOLTAGE signal
--- 4. And then SDL get WAKE_UP signal
+-- 4. App closes connection
+-- 5. And then SDL get WAKE_UP signal
 -- SDL does:
 -- 1. save resumption data
 -- 2. resume FULL HMILevel for app
@@ -33,14 +34,13 @@ local function checkAppId(pAppId, pData)
 end
 
 local function sendWakeUpSignal()
-  common.sendWakeUpSignal()
   common.getHMIConnection():ExpectNotification("BasicCommunication.OnAppUnregistered", {
     unexpectedDisconnect = true,
     appID = common.getHMIAppId()
   })
-  :Do(function()
-      common.cleanSessions()
-    end)
+  RUN_AFTER(function() common.cleanSessions() end, 100)
+  RUN_AFTER(function() common.sendWakeUpSignal() end, 1000)
+  common.wait(3000)
 end
 
 --[[ Scenario ]]

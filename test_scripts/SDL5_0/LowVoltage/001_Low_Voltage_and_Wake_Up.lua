@@ -91,6 +91,12 @@ local function checkAppId(pAppId, pData)
   return true
 end
 
+local function sendWakeUpSignal()
+  common.sendWakeUpSignal()
+  common.getHMIConnection():SendNotification("BasicCommunication.OnEventChanged", {
+    isActive = false, eventName = "EMERGENCY_EVENT" })
+end
+
 --[[ Scenario ]]
 runner.Title("Preconditions")
 runner.Step("Clean environment", common.preconditions)
@@ -111,7 +117,7 @@ runner.Step("Send LOW_VOLTAGE signal", common.sendLowVoltageSignal)
 runner.Step("Check SDL Ignores RPCs from Mobile side", checkSDLIgnoresRPCFromMobileSide)
 runner.Step("Check SDL Ignores RPCs from HMI side", checkSDLIgnoresRPCFromHMISide)
 runner.Step("Close mobile connection", common.cleanSessions)
-runner.Step("Send WAKE_UP signal", common.sendWakeUpSignal)
+runner.Step("Send WAKE_UP signal", sendWakeUpSignal)
 runner.Step("Re-connect Mobile", common.connectMobile)
 for i = 1, numOfApps do
   runner.Step("Re-register App " .. i .. ", check resumption data and HMI level", common.reRegisterApp, {

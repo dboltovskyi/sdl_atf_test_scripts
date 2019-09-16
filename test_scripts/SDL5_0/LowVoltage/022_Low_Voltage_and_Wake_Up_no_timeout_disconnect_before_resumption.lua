@@ -6,8 +6,9 @@
 -- 4. App closes connection
 -- 5. And then SDL get WAKE_UP signal
 -- SDL does:
--- 1. not resume FULL HMILevel for app
--- 2. not resume persistent data
+-- 1. save resumption data
+-- 2. resume FULL HMILevel for app
+-- 3. resume persistent data
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
 local common = require('test_scripts/SDL5_0/LowVoltage/common')
@@ -22,29 +23,24 @@ local function addCommand()
 end
 
 local function checkResumptionData()
-  common.getHMIConnection():ExpectRequest("VR.AddCommand")
-  :Times(0)
-end
-
-local function checkResumptionHMILevel()
-  common.getHMIConnection():ExpectRequest("BasicCommunication.ActivateApp")
-  :Times(0)
-  common.getMobileSession():ExpectNotification("OnHMIStatus",
-    { hmiLevel = "NONE", audioStreamingState = "NOT_AUDIBLE", systemContext = "MAIN" })
+  common.rpcCheck.AddCommand(1, 1)
 end
 
 local function checkAppId(pAppId, pData)
-  if pData.params.application.appID == common.getHMIAppId(pAppId) then
-    return false, "App " .. pAppId .. " is registered with the same HMI App Id"
+  if pData.params.application.appID ~= common.getHMIAppId(pAppId) then
+    return false, "App " .. pAppId .. " is registered with not the same HMI App Id"
   end
   return true
 end
 
 local function sendWakeUpSignal()
-  common.cleanSessions()
-  common.sendWakeUpSignal()
-  common.getHMIConnection():ExpectNotification("BasicCommunication.OnAppUnregistered")
-  :Times(0)
+  common.getHMIConnection():ExpectNotification("BasicCommunication.OnAppUnregistered", {
+    unexpectedDisconnect = true,
+    appID = common.getHMIAppId()
+  })
+  RUN_AFTER(function() common.cleanSessions() end, 100)
+  RUN_AFTER(function() common.sendWakeUpSignal() end, 1000)
+  common.wait(3000)
 end
 
 --[[ Scenario ]]
@@ -61,7 +57,7 @@ runner.Step("Send LOW_VOLTAGE signal", common.sendLowVoltageSignal)
 runner.Step("Send WAKE_UP signal", sendWakeUpSignal)
 runner.Step("Re-connect Mobile", common.connectMobile)
 runner.Step("Re-register App, check resumption data and HMI level", common.reRegisterApp, {
-  1, checkAppId, checkResumptionData, checkResumptionHMILevel, "RESUME_FAILED", 11000
+  1, checkAppId, checkResumptionData, common.checkResumptionHMILevel, "SUCCESS", 1000
 })
 
 runner.Title("Postconditions")

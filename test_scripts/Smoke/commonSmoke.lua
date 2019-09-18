@@ -35,6 +35,7 @@ commonSmoke.is_table_equal = commonFunctions.is_table_equal
 commonSmoke.read_parameter_from_smart_device_link_ini =  commonFunctions.read_parameter_from_smart_device_link_ini
 commonSmoke.GetPathToSDL = commonPreconditions.GetPathToSDL
 commonSmoke.jsonFileToTable = utils.jsonFileToTable
+commonSmoke.wait = utils.wait
 
 local preloadedPT = commonSmoke:read_parameter_from_smart_device_link_ini("PreloadedPT")
 

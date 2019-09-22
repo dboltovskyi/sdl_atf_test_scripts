@@ -87,8 +87,8 @@ end
 
 local function addContent(pAppId, pContentData)
   appData[pAppId] = { hmiAppId = common.app.getHMIId(pAppId) }
-  common.addCommand(pAppId, pContentData.addCommand)
-  common.addSubMenu(pAppId, pContentData.addSubMenu)
+  common.run.runAfter(function() common.addCommand(pAppId, pContentData.addCommand) end, 100)
+  common.run.runAfter(function() common.addSubMenu(pAppId, pContentData.addSubMenu) end, 200)
   common.mobile.getSession(pAppId):ExpectNotification("OnHashChange")
   :Do(function(exp, data)
       if exp.occurences == 2 then

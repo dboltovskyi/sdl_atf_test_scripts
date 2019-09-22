@@ -523,6 +523,7 @@ function common.policyTableUpdateWithOnPermChange(pPTUpdateFunc, pExpNotificatio
   :ValidIf(function(_, data)
       return common.onPermissionChangeValidation(data.payload.permissionItem, pVDparams)
     end)
+  :Do(function() utils.wait(1000) end)
 end
 
 function common.validation(actualData, expectedData, pMessage)

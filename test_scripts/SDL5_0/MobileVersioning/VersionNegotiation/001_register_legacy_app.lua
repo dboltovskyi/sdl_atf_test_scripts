@@ -98,9 +98,9 @@ local function RegisterAppInterface(self)
 	local notificationParams = GetNotificationParams()
 	EXPECT_HMINOTIFICATION("BasicCommunication.OnAppRegistered", notificationParams)
 	self.mobileSession1:ExpectResponse(CorIdRAI, { success = true, resultCode = "SUCCESS", syncMsgVersion = {
-		majorVersion = 4,
-		minorVersion = 5,
-		patchVersion = 1
+		majorVersion = 2,
+		minorVersion = 2,
+		patchVersion = 0
 	}})
 	self.mobileSession1:ExpectNotification("OnHMIStatus",
 		{ hmiLevel = "NONE", audioStreamingState = "NOT_AUDIBLE", systemContext = "MAIN" })

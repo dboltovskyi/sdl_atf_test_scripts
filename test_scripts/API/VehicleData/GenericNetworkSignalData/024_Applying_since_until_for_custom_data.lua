@@ -81,11 +81,10 @@ runner.Step("App2 activation", common.activateApp, { appSessionId2 })
 runner.Title("Test")
 runner.Step("App1 SubscribeVehicleData " .. vehicleDataName, common.VDsubscription,
   { appSessionId1, vehicleDataName, "SubscribeVehicleData" })
-runner.Step("App1 OnVehicleData " .. vehicleDataName, common.onVD, { appSessionId1, vehicleDataName })
+runner.Step("App1 OnVehicleData " .. vehicleDataName, common.onVD, { appSessionId1, vehicleDataName, common.VD.NOT_EXPECTED })
 runner.Step("App1 UnsubscribeVehicleData " .. vehicleDataName, common.VDsubscription,
   { appSessionId1, vehicleDataName, "UnsubscribeVehicleData" })
-runner.Step("App1 GetVehicleData " .. vehicleDataName, common.GetVD, { appSessionId1, vehicleDataName })
-
+runner.Step("App1 GetVehicleData " .. vehicleDataName, getVehicleDataGenericError, { appSessionId1, vehicleDataName })
 runner.Step("Update parameter values according to since and until values", setNewParams)
 runner.Step("App2 SubscribeVehicleData " .. vehicleDataName, common.VDsubscription,
   { appSessionId2, vehicleDataName, "SubscribeVehicleData" })
@@ -97,10 +96,10 @@ runner.Step("App2 GetVehicleData " .. vehicleDataName, common.GetVD, { appSessio
 runner.Step("App1 SubscribeVehicleData " .. vehicleDataName .. " with updated values", common.VDsubscription,
   { appSessionId1, vehicleDataName, "SubscribeVehicleData" })
 runner.Step("App1 OnVehicleData " .. vehicleDataName .. " with updated values", common.onVD,
-  { appSessionId1, vehicleDataName, common.VD.NOT_EXPECTED })
+  { appSessionId1, vehicleDataName, common.VD.EXPECTED })
 runner.Step("App1 UnsubscribeVehicleData " .. vehicleDataName .. " with updated values", common.VDsubscription,
   { appSessionId1, vehicleDataName, "UnsubscribeVehicleData" })
-runner.Step("App1 GetVehicleData " .. vehicleDataName .. " with updated values", getVehicleDataGenericError,
+runner.Step("App1 GetVehicleData " .. vehicleDataName .. " with updated values", common.GetVD, 
   { appSessionId1, vehicleDataName })
 
 runner.Title("Postconditions")

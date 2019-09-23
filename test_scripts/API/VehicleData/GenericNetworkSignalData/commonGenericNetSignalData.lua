@@ -19,6 +19,7 @@ local SDL = require("modules/SDL")
 
 --[[ Local Variables ]]
 local common = {}
+common.getPolicyAppId = actions.app.getPolicyAppId
 common.start = actions.start
 common.setSDLIniParameter = actions.setSDLIniParameter
 common.activateApp = actions.activateApp
@@ -803,7 +804,7 @@ function common.ptuFuncWithCustomData(pTbl)
   rpcsGroupWithAllVehicleData.SubscribeVehicleData.parameters = customDataNames
   rpcsGroupWithAllVehicleData.UnsubscribeVehicleData.parameters = customDataNames
 
-  pTbl.policy_table.app_policies[common.getConfigAppParams(1).fullAppID].groups = {
+  pTbl.policy_table.app_policies[actions.app.getPolicyAppId(1)].groups = {
     "Base-4", "GroupWithAllRpcSpecVehicleData", "GroupWithAllVehicleData"
   }
 end
@@ -811,7 +812,7 @@ end
 function common.ptuFuncWithCustomData2Apps(pTbl)
   common.ptuFuncWithCustomData(pTbl)
 
-  pTbl.policy_table.app_policies[common.getConfigAppParams(2).fullAppID].groups = {
+  pTbl.policy_table.app_policies[actions.app.getPolicyAppId(2)].groups = {
     "Base-4", "GroupWithAllRpcSpecVehicleData", "GroupWithAllVehicleData"
   }
 end

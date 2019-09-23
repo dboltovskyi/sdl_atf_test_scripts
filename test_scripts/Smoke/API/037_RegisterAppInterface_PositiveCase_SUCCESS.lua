@@ -78,7 +78,7 @@ local function SetNotificationParams()
 		transportType = "WIFI",
 		isSDLAllowed = true
 	}
-	notificationParams.application.policyAppID = requestParams.fullAppID
+	notificationParams.application.policyAppID = requestParams.appID
 	notificationParams.ttsName = requestParams.ttsName
 	notificationParams.vrSynonyms = requestParams.vrSynonyms
 	return notificationParams

@@ -5,8 +5,8 @@
 
 -- Precondition:
 -- 1. Preloaded file contains VehicleDataItems for all RPC spec VD
--- 2. App1 is registered with majorVersion = 3
--- 3. App2 is registered with majorVersion = 6
+-- 2. App1 is registered with majorVersion = 3.0
+-- 3. App2 is registered with majorVersion = 5.9
 -- 4. PTU is performed, the update contains VehicleDataItems with since, until parameters
 -- 5. Custom VD is allowed
 
@@ -23,8 +23,8 @@ local common = require('test_scripts/API/VehicleData/GenericNetworkSignalData/co
 runner.testSettings.isSelfIncluded = false
 config.application1.registerAppInterfaceParams.syncMsgVersion.majorVersion = 3
 config.application1.registerAppInterfaceParams.syncMsgVersion.minorVersion = 0
-config.application2.registerAppInterfaceParams.syncMsgVersion.majorVersion = 6
-config.application2.registerAppInterfaceParams.syncMsgVersion.minorVersion = 0
+config.application2.registerAppInterfaceParams.syncMsgVersion.majorVersion = 5
+config.application2.registerAppInterfaceParams.syncMsgVersion.minorVersion = 9
 
 --[[ Local Variables ]]
 local itemInteger
@@ -32,12 +32,12 @@ local vehicleDataName = "custom_vd_item1_integer"
 
 for VDkey, VDitem in pairs (common.customDataTypeSample)do
   if VDitem.name == vehicleDataName then
+    itemInteger = common.cloneTable(common.customDataTypeSample[VDkey])
     common.customDataTypeSample[VDkey]["since"] = "1.0"
     common.customDataTypeSample[VDkey]["until"] = "5.0"
-    itemInteger = common.cloneTable(common.customDataTypeSample[VDkey])
     itemInteger.minvalue = 101
     itemInteger.maxvalue = 1000
-    itemInteger.since = "5.0"
+    itemInteger.since = "5.1"
   end
 end
 
@@ -81,7 +81,8 @@ runner.Step("App2 activation", common.activateApp, { appSessionId2 })
 runner.Title("Test")
 runner.Step("App1 SubscribeVehicleData " .. vehicleDataName, common.VDsubscription,
   { appSessionId1, vehicleDataName, "SubscribeVehicleData" })
-runner.Step("App1 OnVehicleData " .. vehicleDataName, common.onVD, { appSessionId1, vehicleDataName })
+runner.Step("App1 OnVehicleData " .. vehicleDataName, common.onVD,
+  { appSessionId1, vehicleDataName, common.VD.EXPECTED })
 runner.Step("App1 UnsubscribeVehicleData " .. vehicleDataName, common.VDsubscription,
   { appSessionId1, vehicleDataName, "UnsubscribeVehicleData" })
 runner.Step("App1 GetVehicleData " .. vehicleDataName, common.GetVD, { appSessionId1, vehicleDataName })
@@ -89,7 +90,8 @@ runner.Step("App1 GetVehicleData " .. vehicleDataName, common.GetVD, { appSessio
 runner.Step("Update parameter values according to since and until values", setNewParams)
 runner.Step("App2 SubscribeVehicleData " .. vehicleDataName, common.VDsubscription,
   { appSessionId2, vehicleDataName, "SubscribeVehicleData" })
-runner.Step("App2 OnVehicleData " .. vehicleDataName, common.onVD, { appSessionId2, vehicleDataName })
+runner.Step("App2 OnVehicleData " .. vehicleDataName, common.onVD,
+  { appSessionId2, vehicleDataName, common.VD.EXPECTED })
 runner.Step("App2 UnsubscribeVehicleData " .. vehicleDataName, common.VDsubscription,
   { appSessionId2, vehicleDataName, "UnsubscribeVehicleData" })
 runner.Step("App2 GetVehicleData " .. vehicleDataName, common.GetVD, { appSessionId2, vehicleDataName })

@@ -38,18 +38,10 @@ local params = {
     moduleType = moduleType,
     moduleIds = moduleIds
   },
-  hmiRequest = {
-    appID = commonSmoke.getHMIAppId(1),
-    moduleType = moduleType,
-    moduleIds = moduleIds
-  },
-  hmiResponse = {
-    allowed = { true, false }
-  },
   mobResponse = {
     success = true,
     resultCode = "SUCCESS",
-    allowed = { true, false }
+    allowed = { true, true }
   }
 }
 
@@ -57,10 +49,8 @@ local params = {
 local function getInteriorVehicleDataConsent(self)
   local mobSession = commonSmoke.getMobileSession(1, self)
   local cid = mobSession:SendRPC("GetInteriorVehicleDataConsent", params.mobRequest)
-  EXPECT_HMICALL("RC.GetInteriorVehicleDataConsent", params.hmiRequest)
-  :Do(function(_, data)
-      self.hmiConnection:SendResponse(data.id, data.method, "SUCCESS", params.hmiResponse)
-    end)
+  EXPECT_HMICALL("RC.GetInteriorVehicleDataConsent")
+  :Times(0)
   mobSession:ExpectResponse(cid, params.mobResponse)
 end
 

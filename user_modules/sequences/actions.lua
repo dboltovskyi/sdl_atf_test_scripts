@@ -3,7 +3,7 @@
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
 local mobile = require("mobile_connection")
-local tcp = require("tcp_connection")
+local mobile_adapter_controller = require("mobile_adapter/mobile_adapter_controller")
 local file_connection = require("file_connection")
 local mobileSession = require("mobile_session")
 local commonFunctions = require("user_modules/shared_testcases/commonFunctions")
@@ -53,6 +53,7 @@ local function getMobConnectionFromSession(pMobSession)
   return pMobSession.mobile_session_impl.connection
 end
 
+--- Get application Id by script's App id
 local function getPolicyAppId(pAppId)
   local appParams = m.app.getParams(pAppId)
   local appId = appParams.fullAppID
@@ -71,8 +72,8 @@ end
 --- Raise event on mobile connection
 local function MobRaiseEvent(self, pEvent, pEventName)
   if pEventName == nil then pEventName = "noname" end
-  reporter.AddMessage(debug.getinfo(1, "n").name, pEventName)
-  event_dispatcher:RaiseEvent(self, pEvent)
+    reporter.AddMessage(debug.getinfo(1, "n").name, pEventName)
+    event_dispatcher:RaiseEvent(self, pEvent)
 end
 
 --- Create expectation for event on mobile connection
@@ -266,36 +267,11 @@ end
 
 --[[ Functions of mobile submodule ]]
 
---[[ @mobile.createConnection: Create mobile connection
---! @parameters:
---! pMobConnId - script's mobile connection id
---! pMobConnHost - mobile connection host
---! pMobConnPort - mobile connection port
---! @return: none
---]]
-function m.mobile.createConnection(pMobConnId, pMobConnHost, pMobConnPort)
-  if pMobConnId == nil then pMobConnId = 1 end
-  local filename = "mobile" .. pMobConnId .. ".out"
-  local tcpConnection = tcp.Connection(pMobConnHost, pMobConnPort)
-  local fileConnection = file_connection.FileConnection(filename, tcpConnection)
-  local connection = mobile.MobileConnection(fileConnection)
-  connection.RaiseEvent = MobRaiseEvent
-  connection.ExpectEvent = MobExpectEvent
-  connection.host = pMobConnHost
-  connection.port = pMobConnPort
-  event_dispatcher:AddConnection(connection)
-  test.mobileConnections[pMobConnId] = connection
-end
+m.mobile.CONNECTION_TYPE = mobile_adapter_controller.ADAPTER_TYPE
 
---[[ @mobile.connect: Connect mobile connection
---! @parameters:
---! pMobConnId - script's mobile connection id
---! @return: Expectation object of connection
---]]
-function m.mobile.connect(pMobConnId)
-  if pMobConnId == nil then pMobConnId = 1 end
+--- Register connection/disconnection event handlers for connection
+local function registerConnectionExpectations(pMobConnId)
   local connection = m.mobile.getConnection(pMobConnId)
-
   connection:ExpectEvent(events.disconnectedEvent, "Disconnected")
   :Pin()
   :Times(AnyNumber())
@@ -307,7 +283,50 @@ function m.mobile.connect(pMobConnId)
   ret:Do(function()
     utils.cprint(35, "Mobile #" .. pMobConnId .. " connected")
   end)
-  connection:Connect()
+
+  return ret
+end
+
+--[[ @mobile.createConnection: Create mobile connection
+--! @parameters:
+--! pMobConnId - script's mobile connection id
+--! pMobConnHost - mobile connection host
+--! pMobConnPort - mobile connection port
+--! @return: none
+--]]
+function m.mobile.createConnection(pMobConnId, pMobConnHost, pMobConnPort, pMobConnType)
+  if pMobConnId == nil then pMobConnId = 1 end
+  if pMobConnType == nil then pMobConnType = m.mobile.CONNECTION_TYPE.NORMAL end
+  local adapterParams = {}
+  adapterParams.port = pMobConnPort
+  if pMobConnType == m.mobile.CONNECTION_TYPE.WEB_ENGINE then
+    adapterParams.url = pMobConnHost
+  else
+    adapterParams.host = pMobConnHost
+  end
+
+  local baseConnection = mobile_adapter_controller.getAdapter(pMobConnType, adapterParams)
+  local filename = "mobile" .. pMobConnId .. ".out"
+  local fileConnection = file_connection.FileConnection(filename, baseConnection)
+  local connection = mobile.MobileConnection(fileConnection)
+  connection.RaiseEvent = MobRaiseEvent
+  connection.ExpectEvent = MobExpectEvent
+  connection.host = pMobConnHost
+  connection.port = pMobConnPort
+  connection.type = pMobConnType
+  event_dispatcher:AddConnection(connection)
+  test.mobileConnections[pMobConnId] = connection
+end
+
+--[[ @mobile.connect: Connect mobile connection
+--! @parameters:
+--! pMobConnId - script's mobile connection id
+--! @return: Expectation object of connection
+--]]
+function m.mobile.connect(pMobConnId)
+  if pMobConnId == nil then pMobConnId = 1 end
+  local ret = registerConnectionExpectations(pMobConnId)
+  m.mobile.getConnection(pMobConnId):Connect()
   return ret
 end
 
@@ -334,6 +353,7 @@ end
 --]]
 function m.mobile.deleteConnection(pMobConnId)
   if pMobConnId == nil then pMobConnId = 1 end
+  m.mobile.disconnect(pMobConnId)
   local connection = m.mobile.getConnection(pMobConnId)
   event_dispatcher:DeleteConnection(connection)
   test.mobileConnections[pMobConnId] = nil
@@ -622,8 +642,8 @@ function m.app.unRegister(pAppId)
   m.hmi.getConnection():ExpectNotification("BasicCommunication.OnAppUnregistered",
     { unexpectedDisconnect = false, appID = m.app.getHMIId(pAppId) })
   :Do(function()
-      m.app.deleteHMIId(pAppId)
-      m.mobile.deleteSession(pAppId)
+    m.app.deleteHMIId(pAppId)
+    m.mobile.deleteSession(pAppId)
     end)
 end
 
@@ -1167,7 +1187,7 @@ function m.start(pHMIParams)
   :Do(function()
       m.init.HMI()
       :Do(function()
-          m.init.HMI_onReady(pHMIParams)
+        m.init.HMI_onReady(pHMIParams)
           :Do(function()
               m.init.connectMobile()
               :Do(function()

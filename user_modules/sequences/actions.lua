@@ -296,7 +296,7 @@ end
 --]]
 function m.mobile.createConnection(pMobConnId, pMobConnHost, pMobConnPort, pMobConnType)
   if pMobConnId == nil then pMobConnId = 1 end
-  if pMobConnType == nil then pMobConnType = m.mobile.CONNECTION_TYPE.NORMAL end
+  if pMobConnType == nil then pMobConnType = config.defaultMobileAdapterType end
   local adapterParams = {}
   adapterParams.port = pMobConnPort
   if pMobConnType == m.mobile.CONNECTION_TYPE.WEB_ENGINE then

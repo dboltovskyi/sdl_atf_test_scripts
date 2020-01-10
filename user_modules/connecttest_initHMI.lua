@@ -1,7 +1,7 @@
 require('atf.util')
 local module = require('testbase')
 local mobile = require("mobile_connection")
-local tcp = require("tcp_connection")
+local mobile_adapter_controller = require("mobile_adapter/mobile_adapter_controller")
 local file_connection = require("file_connection")
 local mobile_session = require("mobile_session")
 local websocket = require('websocket_connection')
@@ -23,8 +23,30 @@ local SUCCESS = expectations.SUCCESS
 local FAILED = expectations.FAILED
 
 module.hmiConnection = hmi_connection.Connection(websocket.WebSocketConnection(config.hmiUrl, config.hmiPort))
-local tcpConnection = tcp.Connection(config.mobileHost, config.mobilePort)
-local fileConnection = file_connection.FileConnection("mobile.out", tcpConnection)
+
+--- Default mobile connection
+local function getDefaultMobileAdapter()
+  print("Default mobile device transport: " .. tostring(config.defaultMobileAdapterType))
+  if config.defaultMobileAdapterType == "TCP" then
+    local mobileAdapterType = mobile_adapter_controller.ADAPTER_TYPE.NORMAL
+    local mobileAdapterParameters = {
+      host = config.mobileHost,
+      port = config.mobilePort
+    }
+    return mobile_adapter_controller.getAdapter(mobileAdapterType, mobileAdapterParameters)
+  elseif config.defaultMobileAdapterType == "WS" then
+    local mobileAdapterType = mobile_adapter_controller.ADAPTER_TYPE.WEB_ENGINE
+    local mobileAdapterParameters = {
+      url = config.wsMobileURL,
+      port = config.wsMobilePort
+    }
+    return mobile_adapter_controller.getAdapter(mobileAdapterType, mobileAdapterParameters)
+  else error("Unknown default mobile adapter type: " .. tostring(config.defaultMobileAdapterType))
+  end
+end
+
+local mobileAdapter = getDefaultMobileAdapter()
+local fileConnection = file_connection.FileConnection("mobile.out", mobileAdapter)
 module.mobileConnection = mobile.MobileConnection(fileConnection)
 event_dispatcher:AddConnection(module.hmiConnection)
 event_dispatcher:AddConnection(module.mobileConnection)

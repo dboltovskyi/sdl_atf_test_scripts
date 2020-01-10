@@ -38,11 +38,20 @@ commonSmoke.jsonFileToTable = utils.jsonFileToTable
 commonSmoke.wait = utils.wait
 
 local preloadedPT = commonSmoke:read_parameter_from_smart_device_link_ini("PreloadedPT")
-
+local device ={
+  [1] = { id = nil, name = nil}
+}
 --[[Module functions]]
 local function allowSDL(self)
-  self.hmiConnection:SendNotification("SDL.OnAllowSDLFunctionality",
-    { allowed = true, source = "GUI", device = { id = commonSmoke.getDeviceMAC(), name = commonSmoke.getDeviceName() }})
+  EXPECT_HMICALL("BasicCommunication.UpdateDeviceList")
+  :Do(function(_, data)
+      device[1].id = data.params.deviceList[1].id
+      device[1].name = data.params.deviceList[1].name
+      self.hmiConnection:SendResponse(data.id, data.method, "SUCCESS", {})
+      self.hmiConnection:SendNotification("SDL.OnAllowSDLFunctionality",
+        { allowed = true, source = "GUI", device = { id = device[1].id, name = device[1].name }})
+    end)
+
   utils.wait(commonSmoke.minTimeout)
 end
 
@@ -59,11 +68,7 @@ function commonSmoke.getDeviceName()
 end
 
 function commonSmoke.getDeviceMAC()
-  local cmd = "echo -n " .. commonSmoke.getDeviceName() .. " | sha256sum | awk '{printf $1}'"
-  local handle = io.popen(cmd)
-  local result = handle:read("*a")
-  handle:close()
-  return result
+  return device[1].id
 end
 
 function commonSmoke.getPathToSDL()

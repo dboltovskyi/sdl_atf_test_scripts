@@ -81,7 +81,7 @@ function Test:TestStep_Firs_Time_Register_App_And_Check_That_No_Permission_Notif
         {
           name = utils.getDeviceName(),
           id = utils.getDeviceMAC(),
-          transportType = "WIFI",
+          transportType = utils.getDeviceTransportType(),
           isSDLAllowed = false
         }
       }

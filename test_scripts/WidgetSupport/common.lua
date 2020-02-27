@@ -482,13 +482,9 @@ end
 --! @return: none
 --]]
 function m.unexpectedDisconnect()
-  test.mobileConnection:Close()
   m.getHMIConnection():ExpectNotification("BasicCommunication.OnAppUnregistered", { unexpectedDisconnect = true })
-  :Do(function()
-      for i = 1, m.getAppsCount() do
-        test.mobileSession[i] = nil
-      end
-    end)
+  :Times(actions.mobile.getAppsCount())
+  actions.mobile.disconnect()
 end
 
 --[[ @connectMobile: create connection

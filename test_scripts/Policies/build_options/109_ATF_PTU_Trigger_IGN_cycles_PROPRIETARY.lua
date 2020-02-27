@@ -89,7 +89,7 @@ function Test:RegisterNewApp()
   :Do(function(_, d)
       self.hmiConnection:SendResponse(d.id, d.method, "SUCCESS", { })
     end)
-  EXPECT_HMINOTIFICATION("SDL.OnStatusUpdate", { status = "UPDATE_NEEDED" }, { status = "UPDATING" })
+  EXPECT_HMINOTIFICATION("SDL.OnStatusUpdate", { status = "UPDATE_NEEDED" }, { status = "UPDATING" }):Times(2)
 end
 
 function Test:Precondition_SUCCEESS_Flow_PROPRIETARY()

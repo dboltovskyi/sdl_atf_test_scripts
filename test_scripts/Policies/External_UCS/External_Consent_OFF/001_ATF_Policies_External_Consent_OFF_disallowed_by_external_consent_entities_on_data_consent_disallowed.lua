@@ -102,6 +102,7 @@ Test["TEST_NAME_OFF" .. "_Precondition_HMI_sends_OnAllowSDLFunctionality"] = fun
   --hmi side: send request SDL.OnAllowSDLFunctionality
   self.hmiConnection:SendNotification("SDL.OnAllowSDLFunctionality",
     {allowed = false, source = "GUI"})
+  self.mobileSession:ExpectNotification("OnPermissionsChange")
 end
 
 --------------------------------------------------------------------------

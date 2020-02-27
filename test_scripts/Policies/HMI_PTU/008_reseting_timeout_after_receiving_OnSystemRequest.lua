@@ -38,15 +38,17 @@ local function resetTimeoutAfterOnSystemRequest()
   common.hmi():SendNotification("BasicCommunication.OnSystemRequest",
     { requestType = "PROPRIETARY", fileName = "files/ptu.json" })
   common.mobile():ExpectNotification("OnSystemRequest", { requestType = "PROPRIETARY" })
-  common.hmi():ExpectNotification("SDL.OnStatusUpdate", { status = "UPDATE_NEEDED" })
-  :ValidIf(function()
-    local updateNeddedTime = timestamp()
-    local passedTime = updateNeddedTime - systemRequestTime -- in msec
-    -- timeout_after_x_seconds*1000 - convert timeout_after_x_seconds from sec to msec
-    if passedTime > timeout_after_x_seconds*1000 + inaccuracy or
-      passedTime < timeout_after_x_seconds*1000 - inaccuracy then
-      return false , "SDL timer was not updated. Expected time " .. timeout_after_x_seconds*1000 .. " ms. Actual time "
-      .. passedTime
+  common.hmi():ExpectNotification("SDL.OnStatusUpdate", { status = "UPDATE_NEEDED" }, { status = "UPDATING" }):Times(AtLeast(1))
+  :ValidIf(function(e)
+    if e.occurences == 1 then
+      local updateNeddedTime = timestamp()
+      local passedTime = updateNeddedTime - systemRequestTime -- in msec
+      -- timeout_after_x_seconds*1000 - convert timeout_after_x_seconds from sec to msec
+      if passedTime > timeout_after_x_seconds*1000 + inaccuracy or
+        passedTime < timeout_after_x_seconds*1000 - inaccuracy then
+        return false , "SDL timer was not updated. Expected time " .. timeout_after_x_seconds*1000 .. " ms. Actual time "
+        .. passedTime
+      end
     end
     return true
   end)

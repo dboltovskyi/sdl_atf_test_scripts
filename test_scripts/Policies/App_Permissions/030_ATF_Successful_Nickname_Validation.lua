@@ -137,7 +137,7 @@ function Test:TestStep_Register_App_With_Name_Listed_In_LPT()
         {
           name = utils.getDeviceName(),
           id = utils.getDeviceMAC(),
-          transportType = "WIFI",
+          transportType = utils.getDeviceTransportType(),
           isSDLAllowed = false
         }
       }

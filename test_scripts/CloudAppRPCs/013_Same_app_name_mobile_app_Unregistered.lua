@@ -23,6 +23,11 @@ local runner = require('user_modules/script_runner')
 local common = require('test_scripts/CloudAppRPCs/commonCloudAppRPCs')
 local utils = require("user_modules/utils")
 
+--[[ Conditions to scik test ]]
+if config.defaultMobileAdapterType == "WS" or config.defaultMobileAdapterType == "WSS" then
+  runner.skipTest("Test is not applicable for WS/WSS connection")
+end
+
 --[[ Test Configuration ]]
 runner.testSettings.isSelfIncluded = false
 

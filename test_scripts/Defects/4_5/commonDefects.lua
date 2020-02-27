@@ -18,6 +18,7 @@ local sdl = require("SDL")
 local mobile_session = require("mobile_session")
 local events = require("events")
 local json = require("modules/json")
+local utils = require ('user_modules/utils')
 
 --[[ Local Variables ]]
 
@@ -161,21 +162,13 @@ end
 --! @parameters: none
 --! @return: device name
 --]]
-function commonDefect.getDeviceName()
-  return config.mobileHost .. ":" .. config.mobilePort
-end
+commonDefect.getDeviceName = utils.getDeviceName
 
 --[[ @getDeviceMAC: provides device MAC address
 --! @parameters: none
 --! @return: device MAC address
 --]]
-function commonDefect.getDeviceMAC()
-  local cmd = "echo -n " .. commonDefect.getDeviceName() .. " | sha256sum | awk '{printf $1}'"
-  local handle = io.popen(cmd)
-  local result = handle:read("*a")
-  handle:close()
-  return result
-end
+commonDefect.getDeviceMAC = utils.getDeviceMAC
 
 --[[ @allow_sdl: sequence that allows SDL functionality
 --! @parameters:

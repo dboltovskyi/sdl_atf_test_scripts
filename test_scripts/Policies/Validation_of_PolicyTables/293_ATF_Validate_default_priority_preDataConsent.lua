@@ -49,19 +49,12 @@ end
 function Test:Precondition_Connect_device()
   commonTestCases:DelayedExp(2000)
   self:connectMobile()
-  EXPECT_HMICALL("BasicCommunication.UpdateDeviceList",
-    {
-      deviceList = {
-        {
-          id = utils.getDeviceMAC(),
-          name = utils.getDeviceName(),
-          transportType = "WIFI"
-        }
-      }
-    }
-    ):Do(function(_,data)
-      self.hmiConnection:SendResponse(data.id, data.method, "SUCCESS", {})
-    end)
+ if utils.getDeviceTransportType() == "WIFI" then
+    EXPECT_HMICALL("BasicCommunication.UpdateDeviceList")
+    :Do(function(_,data)
+        self.hmiConnection:SendResponse(data.id, data.method, "SUCCESS", {})
+      end)
+  end
 end
 
 --[[ Test ]]

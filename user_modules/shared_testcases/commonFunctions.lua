@@ -81,8 +81,9 @@ function commonFunctions:createMultipleExpectationsWaiter(test, name)
   function exp_waiter:AddExpectation(exp)
     table.insert(exp_waiter.expectation_list, exp)
     exp:Do(function()
-      exp_waiter:RemoveExpectation(exp)
-      exp_waiter:CheckStatus()
+      if exp_waiter:RemoveExpectation(exp) then
+        exp_waiter:CheckStatus()
+      end
     end)
   end
 
@@ -93,9 +94,9 @@ function commonFunctions:createMultipleExpectationsWaiter(test, name)
       end
       return nil
     end
-
-    table.remove(exp_waiter.expectation_list,
-                 AnIndexOf(exp_waiter.expectation_list, exp))
+    local index = AnIndexOf(exp_waiter.expectation_list, exp)
+    if index then table.remove(exp_waiter.expectation_list, index) end
+    return index
   end
 
   exp_waiter.event = events.Event()
@@ -256,6 +257,7 @@ function commonFunctions:cloneTable(original)
         end
         copy[k] = v
     end
+    if getmetatable(original) ~= nil then setmetatable(copy, getmetatable(original)) end
     return copy
 end
 

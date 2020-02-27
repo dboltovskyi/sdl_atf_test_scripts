@@ -36,20 +36,12 @@ commonFunctions:newTestCasesGroup("Test")
 
 function Test:UpdateDeviceList_on_device_connect()
   self:connectMobile()
-  EXPECT_HMICALL("BasicCommunication.UpdateDeviceList",
-    {
-      deviceList = {
-        {
-          id = utils.getDeviceMAC(),
-          isSDLAllowed = false,
-          name = utils.getDeviceName(),
-          transportType = "WIFI"
-        }
-      }
-    }
-    ):Do(function(_,data)
-      self.hmiConnection:SendResponse(data.id, data.method, "SUCCESS", {})
-    end)
+  if utils.getDeviceTransportType() == "WIFI" then
+    EXPECT_HMICALL("BasicCommunication.UpdateDeviceList")
+    :Do(function(_,data)
+        self.hmiConnection:SendResponse(data.id, data.method, "SUCCESS", {})
+      end)
+  end
   commonTestCases:DelayedExp(60*1000)
 end
 

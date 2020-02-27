@@ -147,7 +147,7 @@ function Test:TestStep_RegisterNewApp()
   local corId = self.mobileSession2:SendRPC("RegisterAppInterface", config.application2.registerAppInterfaceParams)
   self.mobileSession2:ExpectResponse(corId, { success = true, resultCode = "SUCCESS" })
 
-  EXPECT_HMINOTIFICATION("SDL.OnStatusUpdate", {status = "UPDATE_NEEDED"})
+  EXPECT_HMINOTIFICATION("SDL.OnStatusUpdate", {status = "UPDATE_NEEDED"}, {status = "UPDATING"}):Times(2)
   EXPECT_HMICALL("BasicCommunication.PolicyUpdate", {file = "/tmp/fs/mp/images/ivsu_cache/sdl_snapshot.json"})
   :Do(function(_,data)
       self.hmiConnection:SendResponse(data.id, data.method, "SUCCESS", {})

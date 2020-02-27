@@ -78,7 +78,7 @@ local function SetNotificationParams()
   notificationParams.application.deviceInfo = {
     name = common.getDeviceName(),
     id = common.getDeviceMAC(),
-    transportType = "WIFI",
+    transportType = common.getDeviceTransportType(),
     isSDLAllowed = true
   }
   notificationParams.application.policyAppID = requestParams.fullAppID

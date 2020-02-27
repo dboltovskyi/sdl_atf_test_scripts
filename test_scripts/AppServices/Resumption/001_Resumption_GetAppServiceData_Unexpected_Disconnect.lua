@@ -109,13 +109,8 @@ local function reRegisterApp(pAppId)
 end
 
 local function unexpectedDisconnect()
-  test.mobileConnection:Close()
   common.getHMIConnection():ExpectNotification("BasicCommunication.OnAppUnregistered", { unexpectedDisconnect = true })
-  :Do(function()
-      for i = 1, common.getAppsCount() do
-        test.mobileSession[i] = nil
-      end
-    end)
+  common.mobile.disconnect()
 end
 
 local function connectMobile()

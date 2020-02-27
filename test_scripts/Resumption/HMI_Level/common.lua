@@ -36,7 +36,7 @@ m.runAfter = actions.run.runAfter
 
 --[[ Common Functions ]]
 function m.unexpectedDisconnect()
-  m.mobile.deleteSession()
+  m.mobile.closeSession()
   m.hmi.getConnection():ExpectNotification("BasicCommunication.OnAppUnregistered", { unexpectedDisconnect = true })
 end
 

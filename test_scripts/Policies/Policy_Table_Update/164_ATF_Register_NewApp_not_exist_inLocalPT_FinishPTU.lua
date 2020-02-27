@@ -100,7 +100,7 @@ end
 function Test:TestStep_FinishPTU_ForAppId1()
   local SystemFilesPath = commonFunctions:read_parameter_from_smart_device_link_ini("SystemFilesPath")
   local CorIdSystemRequest = self.mobileSession:SendRPC ("SystemRequest", { requestType = "PROPRIETARY", fileName = "PolicyTableUpdate", appID = config.application1.registerAppInterfaceParams.fullAppID },
-    "files/jsons/Policies/Policy_Table_Update/ptu.json")
+    "files/jsons/Policies/Policy_Table_Update/ptu_without_preloaded.json")
 
   EXPECT_HMICALL("BasicCommunication.SystemRequest")
   :Do(function(_,data)
@@ -114,7 +114,7 @@ function Test:TestStep_FinishPTU_ForAppId1()
         })
     end)
   --PTU is restarted because of trigger new application added.
-  :Do(function(_,_) EXPECT_HMINOTIFICATION("SDL.OnStatusUpdate", {status = "UPDATE_NEEDED"}) end)
+  EXPECT_HMINOTIFICATION("SDL.OnStatusUpdate", {status = "UP_TO_DATE"}, {status = "UPDATE_NEEDED"}):Times(2)
 end
 
 function Test:TestStep_CheckThatAppID_BothApps_Present_In_DataBase()

@@ -198,7 +198,7 @@ function Test:Precondition_ActivateApp()
         {
           name = utils.getDeviceName(),
           id = utils.getDeviceMAC(),
-          transportType = "WIFI",
+          transportType = utils.getDeviceTransportType(),
           isSDLAllowed = false
         }
       }

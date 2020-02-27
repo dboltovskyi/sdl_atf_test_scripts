@@ -34,6 +34,7 @@ local common = require('test_scripts/Smoke/commonSmoke')
 
 --[[ Test Configuration ]]
 runner.testSettings.isSelfIncluded = false
+config.defaultMobileAdapterType = "TCP"
 
 --[[ Local Variables ]]
 local numOfDevices = 5
@@ -71,14 +72,6 @@ local function start()
   return common.getHMIConnection():ExpectEvent(event, "Start event")
 end
 
-local function getDeviceName(pDevice)
-  return pDevice .. ":" .. config.mobilePort
-end
-
-local function getDeviceMAC(pDevice)
-  return execCmd("echo -n " .. getDeviceName(pDevice) .. " | sha256sum | awk '{printf $1}'")
-end
-
 local function registerApp(pAppId)
   common.createMobileSession(pAppId, nil, pAppId)
   common.getMobileSession(pAppId):StartService(7)
@@ -89,8 +82,8 @@ local function registerApp(pAppId)
           appName = common.getConfigAppParams(pAppId).appName,
           appID = common.getHMIAppId(pAppId),
           deviceInfo = {
-            name = getDeviceName(device[pAppId]),
-            id = getDeviceMAC(device[pAppId])
+            name = common.getDeviceName(device[pAppId]),
+            id = common.getDeviceMAC(device[pAppId])
           }
         }
       })

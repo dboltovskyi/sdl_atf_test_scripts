@@ -106,6 +106,7 @@ function Test:TestStep_FinishPTU_ForAppId1()
       self.hmiConnection:SendNotification("SDL.OnReceivedPolicyUpdate", { policyfile = "/tmp/fs/mp/images/ivsu_cache/ptu.json" })
       -- PTU will be restarted because of new AppID is registered
       EXPECT_HMINOTIFICATION("SDL.OnStatusUpdate", {status = "UP_TO_DATE"}, {status = "UPDATE_NEEDED"})
+      :Times(2)
     end)
 end
 

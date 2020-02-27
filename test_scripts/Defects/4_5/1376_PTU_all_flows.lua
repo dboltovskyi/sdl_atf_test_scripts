@@ -10,6 +10,7 @@ local json = require("modules/json")
 local atf_logger = require("atf_logger")
 local sdl = require("SDL")
 local commonSteps = require("user_modules/shared_testcases/commonSteps")
+local utils = require ('user_modules/utils')
 
 --[[ General configuration parameters ]]
 config.mobileHost = "127.0.0.1"
@@ -34,23 +35,13 @@ end
 
 -- Allow device from HMI
 local function allowSDL(self)
-  local function getDeviceName()
-    return config.mobileHost .. ":" .. config.mobilePort
-  end
-  local function getDeviceMAC()
-    local cmd = "echo -n " .. getDeviceName() .. " | sha256sum | awk '{printf $1}'"
-    local handle = io.popen(cmd)
-    local result = handle:read("*a")
-    handle:close()
-    return result
-  end
   -- sending notification OnAllowSDLFunctionality from HMI to allow connected device
   self.hmiConnection:SendNotification("SDL.OnAllowSDLFunctionality", {
     allowed = true,
     source = "GUI",
     device = {
-      id = getDeviceMAC(),
-      name = getDeviceName()
+      id = utils.getDeviceMAC(),
+      name = utils.getDeviceName()
     }
   })
 end

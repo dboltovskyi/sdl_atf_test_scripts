@@ -30,6 +30,7 @@ config.defaultProtocolVersion = 2
 config.application1.registerAppInterfaceParams.deviceInfo.hardware = "Nexus"
 
 --[[ Local Variables ]]
+local deviceFilter = ' where id = ' .. '"' .. utils.getDeviceMAC() .. '"'
 local TESTED_DATA = {
   preloaded_date = {"1988-12-01","2015-05-02"},
   device = {
@@ -206,7 +207,7 @@ function Test.checkLocalPT(checkTable)
   local isTestPass = true
   for _, check in pairs(checkTable) do
     expectedLocalPtValues = check.expectedValues
-    queryString = check.query
+    queryString = check.query .. deviceFilter
     actualLocalPtValues = executeSqliteQuery(queryString, constructPathToDatabase())
     if actualLocalPtValues then
       comparationResult = isValuesCorrect(actualLocalPtValues, expectedLocalPtValues)

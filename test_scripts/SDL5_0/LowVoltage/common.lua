@@ -175,11 +175,11 @@ end
 --! @return: none
 --]]
 function m.connectMobile()
-  test.mobileConnection:Connect()
   EXPECT_EVENT(events.connectedEvent, "Connected")
   :Do(function()
       utils.cprint(35, "Mobile connected")
     end)
+  test.mobileConnection:Connect()
 end
 
 --[[ @reRegisterApp: re-register application

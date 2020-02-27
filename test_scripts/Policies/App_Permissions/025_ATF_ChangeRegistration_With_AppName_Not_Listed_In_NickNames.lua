@@ -145,7 +145,7 @@ function Test:Precondition_Register_App_Activate_And_consent_Device()
         {
           name = utils.getDeviceName(),
           id = utils.getDeviceMAC(),
-          transportType = "WIFI",
+          transportType = utils.getDeviceTransportType(),
           isSDLAllowed = false
         }
       }

@@ -46,11 +46,12 @@ local mobile_session = require("mobile_session")
 function Test:Precondition_Connect_device()
   commonTestCases:DelayedExp(2000)
   self:connectMobile()
-  EXPECT_HMICALL("BasicCommunication.UpdateDeviceList", {
-      deviceList = { { id = utils.getDeviceMAC(), name = utils.getDeviceName(), transportType = "WIFI", isSDLAllowed = false} } })
-  :Do(function(_,data)
-      self.hmiConnection:SendResponse(data.id, data.method, "SUCCESS", {})
-    end)
+  if utils.getDeviceTransportType() == "WIFI" then
+    EXPECT_HMICALL("BasicCommunication.UpdateDeviceList")
+    :Do(function(_,data)
+        self.hmiConnection:SendResponse(data.id, data.method, "SUCCESS", {})
+      end)
+  end
 end
 
 function Test:Precondition_StartNewSession()
@@ -117,13 +118,16 @@ function Test:Preconditions_Update_Policy_With_Steal_Focus_FalseValue_for_Curren
     end)
 end
 
---[[Test]]
-commonFunctions:newTestCasesGroup("Test")
+function Test.Wait()
+  os.execute("sleep 2")
+end
 
+--[[Test]]
 function Test:TestStep_UpdatePTS()
   testCasesForPolicyTable:trigger_user_request_update_from_HMI(self)
 end
 
+commonFunctions:newTestCasesGroup("Test")
 function Test:TestStep_Verify_appid_section()
   local test_fail = false
   local steal_focus = testCasesForPolicyTableSnapshot:get_data_from_PTS("app_policies.123456.steal_focus")

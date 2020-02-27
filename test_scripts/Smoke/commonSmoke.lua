@@ -10,7 +10,7 @@ local utils = require('user_modules/utils')
 local json = require("modules/json")
 local mobileConnection  = require('mobile_connection')
 local SDL = require("SDL")
-local tcp = require('tcp_connection')
+local mobile_adapter_controller = require("mobile_adapter/mobile_adapter_controller")
 local file_connection  = require('file_connection')
 local events = require("events")
 local constants = require('protocol_handler/ford_protocol_constants')
@@ -37,19 +37,14 @@ common.json = { decode = json.decode, null = json.null }
 common.events = { disconnectedEvent = events.disconnectedEvent }
 common.SDL = { buildOptions = SDL.buildOptions }
 common.SDL.PTS = SDL.PTS
+common.runAfter = common.run.runAfter
+common.failTestCase = common.run.fail
+common.getDeviceTransportType = utils.getDeviceTransportType
 
 --[[ Module constants ]]
 common.timeout = 4000
 
 --[[ Module functions ]]
-function common.runAfter(pFunc, pDelay)
-  RUN_AFTER(pFunc, pDelay)
-end
-
-function common.failTestCase(pMsg)
-  test:FailTestCase(pMsg)
-end
-
 function common.readParameterFromSDLINI(pParamName)
   return SDL.INI.get(pParamName)
 end
@@ -319,11 +314,23 @@ function common.createEvent(pMatchFunc)
 end
 
 function common.createConnection(pConId, pDevice)
+  local function getMobileAdapter(pSource)
+    if config.defaultMobileAdapterType ~= "TCP" then
+      print("WARNING: Default mobile adapter type is not TCP. Create TCP mobile connection.")
+    end
+    local mobileAdapterParameters = {
+      host = SDL.GetHostURL(),
+      port = config.mobilePort,
+      source = pSource
+    }
+    return mobile_adapter_controller.getAdapter("TCP", mobileAdapterParameters)
+  end
+
   if pConId == nil then pConId = 1 end
   if pDevice == nil then pDevice = config.mobileHost end
   local filename = "mobile" .. pConId .. ".out"
-  local tcpConnection = tcp.Connection(SDL.GetHostURL(), config.mobilePort, pDevice)
-  local fileConnection = file_connection.FileConnection(filename, tcpConnection)
+  local mobileAdapter = getMobileAdapter(pDevice)
+  local fileConnection = file_connection.FileConnection(filename, mobileAdapter)
   local connection = mobileConnection.MobileConnection(fileConnection)
   test.mobileConnections[pConId] = connection
   function connection:ExpectEvent(pEvent, pEventName)

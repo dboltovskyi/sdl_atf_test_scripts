@@ -22,6 +22,7 @@ local commonTestCases = require('user_modules/shared_testcases/commonTestCases')
 local mobile_session = require('mobile_session')
 local testCasesForPolicyTable = require('user_modules/shared_testcases/testCasesForPolicyTable')
 local utils = require ('user_modules/utils')
+local SDL = require('SDL')
 
 --[[ Local variables ]]
 local pts_json = '/tmp/fs/mp/images/ivsu_cache/sdl_snapshot.json'
@@ -39,23 +40,26 @@ require('user_modules/AppTypes')
 commonFunctions:newTestCasesGroup("Preconditions")
 
 function Test:Precondition_Connect_device()
-  commonTestCases:DelayedExp(2000)
-  self:connectMobile()
-  EXPECT_HMICALL("BasicCommunication.UpdateDeviceList",
-    {
-      deviceList = {
-        {
-          id = utils.getDeviceMAC(),
-          name = utils.getDeviceName(),
-          transportType = "WIFI",
-          isSDLAllowed = false
-        }
+  local exp = {
+    deviceList = {
+      {
+        id = utils.getDeviceMAC(),
+        name = utils.getDeviceName(),
+        transportType = utils.getDeviceTransportType(),
+        isSDLAllowed = false
       }
     }
-  )
-  :Do(function(_,data)
-      self.hmiConnection:SendResponse(data.id, data.method, "SUCCESS", {})
-    end)
+  }
+  if SDL.buildOptions.webSocketServerSupport == "ON" then
+    table.insert(exp.deviceList, 1, { transportType = "WEBENGINE_WEBSOCKET" })
+  end
+  self:connectMobile()
+  if utils.getDeviceTransportType() == "WIFI" then
+    EXPECT_HMICALL("BasicCommunication.UpdateDeviceList", exp)
+    :Do(function(_,data)
+        self.hmiConnection:SendResponse(data.id, data.method, "SUCCESS", {})
+      end)
+  end
 end
 
 function Test:Precondition_Register_app()
@@ -72,7 +76,7 @@ function Test:Precondition_Register_app()
             {
               name = utils.getDeviceName(),
               id = utils.getDeviceMAC(),
-              transportType = "WIFI"
+              transportType = utils.getDeviceTransportType()
             }
           }
         })
@@ -99,9 +103,13 @@ function Test:Check_device_identifier_added_to_lpt()
     file:close()
     local json = require("modules/json")
     local data = json.decode(json_data)
-    local deviceIdentificatorInPTS = next(data.policy_table.device_data, nil)
-
-    if (deviceIdentificatorInPTS == utils.getDeviceMAC()) then
+    local deviceIdentificatorInPTS = nil
+    for device in pairs(data.policy_table.device_data) do
+      if device == utils.getDeviceMAC() then
+        deviceIdentificatorInPTS = device
+      end
+    end
+    if deviceIdentificatorInPTS ~= nil then
       commonFunctions:userPrint(33, "device_identifier ".. deviceIdentificatorInPTS.. " section is created")
     else
       self:FailTestCase("Test is FAILED. device_identifier section is not created.")

@@ -1,0 +1,1 @@
+./test_scripts/Smoke/Registration/001_Register_5_connection.lua

@@ -407,15 +407,17 @@ function module:initHMI_onReady()
 
   end
 
-  ExpectRequest("BasicCommunication.MixingAudioSupported",
-    true,
-    { attenuatedSupported = true })
   ExpectRequest("BasicCommunication.GetSystemInfo", false,
     {
       ccpu_version = "ccpu_version",
       language = "EN-US",
       wersCountryCode = "wersCountryCode"
     })
+
+  local function ExpectedHMICaps()
+  ExpectRequest("BasicCommunication.MixingAudioSupported",
+    true,
+    { attenuatedSupported = true })
   ExpectRequest("UI.GetLanguage", true, { language = "EN-US" })
   ExpectRequest("VR.GetLanguage", true, { language = "EN-US" })
   -- :Times(0)
@@ -631,12 +633,15 @@ function module:initHMI_onReady()
       }
     })
 
+  end
   ExpectRequest("VR.IsReady", true, { available = true })
   ExpectRequest("TTS.IsReady", true, { available = true })
   ExpectRequest("UI.IsReady", true, { available = true })
   ExpectRequest("Navigation.IsReady", true, { available = true })
   ExpectRequest("VehicleInfo.IsReady", true, { available = true })
   ExpectRequest("RC.IsReady", true, { available = false })
+
+  if SDL.HMICapCache.get() == nil then ExpectedHMICaps() end
 
   self.applications = { }
   ExpectRequest("BasicCommunication.UpdateAppList", false, { })

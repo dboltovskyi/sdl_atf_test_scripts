@@ -609,10 +609,26 @@ function module:initHMI_onReady()
       hmiZoneCapabilities = "FRONT",
       softButtonCapabilities =
       {
-        shortPressAvailable = true,
-        longPressAvailable = true,
-        upDownAvailable = true,
-        imageSupported = true
+        {
+          shortPressAvailable = true,
+          longPressAvailable = true,
+          upDownAvailable = true,
+          imageSupported = true
+        }
+      },
+      systemCapabilities = {
+          navigationCapability = {
+              sendLocationEnabled = true,
+              getWayPointsEnabled = true
+          },
+          phoneCapability = {
+              dialNumberEnabled = true
+          }
+      },
+      pcmStreamCapabilities = {
+        audioType = "PCM",
+        bitsPerSample = "8_BIT",
+        samplingRate = "44KHZ"
       }
     })
 

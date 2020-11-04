@@ -87,7 +87,8 @@ local function registerApp(pAppId, pConId, pAppNameCode, pResultCode, pActivateC
     occurences = 0
   end
   if (pActivateCloudApp) then
-    common.getHMIConnection():SendRequest("SDL.ActivateApp", {appID = hmiAppIDMap[pAppId]})
+    local cid = common.getHMIConnection():SendRequest("SDL.ActivateApp", {appID = hmiAppIDMap[pAppId]})
+    common.getHMIConnection():ExpectResponse(cid, { result = { code = 0, method = "SDL.ActivateApp" } })
   end
   local session = common.getMobileSession(pAppId, pConId)
   session:StartService(7)
@@ -99,7 +100,7 @@ local function registerApp(pAppId, pConId, pAppNameCode, pResultCode, pActivateC
     local cid = session:SendRPC("RegisterAppInterface", params)
     session:ExpectResponse(cid, { success = success, resultCode = pResultCode })
     session:ExpectNotification("OnPermissionsChange"):Times(occurences)
-    session:ExpectNotification("OnHMIStatus"):Times(pActivateCloudApp == true and occurences*2 or occurences)
+    session:ExpectNotification("OnHMIStatus"):Times(occurences)
     common.getHMIConnection():ExpectNotification("BasicCommunication.OnAppRegistered"):Times(occurences)
   end)
 end

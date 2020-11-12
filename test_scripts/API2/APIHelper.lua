@@ -21,13 +21,11 @@ m.eventType = {
 }
 
 m.rpc = {
-  SendLocation = 1,
-  GetWayPoints = 2
+  GetVehicleData = 1
 }
 
 m.rpcHMIMap = {
-  [m.rpc.SendLocation] = "Navigation.SendLocation",
-  [m.rpc.GetWayPoints] = "Navigation.GetWayPoints",
+  [m.rpc.GetVehicleData] = "VehicleInfo.GetVehicleData"
 }
 
 m.dataType = {
@@ -52,6 +50,8 @@ local schema = {
 }
 
 --[[ Functions ]]-----------------------------------------------------------------------------------
+math.randomseed(os.clock())
+
 local function getType(pType)
   if string.find(pType, "%.") then
     return cmn.splitString(pType, ".")[2]

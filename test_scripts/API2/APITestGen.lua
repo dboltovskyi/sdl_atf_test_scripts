@@ -16,7 +16,8 @@ m.testType = {
   UPPER_IN_BOUND = 3,
   LOWER_IN_BOUND = 4,
   UPPER_OUT_OF_BOUND = 5,
-  LOWER_OUT_OF_BOUND = 6
+  LOWER_OUT_OF_BOUND = 6,
+  VALID_RANDOM = 7
 }
 
 m.isMandatory = {
@@ -37,6 +38,7 @@ local valueTypeMap = {
   [m.testType.LOWER_IN_BOUND] = tdg.valueType.LOWER_IN_BOUND,
   [m.testType.UPPER_OUT_OF_BOUND] = tdg.valueType.UPPER_OUT_OF_BOUND,
   [m.testType.LOWER_OUT_OF_BOUND] = tdg.valueType.LOWER_OUT_OF_BOUND,
+  [m.testType.VALID_RANDOM] = tdg.valueType.VALID_RANDOM,
 }
 
 --[[ Local Variables ]]-----------------------------------------------------------------------------
@@ -45,123 +47,124 @@ local testType
 local paramName
 
 --[[ Utility Functions ]]---------------------------------------------------------------------------
-local function isPresentUnexpectedParams(pExpected, pActual)
-  local isFailed = false
-  local isNotFirst = false
-  local msg = "Unexpected params: "
-  for k in pairs(pActual) do
-    if not pExpected[k] then
-      if isNotFirst then
-        msg = msg .. ", "
-      else
-        isNotFirst = true
-      end
-      msg = msg .. k
-      isFailed = true
-    end
-  end
-  if isFailed then
-    return false, msg
-  end
-  return true
-end
+-- local function isPresentUnexpectedParams(pExpected, pActual)
+--   local isFailed = false
+--   local isNotFirst = false
+--   local msg = "Unexpected params: "
+--   for k in pairs(pActual) do
+--     if not pExpected[k] then
+--       if isNotFirst then
+--         msg = msg .. ", "
+--       else
+--         isNotFirst = true
+--       end
+--       msg = msg .. k
+--       isFailed = true
+--     end
+--   end
+--   if isFailed then
+--     return false, msg
+--   end
+--   return true
+-- end
 
 --[[ Specific Param Values Updater Functions ]]-----------------------------------------------------
-local function addHMIAppId(pHMIRpc, pEventType, pParamValues)
-  local hmiParamsData = ah.getParamsData(ah.apiType.HMI, pEventType, pHMIRpc)
-  if hmiParamsData["appID"] then pParamValues.appID = 0 end
-end
+-- local function addHMIAppId(pHMIRpc, pEventType, pParamValues)
+--   local hmiParamsData = ah.getParamsData(ah.apiType.HMI, pEventType, pHMIRpc)
+--   if hmiParamsData["appID"] then pParamValues.appID = 0 end
+-- end
 
-local function updateHMIAppId(pPV)
-  if pPV.appID then pPV.appID = cmn.getHMIAppId(1) end
-end
+-- local function updateHMIAppId(pPV)
+--   if pPV.appID then pPV.appID = cmn.getHMIAppId(1) end
+-- end
 
-local function updateImageType(pPV)
-  for k, v in pairs(pPV) do
-    if type(v) == "table" then
-      updateImageType(v)
-    else
-      if k == "imageType" then pPV[k] = "STATIC" end
-    end
-  end
-end
+-- local function updateImageType(pPV)
+--   for k, v in pairs(pPV) do
+--     if type(v) == "table" then
+--       updateImageType(v)
+--     else
+--       if k == "imageType" then pPV[k] = "STATIC" end
+--     end
+--   end
+-- end
 
-m.paramValuesUpdaters = {
-  { apiType = ah.apiType.HMI, eventType = ah.eventType.REQUEST, func = updateHMIAppId },
-  { apiType = ah.apiType.HMI, eventType = ah.eventType.RESPONSE, func = updateHMIAppId },
-  { eventType = ah.eventType.REQUEST, func = updateImageType }
-}
+-- m.paramValuesUpdaters = {
+--   { apiType = ah.apiType.HMI, eventType = ah.eventType.REQUEST, func = updateHMIAppId },
+--   { apiType = ah.apiType.HMI, eventType = ah.eventType.RESPONSE, func = updateHMIAppId },
+--   { eventType = ah.eventType.REQUEST, func = updateImageType }
+-- }
 
-local function updateParamValues(pParams)
-  for _, apiType in pairs(ah.apiType) do
-    for _, eventType in pairs(ah.eventType) do
-      for _, u in pairs(m.paramValuesUpdaters) do
-        if (u.apiType == nil or u.apiType == apiType)
-          and (u.eventType == nil or u.eventType == eventType)
-          and (u.rpc == nil or u.rpc == rpc) then
-            local p = pParams[apiType][eventType]
-            if p then u.func(p) end
-        end
-      end
-    end
-  end
-end
+-- local function updateParamValues(pParams)
+--   for _, apiType in pairs(ah.apiType) do
+--     for _, eventType in pairs(ah.eventType) do
+--       for _, u in pairs(m.paramValuesUpdaters) do
+--         if (u.apiType == nil or u.apiType == apiType)
+--           and (u.eventType == nil or u.eventType == eventType)
+--           and (u.rpc == nil or u.rpc == rpc) then
+--             local p = pParams[apiType][eventType]
+--             if p then u.func(p) end
+--         end
+--       end
+--     end
+--   end
+-- end
 
 --[[ Processing Functions ]]------------------------------------------------------------------------
-local function processRPCSuccess(pParams, self)
-  updateParamValues(pParams)
-
-  local cid = self.mobileSession1:SendRPC(pParams.mobile.name, pParams.mobile.request)
-  EXPECT_HMICALL(pParams.hmi.name, pParams.hmi.request)
+local function processRPCSuccess(pParams)
+  -- updateParamValues(pParams)
+  local cid = cmn.getMobileSession():SendRPC(pParams.mobile.name, pParams.mobile.request)
+  cmn.getHMIConnection():ExpectRequest(pParams.hmi.name, pParams.hmi.request)
   :Do(function(_, data)
-      self.hmiConnection:SendResponse(data.id, data.method, "SUCCESS", pParams.hmi.response)
+      cmn.getHMIConnection():SendResponse(data.id, data.method, "SUCCESS", pParams.hmi.response)
     end)
-  :ValidIf(function(_, data)
-      return isPresentUnexpectedParams(pParams.hmi.request, data.params)
-    end)
-  self.mobileSession1:ExpectResponse(cid, pParams.mobile.response)
+  cmn.getMobileSession():ExpectResponse(cid, pParams.mobile.response)
 end
 
-local function processRPCInvalidRequest(pParams, self)
-  updateParamValues(pParams)
-
-  local cid = self.mobileSession1:SendRPC(pParams.mobile.name, pParams.mobile.request)
-  EXPECT_HMICALL(pParams.hmi.name):Times(0)
-  self.mobileSession1:ExpectResponse(cid, pParams.mobile.response)
-  cmn.Delay()
-end
+-- local function processRPCInvalidRequest(pParams)
+--   -- updateParamValues(pParams)
+--   local cid = cmn.getMobileSession():SendRPC(pParams.mobile.name, pParams.mobile.request)
+--   cmn.getHMIConnection():ExpectRequest(pParams.hmi.name, pParams.hmi.request)
+--   :Do(function(_, data)
+--       cmn.getHMIConnection():SendResponse(data.id, data.method, "SUCCESS", pParams.hmi.response)
+--     end)
+--   cmn.getMobileSession():ExpectResponse(cid, pParams.mobile.response)
+-- end
 
 --[[ Params Generator Functions ]]------------------------------------------------------------------
 local function getParamsSuccessTest(pParamData, pValueTypesMap, pArrayValueTypesMap)
-  local mobileParamsValues = tdg.getParamValues(pParamData, pValueTypesMap, pArrayValueTypesMap)
-  local hmiParamsValues = cmn.cloneTable(mobileParamsValues)
+  local request = { [next(pParamData)] = true }
+  local hmiResponse = tdg.getParamValues(pParamData, pValueTypesMap, pArrayValueTypesMap)
+  local mobileResponse = cmn.cloneTable(hmiResponse)
+  mobileResponse.success = true
+  mobileResponse.resultCode = "SUCCESS"
   local params = {
     mobile = {
       name = cmn.getKeyByValue(ah.rpc, rpc),
-      request = mobileParamsValues,
-      response = { success = true, resultCode = "SUCCESS" }
+      request = request,
+      response = mobileResponse
     },
     hmi = {
       name = ah.rpcHMIMap[rpc],
-      request = hmiParamsValues,
-      response = {}
+      request = request,
+      response = hmiResponse
     }
   }
-  addHMIAppId(params.hmi.name, ah.eventType.REQUEST, params.hmi.request)
-  addHMIAppId(params.hmi.name, ah.eventType.RESPONSE, params.hmi.response)
   return params
 end
 
 local function getParamsInvalidDataTest(pParamData, pValueTypesMap, pArrayValueTypesMap)
-  local mobileParamsValues = tdg.getParamValues(pParamData, pValueTypesMap, pArrayValueTypesMap)
+  local request = { [next(pParamData)] = true }
+  local hmiResponse = tdg.getParamValues(pParamData, pValueTypesMap, pArrayValueTypesMap)
   local params = {
     mobile = {
       name = cmn.getKeyByValue(ah.rpc, rpc),
-      request = mobileParamsValues,
-      response = { success = false, resultCode = "INVALID_DATA" }
+      request = request,
+      response = { success = false, resultCode = "GENERIC_ERROR" }
     },
     hmi = {
-      name = ah.rpcHMIMap[rpc]
+      name = ah.rpcHMIMap[rpc],
+      request = request,
+      response = hmiResponse
     }
   }
   return params
@@ -169,7 +172,8 @@ end
 
 --[[ Test Cases Generator Function ]]---------------------------------------------------------------
 local function createTestCases(pIsMandatory, pIsArray, pDataTypes)
-  local mobileParamsData = ah.getParamsData(ah.apiType.MOBILE, ah.eventType.REQUEST, cmn.getKeyByValue(ah.rpc, rpc))
+  local apiParamsData = ah.getParamsData(ah.apiType.HMI, ah.eventType.RESPONSE, ah.rpcHMIMap[rpc])
+  -- local apiParamsData = ah.getParamsData(ah.apiType.MOBILE, ah.eventType.RESPONSE, cmn.getKeyByValue(ah.rpc, rpc))
 
   local function getGraph(pParams, pGraph, pParentId)
     for k, v in cmn.spairs(pParams) do
@@ -186,8 +190,7 @@ local function createTestCases(pIsMandatory, pIsArray, pDataTypes)
     return pGraph
   end
 
-  local graph = getGraph(mobileParamsData, {})
-
+  local graph = getGraph(apiParamsData, {})
   local function getParents(pGraph, pId)
     local out = {}
     pId = pGraph[pId].parentId
@@ -222,17 +225,15 @@ local function createTestCases(pIsMandatory, pIsArray, pDataTypes)
     return pChildreIds
   end
 
-  local function getTCParamsIds(pId, pParentIds, pNeighborsIds, pChildrenIds)
+  local function getTCParamsIds(pId, ...)
     local ids = {}
     ids[pId] = true
-    for p in pairs(pParentIds) do
-      ids[p] = true
-    end
-    for p in pairs(pNeighborsIds) do
-      ids[p] = true
-    end
-    for p in pairs(pChildrenIds) do
-      ids[p] = true
+    for _, arg in pairs({...}) do
+      if type(arg) == "table" then
+        for p in pairs(arg) do
+          ids[p] = true
+        end
+      end
     end
     return ids
   end
@@ -278,7 +279,7 @@ local function createTestCases(pIsMandatory, pIsArray, pDataTypes)
     end
     local function getParamNameCondition(pName)
       if paramName == nil or paramName == "" then return true
-      else return pName == paramName
+      else return string.find(pName, paramName) == 1
       end
     end
     local tcs = {}
@@ -287,9 +288,13 @@ local function createTestCases(pIsMandatory, pIsArray, pDataTypes)
       if getMandatoryCondition(v.mandatory) and getArrayCondition(v.array)
         and getTypeCondition(v.type) and getParamNameCondition(paramFullName) then
         local parentIds = getParents(graph, k)
-        local neighborsIds = getMandatoryNeighbors(graph, k, parentIds)
         local childrenIds = getMandatoryChildren(graph, k, {})
-        local tcParamIds = getTCParamsIds(k, parentIds, neighborsIds, childrenIds)
+        local neighborsIds = getMandatoryNeighbors(graph, k, parentIds)
+        local neighborsChildrenIds = {}
+        for id in pairs(neighborsIds) do
+          getMandatoryChildren(graph, id, neighborsChildrenIds)
+        end
+        local tcParamIds = getTCParamsIds(k, parentIds, neighborsIds, childrenIds, neighborsChildrenIds)
         if not (v.type == ah.dataType.STRUCT.type and cmn.getTableSize(childrenIds) == 0) then
           table.insert(tcs, {
               -- pId = k,
@@ -300,7 +305,7 @@ local function createTestCases(pIsMandatory, pIsArray, pDataTypes)
               paramName = graph[k].name,
               paramFullName = paramFullName,
               paramData = graph[k],
-              params = getUpdatedParams(cmn.cloneTable(mobileParamsData), tcParamIds)
+              params = getUpdatedParams(cmn.cloneTable(apiParamsData), tcParamIds)
             })
         end
       end
@@ -376,9 +381,8 @@ end
 
 local function getOutOfBoundTests()
   local tests = {}
-  local dataTypes
   -- tests for simple data types
-  dataTypes = { ah.dataType.INTEGER.type, ah.dataType.FLOAT.type, ah.dataType.DOUBLE.type, ah.dataType.STRING.type }
+  local dataTypes = { ah.dataType.INTEGER.type, ah.dataType.FLOAT.type, ah.dataType.DOUBLE.type, ah.dataType.STRING.type }
   for _, tc in pairs(createTestCases(m.isMandatory.ALL, m.isArray.ALL, dataTypes)) do
     local function isSkipped()
       if tc.paramData.type == ah.dataType.STRING.type then
@@ -398,7 +402,7 @@ local function getOutOfBoundTests()
       local valueTypesMap = { [tc.paramName] = valueTypeMap[testType] }
       table.insert(tests, {
           name = "Param_" .. tc.paramFullName,
-          func = processRPCInvalidRequest,
+          func = processRPCSuccess,
           params = getParamsInvalidDataTest(tc.params, valueTypesMap, { })
         })
     end
@@ -409,7 +413,7 @@ local function getOutOfBoundTests()
     local arrayValueTypesMap = { [tc.paramName] = valueTypeMap[testType] }
     table.insert(tests, {
         name = "Param_" .. tc.paramFullName .. "_array_value_LOWER",
-        func = processRPCInvalidRequest,
+        func = processRPCSuccess,
         params = getParamsInvalidDataTest(tc.params, valueTypesMap, arrayValueTypesMap)
       })
   end
@@ -418,8 +422,23 @@ local function getOutOfBoundTests()
     local arrayValueTypesMap = { [tc.paramName] = valueTypeMap[testType] }
     table.insert(tests, {
         name = "Param_" .. tc.paramFullName .. "_array_value_UPPER",
-        func = processRPCInvalidRequest,
+        func = processRPCSuccess,
         params = getParamsInvalidDataTest(tc.params, valueTypesMap, arrayValueTypesMap)
+      })
+  end
+  return tests
+end
+
+local function getValidRandomTests()
+  local tcs = createTestCases(m.isMandatory.ALL, m.isArray.ALL, {})
+  local tests = {}
+  for _, tc in pairs(tcs) do
+    local valueTypesMap = { [tc.paramName] = valueTypeMap[testType] }
+    local arrayValueTypesMap = { [tc.paramName] = valueTypeMap[testType] }
+    table.insert(tests, {
+        name = "Param " .. tc.paramFullName,
+        func = processRPCSuccess,
+        params = getParamsSuccessTest(tc.params, valueTypesMap, arrayValueTypesMap)
       })
   end
   return tests
@@ -431,12 +450,13 @@ function m.getTests(pRPC, pTestType, pParamName)
   testType = pTestType
   paramName = pParamName
   local testTypeMap = {
-    [m.testType.DEBUG] = getDebugTests,
+    -- [m.testType.DEBUG] = getDebugTests,
     [m.testType.ONLY_MANDATORY_PARAMS] = getOnlyMandatoryTests,
-    [m.testType.UPPER_IN_BOUND] = getInBoundTests,
     [m.testType.LOWER_IN_BOUND] = getInBoundTests,
+    [m.testType.UPPER_IN_BOUND] = getInBoundTests,
+    [m.testType.LOWER_OUT_OF_BOUND] = getOutOfBoundTests,
     [m.testType.UPPER_OUT_OF_BOUND] = getOutOfBoundTests,
-    [m.testType.LOWER_OUT_OF_BOUND] = getOutOfBoundTests
+    [m.testType.VALID_RANDOM] = getValidRandomTests
   }
   if testTypeMap[testType] then return testTypeMap[testType]() end
   return {}

@@ -13,6 +13,7 @@ m.valueType = {
   UPPER_IN_BOUND = 2,
   LOWER_OUT_OF_BOUND = 3,
   UPPER_OUT_OF_BOUND = 4,
+  VALID_RANDOM = 5
 }
 
 --[[ Value generators ]]----------------------------------------------------------------------------
@@ -32,6 +33,12 @@ local function getStringValue(pTypeData, pValueType)
     length = pTypeData.maxlength
     if not length or length == 0 then length = ah.dataType.STRING.max end
     length = length + 1
+  elseif pValueType == m.valueType.VALID_RANDOM then
+    local min = pTypeData.minlength
+    local max = pTypeData.maxlength
+    if not min or min == 0 then min = ah.dataType.STRING.min end
+    if not max or max == 0 then max = ah.dataType.STRING.max end
+    length = math.random(min, max)
   end
   return string.rep("a", length)
 end
@@ -52,6 +59,12 @@ local function getIntegerValue(pTypeData, pValueType)
     value = pTypeData.maxvalue
     if not value then value = ah.dataType.INTEGER.max end
     value = value + 1
+  elseif pValueType == m.valueType.VALID_RANDOM then
+    local min = pTypeData.minvalue
+    local max = pTypeData.maxvalue
+    if not min then min = ah.dataType.INTEGER.min end
+    if not max then max = ah.dataType.INTEGER.max end
+    value = math.random(min, max)
   end
   return value
 end
@@ -72,6 +85,12 @@ local function getFloatValue(pTypeData, pValueType)
     value = pTypeData.maxvalue
     if not value then value = ah.dataType.FLOAT.max end
     value = value + 1
+  elseif pValueType == m.valueType.VALID_RANDOM then
+    local min = pTypeData.minvalue
+    local max = pTypeData.maxvalue
+    if not min then min = ah.dataType.FLOAT.min end
+    if not max then max = ah.dataType.FLOAT.max end
+    value = tonumber(string.format('%.02f', math.random() + math.random(min, max-1)))
   end
   return value
 end
@@ -92,17 +111,28 @@ local function getDoubleValue(pTypeData, pValueType)
     value = pTypeData.maxvalue
     if not value then value = ah.dataType.DOUBLE.max end
     value = value + 1
+  elseif pValueType == m.valueType.VALID_RANDOM then
+    local min = pTypeData.minvalue
+    local max = pTypeData.maxvalue
+    if not min then min = ah.dataType.DOUBLE.min end
+    if not max then max = ah.dataType.DOUBLE.max end
+    value = tonumber(string.format('%.02f', math.random() + math.random(min, max-1)))
   end
   return value
 end
 
-local function getBooleanValue()
+local function getBooleanValue(_, pValueType)
+  if pValueType == m.valueType.VALID_RANDOM then
+    return math.random(0, 1) == 1
+  end
   return true
 end
 
 local function getEnumTypeValue(pTypeData, pValueType)
   if pValueType == m.valueType.UPPER_OUT_OF_BOUND then
     return #pTypeData.data + 1
+  elseif pValueType == m.valueType.VALID_RANDOM then
+    return pTypeData.data[math.random(1, #pTypeData.data)]
   end
   return pTypeData.data[1]
 end
@@ -154,6 +184,12 @@ local function getNumOfItems(pParamName, pTypeData, pArrayValueTypesMap)
       numOfItems = pTypeData.maxsize
       if not numOfItems or numOfItems == 0 then numOfItems = 1 end
       numOfItems = numOfItems + 1
+    elseif arrayValueType == m.valueType.VALID_RANDOM then
+      local min = pTypeData.minsize
+      local max = pTypeData.maxsize
+      if not min or min == 0 then min = 1 end
+      if not max or max == 0 then max = 5 end
+      numOfItems = math.random(min, max)
     end
   end
   return numOfItems

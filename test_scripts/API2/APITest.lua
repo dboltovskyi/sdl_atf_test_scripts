@@ -9,40 +9,32 @@ local ah = require('test_scripts/API2/APIHelper')
 
 --[[ Local Constants ]]-----------------------------------------------------------------------------
 local rpcs = {
-  ah.rpc.SendLocation,
-  ah.rpc.GetWayPoints
+  ah.rpc.GetVehicleData
 }
 local testTypes = {
-  tg.testType.ONLY_MANDATORY_PARAMS,
-  tg.testType.LOWER_IN_BOUND,
-  tg.testType.UPPER_IN_BOUND,
-  tg.testType.LOWER_OUT_OF_BOUND,
-  tg.testType.UPPER_OUT_OF_BOUND
+  -- tg.testType.DEBUG,
+  -- tg.testType.ONLY_MANDATORY_PARAMS,
+  -- tg.testType.LOWER_IN_BOUND,
+  -- tg.testType.UPPER_IN_BOUND,
+  -- tg.testType.LOWER_OUT_OF_BOUND,
+  -- tg.testType.UPPER_OUT_OF_BOUND,
+  tg.testType.VALID_RANDOM
 }
 
 --[[ Local Variables ]]-----------------------------------------------------------------------------
 rpcs = { rpcs[1] }
 -- testTypes = { tg.testType.LOWER_OUT_OF_BOUND }
-local paramName = ""
+local paramName = "windowStatus"--"windowStatus"--"deviceStatus"
 
 --[[ Local Functions ]]-----------------------------------------------------------------------------
-local function ptUpdate(pTbl)
-  local grp = "APITest"
-  pTbl.policy_table.functional_groupings[grp] = { rpcs = {}}
-  for _, rpc in pairs(rpcs) do
-    pTbl.policy_table.functional_groupings[grp].rpcs[cmn.getKeyByValue(ah.rpc, rpc)] = {
-      hmi_levels = { "BACKGROUND", "FULL", "LIMITED" }
-    }
-  end
-  pTbl.policy_table.app_policies[cmn.getMobileAppId(1)] = cmn.getAppConfig()
-end
+
 
 --[[ Scenario ]]------------------------------------------------------------------------------------
-runner.Title("Preconditions")
-runner.Step("Clean environment", cmn.preconditions)
-runner.Step("Start SDL, HMI, connect Mobile, start Session", cmn.start)
-runner.Step("RAI, PTU", cmn.registerAppWithPTU, { 1, ptUpdate })
-runner.Step("Activate App", cmn.activateApp)
+cmn.Title("Preconditions")
+cmn.Step("Clean environment and update preloaded_pt file", cmn.preconditions)
+cmn.Step("Start SDL, HMI, connect Mobile, start Session", cmn.start)
+cmn.Step("Register App", cmn.registerApp)
+cmn.Step("Activate App", cmn.activateApp)
 
 runner.Title("Test")
 

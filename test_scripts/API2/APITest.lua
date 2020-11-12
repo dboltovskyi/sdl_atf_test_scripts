@@ -13,18 +13,17 @@ local rpcs = {
 }
 local testTypes = {
   -- tg.testType.DEBUG,
-  -- tg.testType.ONLY_MANDATORY_PARAMS,
-  -- tg.testType.LOWER_IN_BOUND,
-  -- tg.testType.UPPER_IN_BOUND,
-  -- tg.testType.LOWER_OUT_OF_BOUND,
-  -- tg.testType.UPPER_OUT_OF_BOUND,
-  tg.testType.VALID_RANDOM
+  tg.testType.VALID_RANDOM,
+  tg.testType.ONLY_MANDATORY_PARAMS,
+  tg.testType.LOWER_IN_BOUND,
+  tg.testType.UPPER_IN_BOUND,
+  tg.testType.LOWER_OUT_OF_BOUND,
+  tg.testType.UPPER_OUT_OF_BOUND,
+  tg.testType.ENUM_ITEMS,
 }
 
 --[[ Local Variables ]]-----------------------------------------------------------------------------
-rpcs = { rpcs[1] }
--- testTypes = { tg.testType.LOWER_OUT_OF_BOUND }
-local paramName = "windowStatus"--"windowStatus"--"deviceStatus"
+local paramName = "gps"--"clusterModeStatus"--"wiperStatus"--"headLampStatus"--"windowStatus"--"deviceStatus"
 
 --[[ Local Functions ]]-----------------------------------------------------------------------------
 

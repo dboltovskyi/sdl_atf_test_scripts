@@ -5,6 +5,7 @@
 local actions = require("user_modules/sequences/actions")
 local runner = require('user_modules/script_runner')
 local utils = require("user_modules/utils")
+local color = require("user_modules/consts").color
 
 --[[ General configuration parameters ]]
 runner.testSettings.isSelfIncluded = false
@@ -33,6 +34,7 @@ do
   m.cprint = utils.cprint
   m.json = actions.json
   m.getHMIAppId = actions.getHMIAppId
+  m.color = color
 end
 
 --[[ Constants ]] ----------------------------------------------------------------------------------

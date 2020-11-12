@@ -146,7 +146,7 @@ local function getStructValues(pTypeData, pValueTypesMap, pArrayValueTypesMap)
 end
 
 local function getTypeValue(pParamName, pTypeData, pValueTypesMap, pArrayValueTypesMap)
-  local valueType = m.valueType.LOWER_IN_BOUND
+  local valueType = m.valueType.VALID_RANDOM
   if pValueTypesMap[pParamName] then valueType = pValueTypesMap[pParamName] end
   if pTypeData.type == ah.dataType.INTEGER.type then
     return getIntegerValue(pTypeData, valueType)
@@ -166,7 +166,7 @@ local function getTypeValue(pParamName, pTypeData, pValueTypesMap, pArrayValueTy
 end
 
 local function getNumOfItems(pParamName, pTypeData, pArrayValueTypesMap)
-  local arrayValueType = m.valueType.LOWER_IN_BOUND
+  local arrayValueType = m.valueType.VALID_RANDOM
   if pArrayValueTypesMap[pParamName] then arrayValueType = pArrayValueTypesMap[pParamName] end
   local numOfItems = -1
   if pTypeData.array == true then
@@ -185,10 +185,10 @@ local function getNumOfItems(pParamName, pTypeData, pArrayValueTypesMap)
       if not numOfItems or numOfItems == 0 then numOfItems = 1 end
       numOfItems = numOfItems + 1
     elseif arrayValueType == m.valueType.VALID_RANDOM then
-      local min = pTypeData.minsize
-      local max = pTypeData.maxsize
-      if not min or min == 0 then min = 1 end
-      if not max or max == 0 then max = 5 end
+      local min = 1
+      local max = 5
+      if pTypeData.minsize ~= nil and pTypeData.minsize > min then min = pTypeData.minsize end
+      if pTypeData.maxsize ~= nil and pTypeData.maxsize < max then max = pTypeData.maxsize end
       numOfItems = math.random(min, max)
     end
   end

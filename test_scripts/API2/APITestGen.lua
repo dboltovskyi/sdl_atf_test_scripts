@@ -17,7 +17,8 @@ m.testType = {
   LOWER_IN_BOUND = 4,
   UPPER_OUT_OF_BOUND = 5,
   LOWER_OUT_OF_BOUND = 6,
-  VALID_RANDOM = 7
+  VALID_RANDOM = 7,
+  ENUM_ITEMS = 8
 }
 
 m.isMandatory = {
@@ -30,6 +31,11 @@ m.isArray = {
   YES = true,
   NO = false,
   ALL = 3
+}
+
+m.iterateEnumItems = {
+  YES = true,
+  NO = false
 }
 
 --[[ Local Constants ]]-----------------------------------------------------------------------------
@@ -46,72 +52,8 @@ local rpc
 local testType
 local paramName
 
---[[ Utility Functions ]]---------------------------------------------------------------------------
--- local function isPresentUnexpectedParams(pExpected, pActual)
---   local isFailed = false
---   local isNotFirst = false
---   local msg = "Unexpected params: "
---   for k in pairs(pActual) do
---     if not pExpected[k] then
---       if isNotFirst then
---         msg = msg .. ", "
---       else
---         isNotFirst = true
---       end
---       msg = msg .. k
---       isFailed = true
---     end
---   end
---   if isFailed then
---     return false, msg
---   end
---   return true
--- end
-
---[[ Specific Param Values Updater Functions ]]-----------------------------------------------------
--- local function addHMIAppId(pHMIRpc, pEventType, pParamValues)
---   local hmiParamsData = ah.getParamsData(ah.apiType.HMI, pEventType, pHMIRpc)
---   if hmiParamsData["appID"] then pParamValues.appID = 0 end
--- end
-
--- local function updateHMIAppId(pPV)
---   if pPV.appID then pPV.appID = cmn.getHMIAppId(1) end
--- end
-
--- local function updateImageType(pPV)
---   for k, v in pairs(pPV) do
---     if type(v) == "table" then
---       updateImageType(v)
---     else
---       if k == "imageType" then pPV[k] = "STATIC" end
---     end
---   end
--- end
-
--- m.paramValuesUpdaters = {
---   { apiType = ah.apiType.HMI, eventType = ah.eventType.REQUEST, func = updateHMIAppId },
---   { apiType = ah.apiType.HMI, eventType = ah.eventType.RESPONSE, func = updateHMIAppId },
---   { eventType = ah.eventType.REQUEST, func = updateImageType }
--- }
-
--- local function updateParamValues(pParams)
---   for _, apiType in pairs(ah.apiType) do
---     for _, eventType in pairs(ah.eventType) do
---       for _, u in pairs(m.paramValuesUpdaters) do
---         if (u.apiType == nil or u.apiType == apiType)
---           and (u.eventType == nil or u.eventType == eventType)
---           and (u.rpc == nil or u.rpc == rpc) then
---             local p = pParams[apiType][eventType]
---             if p then u.func(p) end
---         end
---       end
---     end
---   end
--- end
-
 --[[ Processing Functions ]]------------------------------------------------------------------------
 local function processRPCSuccess(pParams)
-  -- updateParamValues(pParams)
   local cid = cmn.getMobileSession():SendRPC(pParams.mobile.name, pParams.mobile.request)
   cmn.getHMIConnection():ExpectRequest(pParams.hmi.name, pParams.hmi.request)
   :Do(function(_, data)
@@ -119,16 +61,6 @@ local function processRPCSuccess(pParams)
     end)
   cmn.getMobileSession():ExpectResponse(cid, pParams.mobile.response)
 end
-
--- local function processRPCInvalidRequest(pParams)
---   -- updateParamValues(pParams)
---   local cid = cmn.getMobileSession():SendRPC(pParams.mobile.name, pParams.mobile.request)
---   cmn.getHMIConnection():ExpectRequest(pParams.hmi.name, pParams.hmi.request)
---   :Do(function(_, data)
---       cmn.getHMIConnection():SendResponse(data.id, data.method, "SUCCESS", pParams.hmi.response)
---     end)
---   cmn.getMobileSession():ExpectResponse(cid, pParams.mobile.response)
--- end
 
 --[[ Params Generator Functions ]]------------------------------------------------------------------
 local function getParamsSuccessTest(pParamData, pValueTypesMap, pArrayValueTypesMap)
@@ -171,13 +103,16 @@ local function getParamsInvalidDataTest(pParamData, pValueTypesMap, pArrayValueT
 end
 
 --[[ Test Cases Generator Function ]]---------------------------------------------------------------
-local function createTestCases(pIsMandatory, pIsArray, pDataTypes)
+local function createTestCases(pIsMandatory, pIsArray, pDataTypes, pIterateEnumItems)
   local apiParamsData = ah.getParamsData(ah.apiType.HMI, ah.eventType.RESPONSE, ah.rpcHMIMap[rpc])
   -- local apiParamsData = ah.getParamsData(ah.apiType.MOBILE, ah.eventType.RESPONSE, cmn.getKeyByValue(ah.rpc, rpc))
 
   local function getGraph(pParams, pGraph, pParentId)
     for k, v in cmn.spairs(pParams) do
       local item = cmn.cloneTable(v)
+      if v.type == ah.dataType.ENUM.type then
+        item.items = cmn.cloneTable(v.data)
+      end
       if item.data then item.data = nil end
       item.parentId = pParentId
       item.name = k
@@ -191,6 +126,7 @@ local function createTestCases(pIsMandatory, pIsArray, pDataTypes)
   end
 
   local graph = getGraph(apiParamsData, {})
+
   local function getParents(pGraph, pId)
     local out = {}
     pId = pGraph[pId].parentId
@@ -248,13 +184,16 @@ local function createTestCases(pIsMandatory, pIsArray, pDataTypes)
     return out
   end
 
-  local function getUpdatedParams(pParams, pParamIds)
+  local function getUpdatedParams(pParams, pParamIds, pEnumParamId, pEnumParamItem)
     for k, v in pairs(pParams) do
       if not pParamIds[v.id] then
         pParams[k] = nil
       end
+      if v.id == pEnumParamId then
+        v.data = { pEnumParamItem }
+      end
       if v.type == ah.dataType.STRUCT.type then
-        getUpdatedParams(v.data, pParamIds)
+        getUpdatedParams(v.data, pParamIds, pEnumParamId, pEnumParamItem)
       end
     end
     return pParams
@@ -282,11 +221,20 @@ local function createTestCases(pIsMandatory, pIsArray, pDataTypes)
       else return string.find(pName, paramName) == 1
       end
     end
+    local function getDisabledParamCondition(pName)
+      local parentName = cmn.splitString(pName, ".")[1]
+      if cmn.vd[parentName] == nil then
+        cmn.cprint(cmn.color.magenta, "Disabled VD parameter:", pName)
+        return false
+      end
+      return true
+    end
     local tcs = {}
     for k, v in pairs(pGraph) do
       local paramFullName = getFullParamName(graph, k)
       if getMandatoryCondition(v.mandatory) and getArrayCondition(v.array)
-        and getTypeCondition(v.type) and getParamNameCondition(paramFullName) then
+        and getTypeCondition(v.type) and getParamNameCondition(paramFullName)
+        and getDisabledParamCondition(paramFullName) then
         local parentIds = getParents(graph, k)
         local childrenIds = getMandatoryChildren(graph, k, {})
         local neighborsIds = getMandatoryNeighbors(graph, k, parentIds)
@@ -296,17 +244,22 @@ local function createTestCases(pIsMandatory, pIsArray, pDataTypes)
         end
         local tcParamIds = getTCParamsIds(k, parentIds, neighborsIds, childrenIds, neighborsChildrenIds)
         if not (v.type == ah.dataType.STRUCT.type and cmn.getTableSize(childrenIds) == 0) then
-          table.insert(tcs, {
-              -- pId = k,
-              -- parentIds = parentIds,
-              -- neighborsIds = neighborsIds,
-              -- childrenIds = childrenIds,
-              paramIds = tcParamIds,
-              paramName = graph[k].name,
-              paramFullName = paramFullName,
-              paramData = graph[k],
-              params = getUpdatedParams(cmn.cloneTable(apiParamsData), tcParamIds)
-            })
+          local tc = {
+            paramName = graph[k].name,
+            paramFullName = paramFullName,
+            paramData = graph[k]
+          }
+          if pIterateEnumItems == true and v.type == ah.dataType.ENUM.type then
+            for _, item in pairs(v.items) do
+              local tcUpd = cmn.cloneTable(tc)
+              tcUpd.params = getUpdatedParams(cmn.cloneTable(apiParamsData), tcParamIds, k, item)
+              tcUpd.item = item
+              table.insert(tcs, tcUpd)
+            end
+          else
+            tc.params = getUpdatedParams(cmn.cloneTable(apiParamsData), tcParamIds)
+            table.insert(tcs, tc)
+          end
         end
       end
     end
@@ -433,12 +386,23 @@ local function getValidRandomTests()
   local tcs = createTestCases(m.isMandatory.ALL, m.isArray.ALL, {})
   local tests = {}
   for _, tc in pairs(tcs) do
-    local valueTypesMap = { [tc.paramName] = valueTypeMap[testType] }
-    local arrayValueTypesMap = { [tc.paramName] = valueTypeMap[testType] }
     table.insert(tests, {
         name = "Param " .. tc.paramFullName,
         func = processRPCSuccess,
-        params = getParamsSuccessTest(tc.params, valueTypesMap, arrayValueTypesMap)
+        params = getParamsSuccessTest(tc.params)
+      })
+  end
+  return tests
+end
+
+local function getEnumItemsTests()
+  local tcs = createTestCases(m.isMandatory.ALL, m.isArray.ALL, { ah.dataType.ENUM.type }, m.iterateEnumItems.YES)
+  local tests = {}
+  for _, tc in pairs(tcs) do
+    table.insert(tests, {
+        name = "Param " .. tc.paramFullName .. "_" .. tc.item,
+        func = processRPCSuccess,
+        params = getParamsSuccessTest(tc.params)
       })
   end
   return tests
@@ -456,7 +420,8 @@ function m.getTests(pRPC, pTestType, pParamName)
     [m.testType.UPPER_IN_BOUND] = getInBoundTests,
     [m.testType.LOWER_OUT_OF_BOUND] = getOutOfBoundTests,
     [m.testType.UPPER_OUT_OF_BOUND] = getOutOfBoundTests,
-    [m.testType.VALID_RANDOM] = getValidRandomTests
+    [m.testType.VALID_RANDOM] = getValidRandomTests,
+    [m.testType.ENUM_ITEMS] = getEnumItemsTests
   }
   if testTypeMap[testType] then return testTypeMap[testType]() end
   return {}

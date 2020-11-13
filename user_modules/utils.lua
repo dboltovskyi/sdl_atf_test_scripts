@@ -428,4 +428,33 @@ function m.getDeviceTransportType()
   end
 end
 
+function m.getTableSize(pTbl)
+  local out = 0
+  for _ in pairs(pTbl) do
+    out = out + 1
+  end
+  return out
+end
+
+function m.tableContains(pTbl, pValue)
+  for _, v in pairs(pTbl) do
+    if v == pValue then return true end
+  end
+  return false
+end
+
+function m.splitString(pStr, pDelimiter)
+  local result = {}
+  for match in (pStr .. pDelimiter):gmatch("(.-)%" .. pDelimiter) do
+    table.insert(result, match)
+  end
+  return result
+end
+
+function m.getKeyByValue(pTbl, pValue)
+  for k, v in pairs(pTbl) do
+    if v == pValue then return k end
+  end
+end
+
 return m

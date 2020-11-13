@@ -9,6 +9,7 @@ local json = require("modules/json")
 local SDL = require("SDL")
 local apiLoader = require("modules/api_loader")
 local color = require("user_modules/consts").color
+local tg = require("user_modules/api/APITestGen")
 
 --[[ General configuration parameters ]]
 runner.testSettings.isSelfIncluded = false
@@ -44,6 +45,9 @@ do
   m.spairs = utils.spairs
   m.cprint = utils.cprint
   m.json = actions.json
+  m.testType = tg.testType
+  m.getTests = tg.getTests
+  m.getKeyByValue = utils.getKeyByValue
 end
 
 --[[ Common Variables ]]

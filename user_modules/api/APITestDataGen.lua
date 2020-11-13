@@ -2,7 +2,7 @@
 -- API Test Data Generator module
 ----------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]-------------------------------------------------------------------
-local ah = require('test_scripts/API2/APIHelper')
+local ah = require("user_modules/api/APIHelper")
 
 --[[ Module ]]--------------------------------------------------------------------------------------
 local m = {}

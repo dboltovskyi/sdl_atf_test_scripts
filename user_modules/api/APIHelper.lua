@@ -2,7 +2,7 @@
 -- API Helper module
 ----------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]-------------------------------------------------------------------
-local cmn = require('test_scripts/API2/APICommon')
+local utils = require("user_modules/utils")
 local apiLoader = require("modules/api_loader")
 
 --[[ Module ]]--------------------------------------------------------------------------------------
@@ -21,11 +21,13 @@ m.eventType = {
 }
 
 m.rpc = {
-  GetVehicleData = 1
+  GetVehicleData = 1,
+  OnVehicleData = 2
 }
 
 m.rpcHMIMap = {
-  [m.rpc.GetVehicleData] = "VehicleInfo.GetVehicleData"
+  [m.rpc.GetVehicleData] = "VehicleInfo.GetVehicleData",
+  [m.rpc.OnVehicleData] = "VehicleInfo.OnVehicleData"
 }
 
 m.dataType = {
@@ -54,22 +56,23 @@ math.randomseed(os.clock())
 
 local function getType(pType)
   if string.find(pType, "%.") then
-    return cmn.splitString(pType, ".")[2]
+    return utils.splitString(pType, ".")[2]
   end
   return pType
 end
 
 function m.getParamsData(pAPI, pEventType, pFunctionName)
+
   local function buildParams(pTbl, pParams)
     for k, v in pairs(pParams) do
-      pTbl[k] = cmn.cloneTable(v)
+      pTbl[k] = utils.cloneTable(v)
       if schema[pAPI].struct[getType(v.type)] then
         pTbl[k].data = {}
         buildParams(pTbl[k].data, schema[pAPI].struct[getType(v.type)].param)
         pTbl[k].type = m.dataType.STRUCT.type
       elseif schema[pAPI].enum[getType(v.type)] then
         pTbl[k].data = {}
-        for kk in cmn.spairs(schema[pAPI].enum[getType(v.type)]) do
+        for kk in utils.spairs(schema[pAPI].enum[getType(v.type)]) do
           table.insert(pTbl[k].data, kk)
         end
         pTbl[k].type = m.dataType.ENUM.type
@@ -81,8 +84,8 @@ function m.getParamsData(pAPI, pEventType, pFunctionName)
     if pAPI == m.apiType.MOBILE then
       return schema.mobile.type[pEventType].functions[pFunctionName].param
     elseif pAPI == m.apiType.HMI then
-      local iName = cmn.splitString(pFunctionName, ".")[1]
-      local fName = cmn.splitString(pFunctionName, ".")[2]
+      local iName = utils.splitString(pFunctionName, ".")[1]
+      local fName = utils.splitString(pFunctionName, ".")[2]
       return api.hmi.interface[iName].type[pEventType].functions[fName].param
     end
   end
@@ -114,6 +117,16 @@ function m.getParamsData(pAPI, pEventType, pFunctionName)
   updateValues(out)
 
   return out
+end
+
+function m.getRPCType(pRPC)
+  local name = utils.getKeyByValue(m.rpc, pRPC)
+  if string.find(name, "Get") == 1 then
+    return m.eventType.RESPONSE
+  elseif string.find(name, "On") == 1 then
+    return m.eventType.NOTIFICATION
+  end
+  return nil
 end
 
 return m

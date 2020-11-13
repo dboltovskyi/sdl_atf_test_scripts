@@ -2,23 +2,22 @@
 -- API Test Generator module
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
-local ah = require('test_scripts/API2/APIHelper')
-local cmn = require('test_scripts/API2/APICommon')
-local tdg = require('test_scripts/API2/APITestDataGen')
+local utils = require("user_modules/utils")
+local ah = require("user_modules/api/APIHelper")
+local tdg = require("user_modules/api/APITestDataGen")
 
 --[[ Module ]]--------------------------------------------------------------------------------------
 local m = {}
 
 --[[ Constants ]]-----------------------------------------------------------------------------------
 m.testType = {
-  DEBUG = 1,
+  VALID_RANDOM = 1,
   ONLY_MANDATORY_PARAMS = 2,
   UPPER_IN_BOUND = 3,
   LOWER_IN_BOUND = 4,
   UPPER_OUT_OF_BOUND = 5,
   LOWER_OUT_OF_BOUND = 6,
-  VALID_RANDOM = 7,
-  ENUM_ITEMS = 8
+  ENUM_ITEMS = 7
 }
 
 m.isMandatory = {
@@ -38,6 +37,11 @@ m.iterateEnumItems = {
   NO = false
 }
 
+--[[ Local Variables ]]-----------------------------------------------------------------------------
+local rpc
+local testType
+local paramName
+
 --[[ Local Constants ]]-----------------------------------------------------------------------------
 local valueTypeMap = {
   [m.testType.UPPER_IN_BOUND] = tdg.valueType.UPPER_IN_BOUND,
@@ -47,31 +51,16 @@ local valueTypeMap = {
   [m.testType.VALID_RANDOM] = tdg.valueType.VALID_RANDOM,
 }
 
---[[ Local Variables ]]-----------------------------------------------------------------------------
-local rpc
-local testType
-local paramName
-
---[[ Processing Functions ]]------------------------------------------------------------------------
-local function processRPCSuccess(pParams)
-  local cid = cmn.getMobileSession():SendRPC(pParams.mobile.name, pParams.mobile.request)
-  cmn.getHMIConnection():ExpectRequest(pParams.hmi.name, pParams.hmi.request)
-  :Do(function(_, data)
-      cmn.getHMIConnection():SendResponse(data.id, data.method, "SUCCESS", pParams.hmi.response)
-    end)
-  cmn.getMobileSession():ExpectResponse(cid, pParams.mobile.response)
-end
-
 --[[ Params Generator Functions ]]------------------------------------------------------------------
-local function getParamsSuccessTest(pParamData, pValueTypesMap, pArrayValueTypesMap)
+local function getParamsValidDataTestForRequest(pParamData, pValueTypesMap, pArrayValueTypesMap)
   local request = { [next(pParamData)] = true }
   local hmiResponse = tdg.getParamValues(pParamData, pValueTypesMap, pArrayValueTypesMap)
-  local mobileResponse = cmn.cloneTable(hmiResponse)
+  local mobileResponse = utils.cloneTable(hmiResponse)
   mobileResponse.success = true
   mobileResponse.resultCode = "SUCCESS"
   local params = {
     mobile = {
-      name = cmn.getKeyByValue(ah.rpc, rpc),
+      name = utils.getKeyByValue(ah.rpc, rpc),
       request = request,
       response = mobileResponse
     },
@@ -84,12 +73,12 @@ local function getParamsSuccessTest(pParamData, pValueTypesMap, pArrayValueTypes
   return params
 end
 
-local function getParamsInvalidDataTest(pParamData, pValueTypesMap, pArrayValueTypesMap)
+local function getParamsInvalidDataTestForRequest(pParamData, pValueTypesMap, pArrayValueTypesMap)
   local request = { [next(pParamData)] = true }
   local hmiResponse = tdg.getParamValues(pParamData, pValueTypesMap, pArrayValueTypesMap)
   local params = {
     mobile = {
-      name = cmn.getKeyByValue(ah.rpc, rpc),
+      name = utils.getKeyByValue(ah.rpc, rpc),
       request = request,
       response = { success = false, resultCode = "GENERIC_ERROR" }
     },
@@ -102,16 +91,51 @@ local function getParamsInvalidDataTest(pParamData, pValueTypesMap, pArrayValueT
   return params
 end
 
+local function getParamsAnyDataTestForNotification(pParamData, pValueTypesMap, pArrayValueTypesMap)
+  local param = next(pParamData)
+  local notification = tdg.getParamValues(pParamData, pValueTypesMap, pArrayValueTypesMap)
+  local params = {
+    mobile = {
+      name = utils.getKeyByValue(ah.rpc, rpc),
+      notification = { [param] = notification[param] }
+    },
+    hmi = {
+      name = ah.rpcHMIMap[rpc],
+      notification = { [param] = notification[param] }
+    }
+  }
+  return params
+end
+
+local function getParamsValidDataTest(...)
+  if ah.getRPCType(rpc) == ah.eventType.RESPONSE then
+    return getParamsValidDataTestForRequest(...)
+  elseif ah.getRPCType(rpc) == ah.eventType.NOTIFICATION then
+    return getParamsAnyDataTestForNotification(...)
+  end
+end
+
+local function getParamsInvalidDataTest(...)
+  if ah.getRPCType(rpc) == ah.eventType.RESPONSE then
+    return getParamsInvalidDataTestForRequest(...)
+  elseif ah.getRPCType(rpc) == ah.eventType.NOTIFICATION then
+    return getParamsAnyDataTestForNotification(...)
+  end
+end
+
+--[[ Processing Functions ]]------------------------------------------------------------------------
+
+
 --[[ Test Cases Generator Function ]]---------------------------------------------------------------
 local function createTestCases(pIsMandatory, pIsArray, pDataTypes, pIterateEnumItems)
-  local apiParamsData = ah.getParamsData(ah.apiType.HMI, ah.eventType.RESPONSE, ah.rpcHMIMap[rpc])
-  -- local apiParamsData = ah.getParamsData(ah.apiType.MOBILE, ah.eventType.RESPONSE, cmn.getKeyByValue(ah.rpc, rpc))
+
+  local apiParamsData = ah.getParamsData(ah.apiType.HMI, ah.getRPCType(rpc), ah.rpcHMIMap[rpc])
 
   local function getGraph(pParams, pGraph, pParentId)
-    for k, v in cmn.spairs(pParams) do
-      local item = cmn.cloneTable(v)
+    for k, v in utils.spairs(pParams) do
+      local item = utils.cloneTable(v)
       if v.type == ah.dataType.ENUM.type then
-        item.items = cmn.cloneTable(v.data)
+        item.items = utils.cloneTable(v.data)
       end
       if item.data then item.data = nil end
       item.parentId = pParentId
@@ -138,7 +162,7 @@ local function createTestCases(pIsMandatory, pIsArray, pDataTypes, pIterateEnumI
   end
 
   local function getMandatoryNeighbors(pGraph, pId, pParentIds)
-    local pIds = cmn.cloneTable(pParentIds)
+    local pIds = utils.cloneTable(pParentIds)
     pIds[pId] = true
     local out = {}
     for p in pairs(pIds) do
@@ -212,7 +236,7 @@ local function createTestCases(pIsMandatory, pIsArray, pDataTypes, pIterateEnumI
     end
     local function getTypeCondition(pType)
       if pDataTypes == nil or #pDataTypes == 0 then return true
-      elseif cmn.tableContains(pDataTypes, pType) then return true
+      elseif utils.tableContains(pDataTypes, pType) then return true
       else return false
       end
     end
@@ -222,11 +246,11 @@ local function createTestCases(pIsMandatory, pIsArray, pDataTypes, pIterateEnumI
       end
     end
     local function getDisabledParamCondition(pName)
-      local parentName = cmn.splitString(pName, ".")[1]
-      if cmn.vd[parentName] == nil then
-        cmn.cprint(cmn.color.magenta, "Disabled VD parameter:", pName)
-        return false
-      end
+      -- local parentName = utils.splitString(pName, ".")[1]
+      -- if cmn.vd[parentName] == nil then
+      --   cmn.cprint(cmn.color.magenta, "Disabled VD parameter:", pName)
+      --   return false
+      -- end
       return true
     end
     local tcs = {}
@@ -243,7 +267,7 @@ local function createTestCases(pIsMandatory, pIsArray, pDataTypes, pIterateEnumI
           getMandatoryChildren(graph, id, neighborsChildrenIds)
         end
         local tcParamIds = getTCParamsIds(k, parentIds, neighborsIds, childrenIds, neighborsChildrenIds)
-        if not (v.type == ah.dataType.STRUCT.type and cmn.getTableSize(childrenIds) == 0) then
+        if not (v.type == ah.dataType.STRUCT.type and utils.getTableSize(childrenIds) == 0) then
           local tc = {
             paramName = graph[k].name,
             paramFullName = paramFullName,
@@ -251,13 +275,13 @@ local function createTestCases(pIsMandatory, pIsArray, pDataTypes, pIterateEnumI
           }
           if pIterateEnumItems == true and v.type == ah.dataType.ENUM.type then
             for _, item in pairs(v.items) do
-              local tcUpd = cmn.cloneTable(tc)
-              tcUpd.params = getUpdatedParams(cmn.cloneTable(apiParamsData), tcParamIds, k, item)
+              local tcUpd = utils.cloneTable(tc)
+              tcUpd.params = getUpdatedParams(utils.cloneTable(apiParamsData), tcParamIds, k, item)
               tcUpd.item = item
               table.insert(tcs, tcUpd)
             end
           else
-            tc.params = getUpdatedParams(cmn.cloneTable(apiParamsData), tcParamIds)
+            tc.params = getUpdatedParams(utils.cloneTable(apiParamsData), tcParamIds)
             table.insert(tcs, tc)
           end
         end
@@ -272,27 +296,13 @@ local function createTestCases(pIsMandatory, pIsArray, pDataTypes, pIterateEnumI
 end
 
 --[[ Tests Generator Functions ]]-------------------------------------------------------------------
-local function getDebugTests()
-  local tcs = createTestCases(m.isMandatory.ALL, m.isArray.ALL, {})
-  local tests = {}
-  for _, tc in pairs(tcs) do
-    table.insert(tests, {
-        name = "Param " .. tc.paramFullName,
-        func = processRPCSuccess,
-        params = getParamsSuccessTest(tc.params)
-      })
-  end
-  return tests
-end
-
 local function getOnlyMandatoryTests()
   local tcs = createTestCases(m.isMandatory.YES, m.isArray.ALL, {})
   local tests = {}
   for _, tc in pairs(tcs) do
     table.insert(tests, {
         name = "Param " .. tc.paramFullName,
-        func = processRPCSuccess,
-        params = getParamsSuccessTest(tc.params)
+        params = getParamsValidDataTest(tc.params)
       })
   end
   return tests
@@ -306,8 +316,7 @@ local function getInBoundTests()
     local valueTypesMap = { [tc.paramName] = valueTypeMap[testType] }
     table.insert(tests, {
         name = "Param_" .. tc.paramFullName,
-        func = processRPCSuccess,
-        params = getParamsSuccessTest(tc.params, valueTypesMap, { })
+        params = getParamsValidDataTest(tc.params, valueTypesMap, { })
       })
   end
   -- tests for arrays
@@ -316,8 +325,7 @@ local function getInBoundTests()
     local arrayValueTypesMap = { [tc.paramName] = valueTypeMap[testType] }
     table.insert(tests, {
         name = "Param_" .. tc.paramFullName .. "_array_value_LOWER",
-        func = processRPCSuccess,
-        params = getParamsSuccessTest(tc.params, valueTypesMap, arrayValueTypesMap)
+        params = getParamsValidDataTest(tc.params, valueTypesMap, arrayValueTypesMap)
       })
   end
   for _, tc in pairs(createTestCases(m.isMandatory.ALL, m.isArray.YES, {})) do
@@ -325,8 +333,7 @@ local function getInBoundTests()
     local arrayValueTypesMap = { [tc.paramName] = valueTypeMap[testType] }
     table.insert(tests, {
         name = "Param_" .. tc.paramFullName .. "_array_value_UPPER",
-        func = processRPCSuccess,
-        params = getParamsSuccessTest(tc.params, valueTypesMap, arrayValueTypesMap)
+        params = getParamsValidDataTest(tc.params, valueTypesMap, arrayValueTypesMap)
       })
   end
   return tests
@@ -355,8 +362,7 @@ local function getOutOfBoundTests()
       local valueTypesMap = { [tc.paramName] = valueTypeMap[testType] }
       table.insert(tests, {
           name = "Param_" .. tc.paramFullName,
-          func = processRPCSuccess,
-          params = getParamsInvalidDataTest(tc.params, valueTypesMap, { })
+            params = getParamsInvalidDataTest(tc.params, valueTypesMap, { })
         })
     end
   end
@@ -366,7 +372,6 @@ local function getOutOfBoundTests()
     local arrayValueTypesMap = { [tc.paramName] = valueTypeMap[testType] }
     table.insert(tests, {
         name = "Param_" .. tc.paramFullName .. "_array_value_LOWER",
-        func = processRPCSuccess,
         params = getParamsInvalidDataTest(tc.params, valueTypesMap, arrayValueTypesMap)
       })
   end
@@ -375,7 +380,6 @@ local function getOutOfBoundTests()
     local arrayValueTypesMap = { [tc.paramName] = valueTypeMap[testType] }
     table.insert(tests, {
         name = "Param_" .. tc.paramFullName .. "_array_value_UPPER",
-        func = processRPCSuccess,
         params = getParamsInvalidDataTest(tc.params, valueTypesMap, arrayValueTypesMap)
       })
   end
@@ -388,8 +392,7 @@ local function getValidRandomTests()
   for _, tc in pairs(tcs) do
     table.insert(tests, {
         name = "Param " .. tc.paramFullName,
-        func = processRPCSuccess,
-        params = getParamsSuccessTest(tc.params)
+        params = getParamsValidDataTest(tc.params)
       })
   end
   return tests
@@ -401,8 +404,7 @@ local function getEnumItemsTests()
   for _, tc in pairs(tcs) do
     table.insert(tests, {
         name = "Param " .. tc.paramFullName .. "_" .. tc.item,
-        func = processRPCSuccess,
-        params = getParamsSuccessTest(tc.params)
+        params = getParamsValidDataTest(tc.params)
       })
   end
   return tests
@@ -410,17 +412,16 @@ end
 
 --[[ Test Getter Function ]]------------------------------------------------------------------------
 function m.getTests(pRPC, pTestType, pParamName)
-  rpc = pRPC
+  rpc = ah.rpc[pRPC]
   testType = pTestType
   paramName = pParamName
   local testTypeMap = {
-    -- [m.testType.DEBUG] = getDebugTests,
+    [m.testType.VALID_RANDOM] = getValidRandomTests,
     [m.testType.ONLY_MANDATORY_PARAMS] = getOnlyMandatoryTests,
     [m.testType.LOWER_IN_BOUND] = getInBoundTests,
     [m.testType.UPPER_IN_BOUND] = getInBoundTests,
     [m.testType.LOWER_OUT_OF_BOUND] = getOutOfBoundTests,
     [m.testType.UPPER_OUT_OF_BOUND] = getOutOfBoundTests,
-    [m.testType.VALID_RANDOM] = getValidRandomTests,
     [m.testType.ENUM_ITEMS] = getEnumItemsTests
   }
   if testTypeMap[testType] then return testTypeMap[testType]() end

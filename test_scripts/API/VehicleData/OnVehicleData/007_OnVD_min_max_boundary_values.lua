@@ -16,7 +16,9 @@ local testTypes = {
 }
 
 --[[ Local Variables ]]-----------------------------------------------------------------------------
--- local param = "wiperStatus"--"clusterModeStatus"--"wiperStatus"--"headLampStatus"--"windowStatus"--"deviceStatus"
+-- function common.getVDParams()
+--   return { windowStatus = 1 }
+-- end
 
 --[[ Local Functions ]]-----------------------------------------------------------------------------
 local function processRPC(pParams, pTestType)

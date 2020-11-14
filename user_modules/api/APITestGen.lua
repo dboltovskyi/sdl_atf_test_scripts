@@ -312,19 +312,10 @@ local function getInBoundTests()
   end
   -- tests for arrays
   for _, tc in pairs(createTestCases(m.isMandatory.ALL, m.isArray.YES, {})) do
-    local valueTypesMap = { [tc.paramName] = tdg.valueType.LOWER_IN_BOUND }
     local arrayValueTypesMap = { [tc.paramName] = valueTypeMap[testType] }
     table.insert(tests, {
-        name = "Param_" .. tc.paramFullName .. "_array_value_LOWER",
-        params = getParamsValidDataTest(tc.params, valueTypesMap, arrayValueTypesMap)
-      })
-  end
-  for _, tc in pairs(createTestCases(m.isMandatory.ALL, m.isArray.YES, {})) do
-    local valueTypesMap = { [tc.paramName] = tdg.valueType.UPPER_IN_BOUND }
-    local arrayValueTypesMap = { [tc.paramName] = valueTypeMap[testType] }
-    table.insert(tests, {
-        name = "Param_" .. tc.paramFullName .. "_array_value_UPPER",
-        params = getParamsValidDataTest(tc.params, valueTypesMap, arrayValueTypesMap)
+        name = "Param_" .. tc.paramFullName .. "_ARRAY",
+        params = getParamsValidDataTest(tc.params, nil, arrayValueTypesMap)
       })
   end
   return tests
@@ -359,19 +350,10 @@ local function getOutOfBoundTests()
   end
   -- tests for arrays
   for _, tc in pairs(createTestCases(m.isMandatory.ALL, m.isArray.YES, {})) do
-    local valueTypesMap = { [tc.paramName] = tdg.valueType.LOWER_IN_BOUND }
     local arrayValueTypesMap = { [tc.paramName] = valueTypeMap[testType] }
     table.insert(tests, {
-        name = "Param_" .. tc.paramFullName .. "_array_value_LOWER",
-        params = getParamsInvalidDataTest(tc.params, valueTypesMap, arrayValueTypesMap)
-      })
-  end
-  for _, tc in pairs(createTestCases(m.isMandatory.ALL, m.isArray.YES, {})) do
-    local valueTypesMap = { [tc.paramName] = tdg.valueType.UPPER_IN_BOUND }
-    local arrayValueTypesMap = { [tc.paramName] = valueTypeMap[testType] }
-    table.insert(tests, {
-        name = "Param_" .. tc.paramFullName .. "_array_value_UPPER",
-        params = getParamsInvalidDataTest(tc.params, valueTypesMap, arrayValueTypesMap)
+        name = "Param_" .. tc.paramFullName .. "_ARRAY",
+        params = getParamsInvalidDataTest(tc.params, nil, arrayValueTypesMap)
       })
   end
   return tests

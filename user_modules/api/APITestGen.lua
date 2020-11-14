@@ -241,24 +241,15 @@ local function createTestCases(pIsMandatory, pIsArray, pDataTypes, pIterateEnumI
       end
     end
     local function getParamNameCondition(pName)
-      if paramName == nil or paramName == "" then return true
-      else return string.find(pName, paramName) == 1
-      end
-    end
-    local function getDisabledParamCondition(pName)
-      -- local parentName = utils.splitString(pName, ".")[1]
-      -- if cmn.vd[parentName] == nil then
-      --   cmn.cprint(cmn.color.magenta, "Disabled VD parameter:", pName)
-      --   return false
-      -- end
-      return true
+      if paramName == nil or paramName == "" then return true end
+      if (pName == paramName) or (string.find(pName .. ".", paramName .. "%.") == 1) then return true end
+      return false
     end
     local tcs = {}
     for k, v in pairs(pGraph) do
       local paramFullName = getFullParamName(graph, k)
       if getMandatoryCondition(v.mandatory) and getArrayCondition(v.array)
-        and getTypeCondition(v.type) and getParamNameCondition(paramFullName)
-        and getDisabledParamCondition(paramFullName) then
+        and getTypeCondition(v.type) and getParamNameCondition(paramFullName) then
         local parentIds = getParents(graph, k)
         local childrenIds = getMandatoryChildren(graph, k, {})
         local neighborsIds = getMandatoryNeighbors(graph, k, parentIds)

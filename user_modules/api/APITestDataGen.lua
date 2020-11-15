@@ -140,7 +140,7 @@ end
 local function getStructValues(pTypeData, pValueTypesMap, pArrayValueTypesMap)
   local out = {}
   for k, v in pairs(pTypeData.data) do
-    out[k] = m.getValue(k, v, pValueTypesMap, pArrayValueTypesMap)
+    out[k] = m.getValue(v.fullName, v, pValueTypesMap, pArrayValueTypesMap)
   end
   return out
 end
@@ -213,7 +213,7 @@ function m.getParamValues(pParamsData, pValueTypesMap, pArrayValueTypesMap)
   if not pArrayValueTypesMap then pArrayValueTypesMap = {} end
   local out = {}
   for k, v in pairs(pParamsData) do
-    out[k] = m.getValue(k, v, pValueTypesMap, pArrayValueTypesMap)
+    out[k] = m.getValue(v.fullName, v, pValueTypesMap, pArrayValueTypesMap)
   end
   return out
 end

@@ -11,6 +11,7 @@ local m = {}
 
 --[[ Constants ]]-----------------------------------------------------------------------------------
 m.testType = {
+  DEBUG = 0,
   VALID_RANDOM = 1,
   ONLY_MANDATORY_PARAMS = 2,
   UPPER_IN_BOUND = 3,
@@ -212,6 +213,8 @@ local function createTestCases(pIsMandatory, pIsArray, pDataTypes, pIterateEnumI
     for k, v in pairs(pParams) do
       if not pParamIds[v.id] then
         pParams[k] = nil
+      else
+        pParams[k].fullName = getFullParamName(graph, v.id)
       end
       if v.id == pEnumParamId then
         v.data = { pEnumParamItem }
@@ -383,6 +386,21 @@ local function getEnumItemsTests()
   return tests
 end
 
+local function getDebugTests()
+  local dataTypes = { ah.dataType.INTEGER.type}
+  local tcs = createTestCases(m.isMandatory.ALL, m.isArray.ALL, dataTypes)
+  local tests = {}
+  for _, tc in pairs(tcs) do
+    local valueTypesMap = { [tc.paramFullName] = tdg.valueType.UPPER_IN_BOUND }
+    utils.printTable(tc.params)
+    table.insert(tests, {
+        name = "Param " .. tc.paramFullName,
+        params = getParamsValidDataTest(tc.params, valueTypesMap)
+      })
+  end
+  return tests
+end
+
 --[[ Test Getter Function ]]------------------------------------------------------------------------
 function m.getTests(pRPC, pTestType, pParamName)
   rpc = ah.rpc[pRPC]
@@ -395,7 +413,8 @@ function m.getTests(pRPC, pTestType, pParamName)
     [m.testType.UPPER_IN_BOUND] = getInBoundTests,
     [m.testType.LOWER_OUT_OF_BOUND] = getOutOfBoundTests,
     [m.testType.UPPER_OUT_OF_BOUND] = getOutOfBoundTests,
-    [m.testType.ENUM_ITEMS] = getEnumItemsTests
+    [m.testType.ENUM_ITEMS] = getEnumItemsTests,
+    [m.testType.DEBUG] = getDebugTests
   }
   if testTypeMap[testType] then return testTypeMap[testType]() end
   return {}

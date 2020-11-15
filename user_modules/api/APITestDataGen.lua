@@ -137,17 +137,9 @@ local function getEnumTypeValue(pTypeData, pValueType)
   return pTypeData.data[1]
 end
 
-local function getStructValues(pTypeData, pValueTypesMap, pArrayValueTypesMap)
-  local out = {}
-  for k, v in pairs(pTypeData.data) do
-    out[k] = m.getValue(v.fullName, v, pValueTypesMap, pArrayValueTypesMap)
-  end
-  return out
-end
-
-local function getTypeValue(pParamName, pTypeData, pValueTypesMap, pArrayValueTypesMap)
+local function getTypeValue(pTypeData)
   local valueType = m.valueType.VALID_RANDOM
-  if pValueTypesMap[pParamName] then valueType = pValueTypesMap[pParamName] end
+  if pTypeData.valueType then valueType = pTypeData.valueType end
   if pTypeData.type == ah.dataType.INTEGER.type then
     return getIntegerValue(pTypeData, valueType)
   elseif pTypeData.type == ah.dataType.FLOAT.type then
@@ -160,14 +152,12 @@ local function getTypeValue(pParamName, pTypeData, pValueTypesMap, pArrayValueTy
     return getBooleanValue()
   elseif pTypeData.type == ah.dataType.ENUM.type then
     return getEnumTypeValue(pTypeData, valueType)
-  elseif pTypeData.type == ah.dataType.STRUCT.type then
-    return getStructValues(pTypeData, pValueTypesMap, pArrayValueTypesMap)
   end
 end
 
-local function getNumOfItems(pParamName, pTypeData, pArrayValueTypesMap)
+local function getNumOfItems(pTypeData)
   local arrayValueType = m.valueType.VALID_RANDOM
-  if pArrayValueTypesMap[pParamName] then arrayValueType = pArrayValueTypesMap[pParamName] end
+  if pTypeData.valueTypeArray then arrayValueType = pTypeData.valueTypeArray end
   local numOfItems = -1
   if pTypeData.array == true then
     if arrayValueType == m.valueType.LOWER_IN_BOUND then
@@ -195,25 +185,53 @@ local function getNumOfItems(pParamName, pTypeData, pArrayValueTypesMap)
   return numOfItems
 end
 
-function m.getValue(pParamName, pTypeData, pValueTypesMap, pArrayValueTypesMap)
-  local numOfItems = getNumOfItems(pParamName, pTypeData, pArrayValueTypesMap)
+local function buildParams(pGraph, pId, pParams)
+  local name = pGraph[pId].name
+  local data = pGraph[pId]
+  local numOfItems = getNumOfItems(data, {})
+  local childrenIds = { }
+  for k, v in pairs(pGraph) do
+    if v.parentId == pId then table.insert(childrenIds, k) end
+  end
+  local function buildParamSingle(pName, pData, pParamsTable)
+    if #childrenIds == 0 then
+      pParamsTable[pName] = getTypeValue(pData, {}, {})
+    else
+      pParamsTable[pName] = {}
+      for _, id in pairs(childrenIds) do
+        buildParams(pGraph, id, pParamsTable[pName])
+      end
+    end
+  end
+  local function buildParamArray(pName, pData, pParamsTable, pNumOfItems)
+    if #childrenIds == 0 then
+      pParamsTable[pName] = {}
+      for _ = 1, pNumOfItems do
+        table.insert(pParamsTable[pName], getTypeValue(pData, {}, {}))
+      end
+    else
+      pParamsTable[pName] = {}
+      for i = 1, pNumOfItems do
+        pParamsTable[pName][i] = {}
+        for _, id in pairs(childrenIds) do
+          buildParams(pGraph, id, pParamsTable[pName][i])
+        end
+      end
+    end
+  end
   if numOfItems == -1 then
-    return getTypeValue(pParamName, pTypeData, pValueTypesMap, pArrayValueTypesMap)
+    buildParamSingle(name, data, pParams)
   else
-    local out = {}
-    for _ = 1, numOfItems do
-      table.insert(out, getTypeValue(pParamName, pTypeData, pValueTypesMap, pArrayValueTypesMap))
-   end
-    return out
+    buildParamArray(name, data, pParams, numOfItems)
   end
 end
 
-function m.getParamValues(pParamsData, pValueTypesMap, pArrayValueTypesMap)
-  if not pValueTypesMap then pValueTypesMap = {} end
-  if not pArrayValueTypesMap then pArrayValueTypesMap = {} end
+function m.getParamValues(pGraph)
   local out = {}
-  for k, v in pairs(pParamsData) do
-    out[k] = m.getValue(v.fullName, v, pValueTypesMap, pArrayValueTypesMap)
+  for id in pairs(pGraph) do
+    if pGraph[id].parentId == nil then
+      buildParams(pGraph, id, out)
+    end
   end
   return out
 end

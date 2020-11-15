@@ -61,7 +61,7 @@ local function getType(pType)
   return pType
 end
 
-function m.getParamsData(pAPI, pEventType, pFunctionName)
+local function getParamsData(pAPI, pEventType, pFunctionName)
 
   local function buildParams(pTbl, pParams)
     for k, v in pairs(pParams) do
@@ -127,6 +127,46 @@ function m.getRPCType(pRPC)
     return m.eventType.NOTIFICATION
   end
   return nil
+end
+
+function m.getGraph(pAPIType, pEventType, pFuncName)
+
+  local function getGraph(pParams, pGraph, pParentId)
+    for k, v in utils.spairs(pParams) do
+      local item = utils.cloneTable(v)
+      item.parentId = pParentId
+      item.name = k
+      table.insert(pGraph, item)
+      v.id = #pGraph
+      if v.type == m.dataType.STRUCT.type then
+        getGraph(v.data, pGraph, #pGraph)
+      end
+    end
+    return pGraph
+  end
+
+  local apiParamsData = getParamsData(pAPIType, pEventType, pFuncName)
+  return getGraph(apiParamsData, {})
+end
+
+function m.getFullParamName(pGraph, pId)
+  local out = pGraph[pId].name
+  pId = pGraph[pId].parentId
+  while pId do
+    out = pGraph[pId].name .. "." .. out
+    pId = pGraph[pId].parentId
+  end
+  return out
+end
+
+function m.getMainParentName(pGraph, pId)
+  local out = pGraph[pId].parentId
+  if out == nil then return pGraph[pId].name end
+  while pId do
+    pId = pGraph[pId].parentId
+    if pId then out = pId end
+  end
+  return pGraph[out].name
 end
 
 return m

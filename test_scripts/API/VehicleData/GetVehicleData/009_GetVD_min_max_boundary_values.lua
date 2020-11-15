@@ -6,20 +6,19 @@ local common = require('test_scripts/API/VehicleData/common')
 
 --[[ Local Constants ]]-----------------------------------------------------------------------------
 local testTypes = {
-  -- common.testType.VALID_RANDOM,
-  -- common.testType.ONLY_MANDATORY_PARAMS,
-  -- common.testType.LOWER_IN_BOUND,
-  -- common.testType.UPPER_IN_BOUND,
-  -- common.testType.LOWER_OUT_OF_BOUND,
-  -- common.testType.UPPER_OUT_OF_BOUND,
-  -- common.testType.ENUM_ITEMS,
-  common.testType.DEBUG
+  common.testType.VALID_RANDOM,
+  common.testType.ONLY_MANDATORY_PARAMS,
+  common.testType.LOWER_IN_BOUND,
+  common.testType.UPPER_IN_BOUND,
+  common.testType.LOWER_OUT_OF_BOUND,
+  common.testType.UPPER_OUT_OF_BOUND,
+  common.testType.ENUM_ITEMS,
 }
 
 --[[ Local Variables ]]-----------------------------------------------------------------------------
-function common.getVDParams()
-  return { emergencyEvent = 1 }
-end
+-- function common.getVDParams()
+--   return { wiperStatus = 1 }
+-- end
 
 --[[ Local Functions ]]-----------------------------------------------------------------------------
 local function processRPC(pParams)

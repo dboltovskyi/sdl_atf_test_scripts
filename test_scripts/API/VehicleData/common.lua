@@ -48,6 +48,7 @@ do
   m.testType = tg.testType
   m.getTests = tg.getTests
   m.getKeyByValue = utils.getKeyByValue
+  m.getTableSize = utils.getTableSize
 end
 
 --[[ Common Variables ]]
@@ -499,10 +500,11 @@ function m.processSubscriptionRPC(pRPC, pParam, pAppId, isRequestOnHMIExpected)
   end
   m.getMobileSession(pAppId):ExpectResponse(cid,
     { success = true, resultCode = "SUCCESS", [responseParam] = response })
-  m.getMobileSession(pAppId):ExpectNotification("OnHashChange")
+  local ret = m.getMobileSession(pAppId):ExpectNotification("OnHashChange")
   :Do(function(_, data)
     m.setHashId(data.payload.hashID, pAppId)
   end)
+  return ret
 end
 
 --[[ @sendOnVehicleData: Processing OnVehicleData RPC

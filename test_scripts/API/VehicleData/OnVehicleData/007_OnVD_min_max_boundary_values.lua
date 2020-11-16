@@ -20,15 +20,27 @@ local testTypes = {
 --   return { windowStatus = 1 }
 -- end
 
+local isSubscribed = {}
+
 --[[ Local Functions ]]-----------------------------------------------------------------------------
-local function processRPC(pParams, pTestType)
-  local times = 1
-  if pTestType == common.testType.LOWER_OUT_OF_BOUND or pTestType == common.testType.UPPER_OUT_OF_BOUND then
-    times = 0
+local function processRPC(pParams, pTestType, pVDParam)
+  local function SendNotification()
+    local times = 1
+    if pTestType == common.testType.LOWER_OUT_OF_BOUND or pTestType == common.testType.UPPER_OUT_OF_BOUND then
+      times = 0
+    end
+    common.getHMIConnection():SendNotification(pParams.hmi.name, pParams.hmi.notification)
+    common.getMobileSession():ExpectNotification(pParams.mobile.name, pParams.mobile.notification)
+    :Times(times)
   end
-  common.getHMIConnection():SendNotification(pParams.hmi.name, pParams.hmi.notification)
-  common.getMobileSession():ExpectNotification(pParams.mobile.name, pParams.mobile.notification)
-  :Times(times)
+  if not isSubscribed[pVDParam] then
+    common.processSubscriptionRPC(common.rpc.sub, pVDParam)
+    :Do(function()
+        SendNotification()
+      end)
+    isSubscribed[pVDParam] = true
+  else SendNotification()
+  end
 end
 
 --[[ Scenario ]]------------------------------------------------------------------------------------
@@ -41,11 +53,13 @@ common.Step("Activate App", common.activateApp)
 common.Title("Test")
 for param in common.spairs(common.getVDParams(true)) do
   common.Title("VD parameter: " .. param)
-  common.Step("RPC " .. common.rpc.sub, common.processSubscriptionRPC, { common.rpc.sub, param })
   for _, testType in pairs(testTypes) do
-    common.Title(common.getKeyByValue(common.testType, testType))
-    for _, t in pairs(common.getTests(common.rpc.on, testType, param)) do
-      common.Step(t.name, processRPC, { t.params, testType })
+    local tests = common.getTests(common.rpc.on, testType, param)
+    if common.getTableSize(tests) > 0 then
+      common.Title(common.getKeyByValue(common.testType, testType))
+      for _, t in pairs(tests) do
+        common.Step(t.name, processRPC, { t.params, testType, param })
+      end
     end
   end
 end

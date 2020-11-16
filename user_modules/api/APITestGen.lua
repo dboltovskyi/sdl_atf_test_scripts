@@ -256,7 +256,28 @@ local function getValidRandomTests()
 end
 
 local function getOnlyMandatoryTests()
+  local function isTCExist(pExistingTCs, pTC)
+    local tc = utils.cloneTable(pTC)
+    tc.paramId = nil
+    for _, e in pairs(pExistingTCs) do
+      local etc = utils.cloneTable(e)
+      etc.paramId = nil
+      if utils.isTableEqual(etc, tc) then return true end
+    end
+    return false
+  end
+  local function filterDuplicates(pTCs)
+    local existingTCs = {}
+    for _, tc in pairs(pTCs) do
+      if not isTCExist(existingTCs, tc) then
+        tc.paramId = tc.graph[tc.paramId].parentId
+        table.insert(existingTCs, tc)
+      end
+    end
+    return existingTCs
+  end
   local tcs = createTestCases(m.isMandatory.YES, m.isArray.ALL, {})
+  tcs = filterDuplicates(tcs)
   local tests = {}
   for _, tc in pairs(tcs) do
     table.insert(tests, {

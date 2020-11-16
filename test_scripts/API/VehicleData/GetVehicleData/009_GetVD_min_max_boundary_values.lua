@@ -17,7 +17,7 @@ local testTypes = {
 
 --[[ Local Variables ]]-----------------------------------------------------------------------------
 -- function common.getVDParams()
---   return { wiperStatus = 1 }
+--   return { windowStatus = 1 }
 -- end
 
 --[[ Local Functions ]]-----------------------------------------------------------------------------
@@ -41,9 +41,12 @@ common.Title("Test")
 for param in common.spairs(common.getVDParams(true)) do
   common.Title("VD parameter: " .. param)
   for _, testType in pairs(testTypes) do
-    common.Title(common.getKeyByValue(common.testType, testType))
-    for _, t in pairs(common.getTests(common.rpc.get, testType, param)) do
-      common.Step(t.name, processRPC, { t.params })
+    local tests = common.getTests(common.rpc.get, testType, param)
+    if common.getTableSize(tests) > 0 then
+      common.Title(common.getKeyByValue(common.testType, testType))
+      for _, t in pairs(tests) do
+        common.Step(t.name, processRPC, { t.params })
+      end
     end
   end
 end

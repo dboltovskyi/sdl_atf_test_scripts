@@ -136,6 +136,9 @@ function m.getGraph(pAPIType, pEventType, pFuncName)
       local item = utils.cloneTable(v)
       item.parentId = pParentId
       item.name = k
+      if v.type ~= m.dataType.ENUM.type then
+        item.data = nil
+      end
       table.insert(pGraph, item)
       v.id = #pGraph
       if v.type == m.dataType.STRUCT.type then

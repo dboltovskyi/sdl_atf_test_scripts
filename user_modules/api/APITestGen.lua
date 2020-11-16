@@ -18,7 +18,8 @@ m.testType = {
   LOWER_IN_BOUND = 4,
   UPPER_OUT_OF_BOUND = 5,
   LOWER_OUT_OF_BOUND = 6,
-  ENUM_ITEMS = 7
+  ENUM_ITEMS = 7,
+  BOOL_ITEMS = 8
 }
 
 m.isMandatory = {
@@ -365,6 +366,22 @@ local function getEnumItemsTests()
   return tests
 end
 
+local function getBoolItemsTests()
+  local tests = {}
+  local dataTypes = { ah.dataType.BOOLEAN.type }
+  for _, tc in pairs(createTestCases(m.isMandatory.ALL, m.isArray.ALL, dataTypes)) do
+    for _, item in pairs({true, false}) do
+      local tcUpd = utils.cloneTable(tc)
+      tcUpd.graph[tc.paramId].data = { item }
+      table.insert(tests, {
+          name = "Param_" .. ah.getFullParamName(tc.graph, tc.paramId) .. "_" .. tostring(item),
+          params = getParamsValidDataTest(tcUpd)
+        })
+    end
+  end
+  return tests
+end
+
 local function getDebugTests()
   local tests = {}
   local dataTypes = { ah.dataType.ENUM.type }
@@ -394,6 +411,7 @@ function m.getTests(pRPC, pTestType, pParamName)
     [m.testType.LOWER_OUT_OF_BOUND] = getOutOfBoundTests,
     [m.testType.UPPER_OUT_OF_BOUND] = getOutOfBoundTests,
     [m.testType.ENUM_ITEMS] = getEnumItemsTests,
+    [m.testType.BOOL_ITEMS] = getBoolItemsTests,
     [m.testType.DEBUG] = getDebugTests
   }
   if testTypeMap[testType] then return testTypeMap[testType]() end

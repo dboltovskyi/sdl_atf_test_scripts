@@ -13,6 +13,7 @@ local testTypes = {
   common.testType.LOWER_OUT_OF_BOUND,
   common.testType.UPPER_OUT_OF_BOUND,
   common.testType.ENUM_ITEMS,
+  common.testType.BOOL_ITEMS,
 }
 
 --[[ Local Variables ]]-----------------------------------------------------------------------------

@@ -121,7 +121,10 @@ local function getDoubleValue(pTypeData, pValueType)
   return value
 end
 
-local function getBooleanValue(_, pValueType)
+local function getBooleanValue(pTypeData, pValueType)
+  if pTypeData.data and #pTypeData.data == 1 then
+    return pTypeData.data[1]
+  end
   if pValueType == m.valueType.VALID_RANDOM then
     return math.random(0, 1) == 1
   end
@@ -149,7 +152,7 @@ local function getTypeValue(pTypeData)
   elseif pTypeData.type == ah.dataType.STRING.type then
     return getStringValue(pTypeData, valueType)
   elseif pTypeData.type == ah.dataType.BOOLEAN.type then
-    return getBooleanValue()
+    return getBooleanValue(pTypeData, valueType)
   elseif pTypeData.type == ah.dataType.ENUM.type then
     return getEnumTypeValue(pTypeData, valueType)
   end

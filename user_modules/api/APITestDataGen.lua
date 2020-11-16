@@ -80,11 +80,11 @@ local function getFloatValue(pTypeData, pValueType)
   elseif pValueType == m.valueType.LOWER_OUT_OF_BOUND then
     value = pTypeData.minvalue
     if not value then value = ah.dataType.FLOAT.min end
-    value = value - 1
+    value = value - 0.1
   elseif pValueType == m.valueType.UPPER_OUT_OF_BOUND then
     value = pTypeData.maxvalue
     if not value then value = ah.dataType.FLOAT.max end
-    value = value + 1
+    value = value + 0.1
   elseif pValueType == m.valueType.VALID_RANDOM then
     local min = pTypeData.minvalue
     local max = pTypeData.maxvalue
@@ -106,11 +106,11 @@ local function getDoubleValue(pTypeData, pValueType)
   elseif pValueType == m.valueType.LOWER_OUT_OF_BOUND then
     value = pTypeData.minvalue
     if not value then value = ah.dataType.DOUBLE.min end
-    value = value - 1
+    value = value - 0.1
   elseif pValueType == m.valueType.UPPER_OUT_OF_BOUND then
     value = pTypeData.maxvalue
     if not value then value = ah.dataType.DOUBLE.max end
-    value = value + 1
+    value = value + 0.1
   elseif pValueType == m.valueType.VALID_RANDOM then
     local min = pTypeData.minvalue
     local max = pTypeData.maxvalue

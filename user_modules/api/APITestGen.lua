@@ -347,6 +347,32 @@ local function getOutOfBoundTests()
         params = getParamsInvalidDataTest(tc)
       })
   end
+  -- tests for enums
+  for _, tc in pairs(createTestCases(m.isMandatory.ALL, m.isArray.ALL, { ah.dataType.ENUM.type })) do
+    local function isSkipped()
+      local paramData = tc.graph[tc.paramId]
+      if paramData.type == ah.dataType.ENUM.type and testType == m.testType.LOWER_OUT_OF_BOUND then
+        return true
+      end
+      return false
+    end
+    local function getMandatoryValues(pId, pLevel, pOut)
+      pOut[pLevel] = tc.graph[pId].mandatory
+      local parentId = tc.graph[pId].parentId
+      if parentId then return getMandatoryValues(parentId, pLevel+1, pOut) end
+      return pOut
+    end
+    local mandatoryValues = getMandatoryValues(tc.paramId, 1, {})
+    if not isSkipped() and (#mandatoryValues == 1 or mandatoryValues[#mandatoryValues-1]) then
+      local invalidValue = "INVALID_VALUE"
+      tc.graph[tc.paramId].data = { invalidValue }
+      local params = getParamsInvalidDataTest(tc)
+      table.insert(tests, {
+          name = "Param_" .. ah.getFullParamName(tc.graph, tc.paramId) .. "_" .. invalidValue,
+          params = params
+        })
+    end
+  end
   return tests
 end
 

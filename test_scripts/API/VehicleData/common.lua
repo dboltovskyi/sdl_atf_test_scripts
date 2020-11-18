@@ -273,10 +273,9 @@ m.mandatoryVD = getMandatoryParamsFromAPI()
 --]]
 local function getVersioningParamsFromAPI()
   local out = {}
-  local schema = api.mob.interface[next(api.mob.interface)]
-  local params = schema.type.request.functions.GetVehicleData.param
-  for k, v in pairs(params) do
-    if v.since ~= nil and m.vd[k] and v.deprecated ~= "true" then out[k] = v.since end
+  local tests = m.getTests(m.rpc.get, m.testType.PARAM_VERSION)
+  for _, t in pairs(tests) do
+    out[t.param] = t.version
   end
   return out
 end

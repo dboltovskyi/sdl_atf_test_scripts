@@ -19,7 +19,8 @@ m.testType = {
   UPPER_OUT_OF_BOUND = 5,
   LOWER_OUT_OF_BOUND = 6,
   ENUM_ITEMS = 7,
-  BOOL_ITEMS = 8
+  BOOL_ITEMS = 8,
+  PARAM_VERSION = 9
 }
 
 m.isMandatory = {
@@ -34,9 +35,10 @@ m.isArray = {
   ALL = 3
 }
 
-m.iterateEnumItems = {
+m.isVersion = {
   YES = true,
-  NO = false
+  NO = false,
+  ALL = 3
 }
 
 --[[ Local Variables ]]-----------------------------------------------------------------------------
@@ -131,9 +133,9 @@ end
 
 
 --[[ Test Cases Generator Function ]]---------------------------------------------------------------
-local function createTestCases(pIsMandatory, pIsArray, pDataTypes)
+local function createTestCases(pAPIType, pFuncType, pFuncName, pIsMandatory, pIsArray, pIsVersion, pDataTypes)
 
-  local graph = ah.getGraph(ah.apiType.HMI, ah.getRPCType(rpc), ah.rpcHMIMap[rpc])
+  local graph = ah.getGraph(pAPIType, pFuncType, pFuncName)
 
   local function getParents(pGraph, pId)
     local out = {}
@@ -202,6 +204,11 @@ local function createTestCases(pIsMandatory, pIsArray, pDataTypes)
       else return pIsArray == pArray
       end
     end
+    local function getVersionCondition(pSince, pDeprecated)
+      if pIsVersion == m.isVersion.ALL then return true end
+      if pSince ~= nil and pDeprecated ~= true then return true end
+      return false
+    end
     local function getTypeCondition(pType)
       if pDataTypes == nil or #pDataTypes == 0 then return true
       elseif utils.tableContains(pDataTypes, pType) then return true
@@ -217,7 +224,8 @@ local function createTestCases(pIsMandatory, pIsArray, pDataTypes)
     for k, v in pairs(pGraph) do
       local paramFullName = ah.getFullParamName(graph, k)
       if getMandatoryCondition(v.mandatory) and getArrayCondition(v.array)
-        and getTypeCondition(v.type) and getParamNameCondition(paramFullName) then
+        and getTypeCondition(v.type) and getParamNameCondition(paramFullName)
+        and getVersionCondition(v.since, v.deprecated) then
         local parentIds = getParents(graph, k)
         local childrenIds = getMandatoryChildren(graph, k, {})
         local neighborsIds = getMandatoryNeighbors(graph, k, parentIds)
@@ -245,7 +253,8 @@ end
 
 --[[ Tests Generator Functions ]]-------------------------------------------------------------------
 local function getValidRandomTests()
-  local tcs = createTestCases(m.isMandatory.ALL, m.isArray.ALL, {})
+  local tcs = createTestCases(ah.apiType.HMI, ah.getRPCType(rpc), ah.rpcHMIMap[rpc],
+    m.isMandatory.ALL, m.isArray.ALL, m.isVersion.ALL, {})
   local tests = {}
   for _, tc in pairs(tcs) do
     table.insert(tests, {
@@ -277,7 +286,8 @@ local function getOnlyMandatoryTests()
     end
     return existingTCs
   end
-  local tcs = createTestCases(m.isMandatory.YES, m.isArray.ALL, {})
+  local tcs = createTestCases(ah.apiType.HMI, ah.getRPCType(rpc), ah.rpcHMIMap[rpc],
+    m.isMandatory.YES, m.isArray.ALL, m.isVersion.ALL, {})
   tcs = filterDuplicates(tcs)
   local tests = {}
   for _, tc in pairs(tcs) do
@@ -292,8 +302,10 @@ end
 local function getInBoundTests()
   local tests = {}
   -- tests simple data types
-  local dataTypes = { ah.dataType.INTEGER.type, ah.dataType.FLOAT.type, ah.dataType.DOUBLE.type, ah.dataType.STRING.type}
-  for _, tc in pairs(createTestCases(m.isMandatory.ALL, m.isArray.ALL, dataTypes)) do
+  local dataTypes = { ah.dataType.INTEGER.type, ah.dataType.FLOAT.type, ah.dataType.DOUBLE.type, ah.dataType.STRING.type }
+  local tcs = createTestCases(ah.apiType.HMI, ah.getRPCType(rpc), ah.rpcHMIMap[rpc],
+    m.isMandatory.ALL, m.isArray.ALL, m.isVersion.ALL, dataTypes)
+  for _, tc in pairs(tcs) do
     tc.graph[tc.paramId].valueType = valueTypeMap[testType]
     table.insert(tests, {
         name = "Param_" .. ah.getFullParamName(tc.graph, tc.paramId),
@@ -301,7 +313,9 @@ local function getInBoundTests()
       })
   end
   -- tests for arrays
-  for _, tc in pairs(createTestCases(m.isMandatory.ALL, m.isArray.YES, {})) do
+  tcs = createTestCases(ah.apiType.HMI, ah.getRPCType(rpc), ah.rpcHMIMap[rpc],
+    m.isMandatory.ALL, m.isArray.YES, m.isVersion.ALL, {})
+  for _, tc in pairs(tcs) do
     tc.graph[tc.paramId].valueTypeArray = valueTypeMap[testType]
     table.insert(tests, {
         name = "Param_" .. ah.getFullParamName(tc.graph, tc.paramId) .. "_ARRAY",
@@ -315,7 +329,9 @@ local function getOutOfBoundTests()
   local tests = {}
   -- tests for simple data types
   local dataTypes = { ah.dataType.INTEGER.type, ah.dataType.FLOAT.type, ah.dataType.DOUBLE.type, ah.dataType.STRING.type }
-  for _, tc in pairs(createTestCases(m.isMandatory.ALL, m.isArray.ALL, dataTypes)) do
+  local tcs = createTestCases(ah.apiType.HMI, ah.getRPCType(rpc), ah.rpcHMIMap[rpc],
+    m.isMandatory.ALL, m.isArray.ALL, m.isVersion.ALL, dataTypes)
+  for _, tc in pairs(tcs) do
     local function isSkipped()
       local paramData = tc.graph[tc.paramId]
       if paramData.type == ah.dataType.STRING.type then
@@ -340,7 +356,9 @@ local function getOutOfBoundTests()
     end
   end
   -- tests for arrays
-  for _, tc in pairs(createTestCases(m.isMandatory.ALL, m.isArray.YES, {})) do
+  tcs = createTestCases(ah.apiType.HMI, ah.getRPCType(rpc), ah.rpcHMIMap[rpc],
+    m.isMandatory.ALL, m.isArray.YES, m.isVersion.ALL, {})
+  for _, tc in pairs(tcs) do
     tc.graph[tc.paramId].valueTypeArray = valueTypeMap[testType]
     table.insert(tests, {
         name = "Param_" .. ah.getFullParamName(tc.graph, tc.paramId) .. "_ARRAY",
@@ -348,7 +366,9 @@ local function getOutOfBoundTests()
       })
   end
   -- tests for enums
-  for _, tc in pairs(createTestCases(m.isMandatory.ALL, m.isArray.ALL, { ah.dataType.ENUM.type })) do
+  tcs = createTestCases(ah.apiType.HMI, ah.getRPCType(rpc), ah.rpcHMIMap[rpc],
+    m.isMandatory.ALL, m.isArray.ALL, m.isVersion.ALL, { ah.dataType.ENUM.type })
+  for _, tc in pairs(tcs) do
     local function isSkipped()
       local paramData = tc.graph[tc.paramId]
       if paramData.type == ah.dataType.ENUM.type and testType == m.testType.LOWER_OUT_OF_BOUND then
@@ -379,7 +399,9 @@ end
 local function getEnumItemsTests()
   local tests = {}
   local dataTypes = { ah.dataType.ENUM.type }
-  for _, tc in pairs(createTestCases(m.isMandatory.ALL, m.isArray.ALL, dataTypes)) do
+  local tcs = createTestCases(ah.apiType.HMI, ah.getRPCType(rpc), ah.rpcHMIMap[rpc],
+    m.isMandatory.ALL, m.isArray.ALL, m.isVersion.ALL, dataTypes)
+  for _, tc in pairs(tcs) do
     for _, item in pairs(tc.graph[tc.paramId].data) do
       local tcUpd = utils.cloneTable(tc)
       tcUpd.graph[tc.paramId].data = { item }
@@ -395,7 +417,9 @@ end
 local function getBoolItemsTests()
   local tests = {}
   local dataTypes = { ah.dataType.BOOLEAN.type }
-  for _, tc in pairs(createTestCases(m.isMandatory.ALL, m.isArray.ALL, dataTypes)) do
+  local tcs = createTestCases(ah.apiType.HMI, ah.getRPCType(rpc), ah.rpcHMIMap[rpc],
+    m.isMandatory.ALL, m.isArray.ALL, m.isVersion.ALL, dataTypes)
+  for _, tc in pairs(tcs) do
     for _, item in pairs({true, false}) do
       local tcUpd = utils.cloneTable(tc)
       tcUpd.graph[tc.paramId].data = { item }
@@ -408,19 +432,22 @@ local function getBoolItemsTests()
   return tests
 end
 
+local function getVersionTests()
+  local tests = {}
+  local dataTypes = { }
+  local tcs = createTestCases(ah.apiType.MOBILE, ah.eventType.REQUEST, utils.getKeyByValue(ah.rpc, rpc),
+    m.isMandatory.ALL, m.isArray.ALL, m.isVersion.YES, dataTypes)
+  for _, tc in pairs(tcs) do
+    table.insert(tests, {
+        param = tc.graph[tc.paramId].name,
+        version = tc.graph[tc.paramId].since
+      })
+  end
+  return tests
+end
+
 local function getDebugTests()
   local tests = {}
-  local dataTypes = { ah.dataType.ENUM.type }
-  for _, tc in pairs(createTestCases(m.isMandatory.ALL, m.isArray.ALL, dataTypes)) do
-    for _, item in pairs(tc.graph[tc.paramId].data) do
-      local tcUpd = utils.cloneTable(tc)
-      tcUpd.graph[tc.paramId].data = { item }
-      table.insert(tests, {
-          name = "Param_" .. ah.getFullParamName(tc.graph, tc.paramId) .. "_" .. item,
-          params = getParamsValidDataTest(tcUpd)
-        })
-    end
-  end
   return tests
 end
 
@@ -430,6 +457,7 @@ function m.getTests(pRPC, pTestType, pParamName)
   testType = pTestType
   paramName = pParamName
   local testTypeMap = {
+    [m.testType.DEBUG] = getDebugTests,
     [m.testType.VALID_RANDOM] = getValidRandomTests,
     [m.testType.ONLY_MANDATORY_PARAMS] = getOnlyMandatoryTests,
     [m.testType.LOWER_IN_BOUND] = getInBoundTests,
@@ -438,7 +466,7 @@ function m.getTests(pRPC, pTestType, pParamName)
     [m.testType.UPPER_OUT_OF_BOUND] = getOutOfBoundTests,
     [m.testType.ENUM_ITEMS] = getEnumItemsTests,
     [m.testType.BOOL_ITEMS] = getBoolItemsTests,
-    [m.testType.DEBUG] = getDebugTests
+    [m.testType.PARAM_VERSION] = getVersionTests
   }
   if testTypeMap[testType] then return testTypeMap[testType]() end
   return {}

@@ -172,4 +172,15 @@ function m.getMainParentName(pGraph, pId)
   return pGraph[out].name
 end
 
+function m.getBranch(pGraph, pId, pTbl)
+  pTbl[pId] = true
+  for k, v in pairs(pGraph) do
+    if v.parentId == pId then
+      pTbl[k] = true
+      m.getBranch(pGraph, k, pTbl)
+    end
+  end
+  return pTbl
+end
+
 return m

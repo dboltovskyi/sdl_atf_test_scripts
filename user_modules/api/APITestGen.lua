@@ -20,7 +20,9 @@ m.testType = {
   LOWER_OUT_OF_BOUND = 6,
   ENUM_ITEMS = 7,
   BOOL_ITEMS = 8,
-  PARAM_VERSION = 9
+  PARAM_VERSION = 9,
+  VALID_RANDOM_ALL = 10,
+  MANDATORY_MISSING = 11
 }
 
 m.isMandatory = {
@@ -293,7 +295,9 @@ local function getOnlyMandatoryTests()
   for _, tc in pairs(tcs) do
     table.insert(tests, {
         name = "Param_" .. ah.getFullParamName(tc.graph, tc.paramId),
-        params = getParamsValidDataTest(tc)
+        params = getParamsValidDataTest(tc),
+        paramId = tc.paramId,
+        graph = tc.graph
       })
   end
   return tests
@@ -446,6 +450,66 @@ local function getVersionTests()
   return tests
 end
 
+local function getValidRandomAllTests()
+  local tests = {}
+  local graph = ah.getGraph(ah.apiType.HMI, ah.getRPCType(rpc), ah.rpcHMIMap[rpc])
+  local function getParamId(pGraph, pName)
+    for k, v in pairs(pGraph) do
+      if v.parentId == nil and v.name == pName then return k end
+    end
+    return nil
+  end
+  local paramId = getParamId(graph, paramName)
+
+  local paramIds = ah.getBranch(graph, paramId, {})
+  local function getUpdatedGraph(pGraph, pParamIds)
+    for k in pairs(pGraph) do
+      if not pParamIds[k] then
+        pGraph[k] = nil
+      end
+    end
+    return pGraph
+  end
+  graph = getUpdatedGraph(graph, paramIds)
+  local tc = { graph = graph, paramId = paramId }
+  table.insert(tests, {
+      name = "Param_" .. ah.getFullParamName(tc.graph, tc.paramId),
+      params = getParamsValidDataTest(tc),
+      paramId = tc.paramId,
+      graph = tc.graph
+    })
+  return tests
+end
+
+local function getMandatoryMissingTests()
+  local function getParamId(pGraph, pName)
+    for k, v in pairs(pGraph) do
+      if v.parentId == nil and v.name == pName then return k end
+    end
+    return nil
+  end
+  local tests = {}
+  local mndTests = getOnlyMandatoryTests()
+  local randomAllTest = getValidRandomAllTests()
+  if #mndTests == 0 or #randomAllTest == 0 then return tests end
+  for k in pairs(mndTests[1].graph) do
+    local graph = utils.cloneTable(randomAllTest[1].graph)
+    if graph[k].parentId ~= nil and graph[k].mandatory == true then
+      local name = ah.getFullParamName(graph, k)
+      local idsToDelete = ah.getBranch(graph, k, {})
+      for j in pairs(graph) do
+        if idsToDelete[j] == true then graph[j] = nil end
+      end
+      local tc = { graph = graph, paramId = getParamId(graph, paramName) }
+      table.insert(tests, {
+        name = "Param_missing_" .. name,
+        params = getParamsInvalidDataTestForRequest(tc)
+      })
+    end
+  end
+  return tests
+end
+
 local function getDebugTests()
   local tests = {}
   return tests
@@ -466,7 +530,9 @@ function m.getTests(pRPC, pTestType, pParamName)
     [m.testType.UPPER_OUT_OF_BOUND] = getOutOfBoundTests,
     [m.testType.ENUM_ITEMS] = getEnumItemsTests,
     [m.testType.BOOL_ITEMS] = getBoolItemsTests,
-    [m.testType.PARAM_VERSION] = getVersionTests
+    [m.testType.PARAM_VERSION] = getVersionTests,
+    [m.testType.VALID_RANDOM_ALL] = getValidRandomAllTests,
+    [m.testType.MANDATORY_MISSING] = getMandatoryMissingTests
   }
   if testTypeMap[testType] then return testTypeMap[testType]() end
   return {}

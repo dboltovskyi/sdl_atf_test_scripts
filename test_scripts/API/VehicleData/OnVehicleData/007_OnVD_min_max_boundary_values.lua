@@ -14,6 +14,8 @@ local testTypes = {
   common.testType.UPPER_OUT_OF_BOUND,
   common.testType.ENUM_ITEMS,
   common.testType.BOOL_ITEMS,
+  common.testType.VALID_RANDOM_ALL,
+  common.testType.MANDATORY_MISSING
 }
 
 --[[ Local Variables ]]-----------------------------------------------------------------------------
@@ -27,7 +29,9 @@ local isSubscribed = {}
 local function processRPC(pParams, pTestType, pVDParam)
   local function SendNotification()
     local times = 1
-    if pTestType == common.testType.LOWER_OUT_OF_BOUND or pTestType == common.testType.UPPER_OUT_OF_BOUND then
+    if pTestType == common.testType.LOWER_OUT_OF_BOUND
+      or pTestType == common.testType.UPPER_OUT_OF_BOUND
+      or pTestType == common.testType.MANDATORY_MISSING then
       times = 0
     end
     common.getHMIConnection():SendNotification(pParams.hmi.name, pParams.hmi.notification)

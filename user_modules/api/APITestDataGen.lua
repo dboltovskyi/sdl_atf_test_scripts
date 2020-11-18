@@ -140,7 +140,7 @@ local function getEnumTypeValue(pTypeData, pValueType)
   return pTypeData.data[1]
 end
 
-local function getTypeValue(pTypeData)
+local function getTypeValue(pTypeData, pGraph, pId)
   local valueType = m.valueType.VALID_RANDOM
   if pTypeData.valueType then valueType = pTypeData.valueType end
   if pTypeData.type == ah.dataType.INTEGER.type then
@@ -156,7 +156,19 @@ local function getTypeValue(pTypeData)
   elseif pTypeData.type == ah.dataType.ENUM.type then
     return getEnumTypeValue(pTypeData, valueType)
   elseif pTypeData.type == ah.dataType.STRUCT.type then
-    return { }
+    local childrenIds = {}
+    for k, v in pairs(pGraph) do
+      if v.parentId == pId then table.insert(childrenIds, k) end
+    end
+    if #childrenIds == 0 then
+      return {}
+    else
+      local out = {}
+      for _, id in pairs(childrenIds) do
+        m.buildParams(pGraph, id, out)
+      end
+      return out
+    end
   end
 end
 
@@ -190,52 +202,32 @@ local function getNumOfItems(pTypeData)
   return numOfItems
 end
 
-local function buildParams(pGraph, pId, pParams)
+function m.buildParams(pGraph, pId, pParams)
   local name = pGraph[pId].name
   local data = pGraph[pId]
-  local numOfItems = getNumOfItems(data, {})
-  local childrenIds = { }
-  for k, v in pairs(pGraph) do
-    if v.parentId == pId then table.insert(childrenIds, k) end
+  local numOfItems = getNumOfItems(data)
+  local function buildParamSingle(pName, pData, pParamsTable, pGraph, pId)
+    pParamsTable[pName] = getTypeValue(pData, pGraph, pId)
   end
-  local function buildParamSingle(pName, pData, pParamsTable)
-    if #childrenIds == 0 then
-      pParamsTable[pName] = getTypeValue(pData, {}, {})
-    else
-      pParamsTable[pName] = {}
-      for _, id in pairs(childrenIds) do
-        buildParams(pGraph, id, pParamsTable[pName])
-      end
-    end
-  end
-  local function buildParamArray(pName, pData, pParamsTable, pNumOfItems)
-    if #childrenIds == 0 then
-      pParamsTable[pName] = {}
-      for _ = 1, pNumOfItems do
-        table.insert(pParamsTable[pName], getTypeValue(pData, {}, {}))
-      end
-    else
-      pParamsTable[pName] = {}
-      for i = 1, pNumOfItems do
-        pParamsTable[pName][i] = {}
-        for _, id in pairs(childrenIds) do
-          buildParams(pGraph, id, pParamsTable[pName][i])
-        end
-      end
+  local function buildParamArray(pName, pData, pParamsTable, pGraph, pId, pNumOfItems)
+    pParamsTable[pName] = {}
+    for i = 1, pNumOfItems do
+      pParamsTable[pName][i] = getTypeValue(pData, pGraph, pId)
     end
   end
   if numOfItems == -1 then
-    buildParamSingle(name, data, pParams)
+    buildParamSingle(name, data, pParams, pGraph, pId)
   else
-    buildParamArray(name, data, pParams, numOfItems)
+    buildParamArray(name, data, pParams, pGraph, pId, numOfItems)
   end
+  return pParams
 end
 
 function m.getParamValues(pGraph)
   local out = {}
   for id in pairs(pGraph) do
     if pGraph[id].parentId == nil then
-      buildParams(pGraph, id, out)
+      m.buildParams(pGraph, id, out)
     end
   end
   return out

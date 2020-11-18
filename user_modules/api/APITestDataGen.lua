@@ -155,6 +155,8 @@ local function getTypeValue(pTypeData)
     return getBooleanValue(pTypeData, valueType)
   elseif pTypeData.type == ah.dataType.ENUM.type then
     return getEnumTypeValue(pTypeData, valueType)
+  elseif pTypeData.type == ah.dataType.STRUCT.type then
+    return { }
   end
 end
 

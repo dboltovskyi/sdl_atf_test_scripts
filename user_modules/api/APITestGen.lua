@@ -492,19 +492,21 @@ local function getMandatoryMissingTests()
   local mndTests = getOnlyMandatoryTests()
   local randomAllTest = getValidRandomAllTests()
   if #mndTests == 0 or #randomAllTest == 0 then return tests end
-  for k in pairs(mndTests[1].graph) do
-    local graph = utils.cloneTable(randomAllTest[1].graph)
-    if graph[k].parentId ~= nil and graph[k].mandatory == true then
-      local name = ah.getFullParamName(graph, k)
-      local idsToDelete = ah.getBranch(graph, k, {})
-      for j in pairs(graph) do
-        if idsToDelete[j] == true then graph[j] = nil end
+  for testId in pairs(mndTests) do
+    for paramId in pairs(mndTests[testId].graph) do
+      local graph = utils.cloneTable(randomAllTest[1].graph)
+      if graph[paramId].parentId ~= nil and graph[paramId].mandatory == true then
+        local name = ah.getFullParamName(graph, paramId)
+        local idsToDelete = ah.getBranch(graph, paramId, {})
+        for id in pairs(graph) do
+          if idsToDelete[id] == true then graph[id] = nil end
+        end
+        local tc = { graph = graph, paramId = getParamId(graph, paramName) }
+        table.insert(tests, {
+          name = "Param_missing_" .. name,
+          params = getParamsInvalidDataTestForRequest(tc)
+        })
       end
-      local tc = { graph = graph, paramId = getParamId(graph, paramName) }
-      table.insert(tests, {
-        name = "Param_missing_" .. name,
-        params = getParamsInvalidDataTestForRequest(tc)
-      })
     end
   end
   return tests

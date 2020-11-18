@@ -206,19 +206,13 @@ function m.buildParams(pGraph, pId, pParams)
   local name = pGraph[pId].name
   local data = pGraph[pId]
   local numOfItems = getNumOfItems(data)
-  local function buildParamSingle(pName, pData, pParamsTable, pGraph, pId)
-    pParamsTable[pName] = getTypeValue(pData, pGraph, pId)
-  end
-  local function buildParamArray(pName, pData, pParamsTable, pGraph, pId, pNumOfItems)
-    pParamsTable[pName] = {}
-    for i = 1, pNumOfItems do
-      pParamsTable[pName][i] = getTypeValue(pData, pGraph, pId)
-    end
-  end
   if numOfItems == -1 then
-    buildParamSingle(name, data, pParams, pGraph, pId)
+    pParams[name] = getTypeValue(data, pGraph, pId)
   else
-    buildParamArray(name, data, pParams, pGraph, pId, numOfItems)
+    pParams[name] = {}
+    for i = 1, numOfItems do
+      pParams[name][i] = getTypeValue(data, pGraph, pId)
+    end
   end
   return pParams
 end

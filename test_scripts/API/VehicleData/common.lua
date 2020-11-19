@@ -14,6 +14,7 @@ local tg = require("user_modules/api/APITestGen")
 --[[ General configuration parameters ]]
 runner.testSettings.isSelfIncluded = false
 config.defaultProtocolVersion = 2
+config.zeroOccurrenceTimeout = 1000
 
 --[[ Local Variables ]]
 local m = {}

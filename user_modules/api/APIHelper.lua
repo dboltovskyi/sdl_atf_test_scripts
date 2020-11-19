@@ -162,16 +162,6 @@ function m.getFullParamName(pGraph, pId)
   return out
 end
 
-function m.getMainParentName(pGraph, pId)
-  local out = pGraph[pId].parentId
-  if out == nil then return pGraph[pId].name end
-  while pId do
-    pId = pGraph[pId].parentId
-    if pId then out = pId end
-  end
-  return pGraph[out].name
-end
-
 function m.getBranch(pGraph, pId, pTbl)
   pTbl[pId] = true
   for k, v in pairs(pGraph) do

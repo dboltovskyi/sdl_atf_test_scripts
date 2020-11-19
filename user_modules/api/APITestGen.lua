@@ -58,10 +58,9 @@ local valueTypeMap = {
 }
 
 --[[ Params Generator Functions ]]------------------------------------------------------------------
-local function getParamsValidDataTestForRequest(pTC)
-  local mainParerntName = ah.getMainParentName(pTC.graph, pTC.paramId)
-  local request = { [mainParerntName] = true }
-  local hmiResponse = tdg.getParamValues(pTC.graph)
+local function getParamsValidDataTestForRequest(pGraph)
+  local request = { [paramName] = true }
+  local hmiResponse = tdg.getParamValues(pGraph)
   local mobileResponse = utils.cloneTable(hmiResponse)
   mobileResponse.success = true
   mobileResponse.resultCode = "SUCCESS"
@@ -80,10 +79,9 @@ local function getParamsValidDataTestForRequest(pTC)
   return params
 end
 
-local function getParamsInvalidDataTestForRequest(pTC)
-  local mainParerntName = ah.getMainParentName(pTC.graph, pTC.paramId)
-  local request = { [mainParerntName] = true }
-  local hmiResponse = tdg.getParamValues(pTC.graph)
+local function getParamsInvalidDataTestForRequest(pGraph)
+  local request = { [paramName] = true }
+  local hmiResponse = tdg.getParamValues(pGraph)
   local params = {
     mobile = {
       name = utils.getKeyByValue(ah.rpc, rpc),
@@ -99,17 +97,16 @@ local function getParamsInvalidDataTestForRequest(pTC)
   return params
 end
 
-local function getParamsAnyDataTestForNotification(pTC)
-  local param = ah.getMainParentName(pTC.graph, pTC.paramId)
-  local notification = tdg.getParamValues(pTC.graph)
+local function getParamsAnyDataTestForNotification(pGraph)
+  local notification = tdg.getParamValues(pGraph)
   local params = {
     mobile = {
       name = utils.getKeyByValue(ah.rpc, rpc),
-      notification = { [param] = notification[param] }
+      notification = { [paramName] = notification[paramName] }
     },
     hmi = {
       name = ah.rpcHMIMap[rpc],
-      notification = { [param] = notification[param] }
+      notification = { [paramName] = notification[paramName] }
     }
   }
   return params
@@ -261,7 +258,7 @@ local function getValidRandomTests()
   for _, tc in pairs(tcs) do
     table.insert(tests, {
         name = "Param_" .. ah.getFullParamName(tc.graph, tc.paramId),
-        params = getParamsValidDataTest(tc)
+        params = getParamsValidDataTest(tc.graph)
       })
   end
   return tests
@@ -295,7 +292,7 @@ local function getOnlyMandatoryTests()
   for _, tc in pairs(tcs) do
     table.insert(tests, {
         name = "Param_" .. ah.getFullParamName(tc.graph, tc.paramId),
-        params = getParamsValidDataTest(tc),
+        params = getParamsValidDataTest(tc.graph),
         paramId = tc.paramId,
         graph = tc.graph
       })
@@ -313,7 +310,7 @@ local function getInBoundTests()
     tc.graph[tc.paramId].valueType = valueTypeMap[testType]
     table.insert(tests, {
         name = "Param_" .. ah.getFullParamName(tc.graph, tc.paramId),
-        params = getParamsValidDataTest(tc)
+        params = getParamsValidDataTest(tc.graph)
       })
   end
   -- tests for arrays
@@ -323,7 +320,7 @@ local function getInBoundTests()
     tc.graph[tc.paramId].valueTypeArray = valueTypeMap[testType]
     table.insert(tests, {
         name = "Param_" .. ah.getFullParamName(tc.graph, tc.paramId) .. "_ARRAY",
-        params = getParamsValidDataTest(tc)
+        params = getParamsValidDataTest(tc.graph)
       })
   end
   return tests
@@ -355,7 +352,7 @@ local function getOutOfBoundTests()
       tc.graph[tc.paramId].valueType = valueTypeMap[testType]
       table.insert(tests, {
           name = "Param_" .. ah.getFullParamName(tc.graph, tc.paramId),
-            params = getParamsInvalidDataTest(tc)
+            params = getParamsInvalidDataTest(tc.graph)
         })
     end
   end
@@ -366,7 +363,7 @@ local function getOutOfBoundTests()
     tc.graph[tc.paramId].valueTypeArray = valueTypeMap[testType]
     table.insert(tests, {
         name = "Param_" .. ah.getFullParamName(tc.graph, tc.paramId) .. "_ARRAY",
-        params = getParamsInvalidDataTest(tc)
+        params = getParamsInvalidDataTest(tc.graph)
       })
   end
   -- tests for enums
@@ -390,7 +387,7 @@ local function getOutOfBoundTests()
     if not isSkipped() and (#mandatoryValues == 1 or mandatoryValues[#mandatoryValues-1]) then
       local invalidValue = "INVALID_VALUE"
       tc.graph[tc.paramId].data = { invalidValue }
-      local params = getParamsInvalidDataTest(tc)
+      local params = getParamsInvalidDataTest(tc.graph)
       table.insert(tests, {
           name = "Param_" .. ah.getFullParamName(tc.graph, tc.paramId) .. "_" .. invalidValue,
           params = params
@@ -411,7 +408,7 @@ local function getEnumItemsTests()
       tcUpd.graph[tc.paramId].data = { item }
       table.insert(tests, {
           name = "Param_" .. ah.getFullParamName(tc.graph, tc.paramId) .. "_" .. item,
-          params = getParamsValidDataTest(tcUpd)
+          params = getParamsValidDataTest(tcUpd.graph)
         })
     end
   end
@@ -429,7 +426,7 @@ local function getBoolItemsTests()
       tcUpd.graph[tc.paramId].data = { item }
       table.insert(tests, {
           name = "Param_" .. ah.getFullParamName(tc.graph, tc.paramId) .. "_" .. tostring(item),
-          params = getParamsValidDataTest(tcUpd)
+          params = getParamsValidDataTest(tcUpd.graph)
         })
     end
   end
@@ -474,7 +471,7 @@ local function getValidRandomAllTests()
   local tc = { graph = graph, paramId = paramId }
   table.insert(tests, {
       name = "Param_" .. ah.getFullParamName(tc.graph, tc.paramId),
-      params = getParamsValidDataTest(tc),
+      params = getParamsValidDataTest(tc.graph),
       paramId = tc.paramId,
       graph = tc.graph
     })
@@ -482,12 +479,6 @@ local function getValidRandomAllTests()
 end
 
 local function getMandatoryMissingTests()
-  local function getParamId(pGraph, pName)
-    for k, v in pairs(pGraph) do
-      if v.parentId == nil and v.name == pName then return k end
-    end
-    return nil
-  end
   local tests = {}
   local mndTests = getOnlyMandatoryTests()
   local randomAllTest = getValidRandomAllTests()
@@ -501,10 +492,9 @@ local function getMandatoryMissingTests()
         for id in pairs(graph) do
           if idsToDelete[id] == true then graph[id] = nil end
         end
-        local tc = { graph = graph, paramId = getParamId(graph, paramName) }
         table.insert(tests, {
           name = "Param_missing_" .. name,
-          params = getParamsInvalidDataTestForRequest(tc)
+          params = getParamsInvalidDataTest(graph)
         })
       end
     end

@@ -17,6 +17,8 @@ m.valueType = {
 }
 
 --[[ Value generators ]]----------------------------------------------------------------------------
+math.randomseed(os.clock())
+
 local function getStringValue(pTypeData, pValueType)
   local length
   if pValueType == m.valueType.LOWER_IN_BOUND then

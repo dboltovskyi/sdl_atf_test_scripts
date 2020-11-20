@@ -20,16 +20,6 @@ m.eventType = {
   NOTIFICATION = "notification"
 }
 
-m.rpc = {
-  GetVehicleData = 1,
-  OnVehicleData = 2
-}
-
-m.rpcHMIMap = {
-  [m.rpc.GetVehicleData] = "VehicleInfo.GetVehicleData",
-  [m.rpc.OnVehicleData] = "VehicleInfo.OnVehicleData"
-}
-
 m.dataType = {
   INTEGER = { type = "Integer", min = -2147483647, max = 2147483647 }, -- min: 2147483648
   FLOAT = { type = "Float", min = -1000000, max = 1000000 },
@@ -52,8 +42,6 @@ local schema = {
 }
 
 --[[ Functions ]]-----------------------------------------------------------------------------------
-math.randomseed(os.clock())
-
 local function getType(pType)
   if string.find(pType, "%.") then
     return utils.splitString(pType, ".")[2]
@@ -117,16 +105,6 @@ local function getParamsData(pAPI, pEventType, pFunctionName)
   updateValues(out)
 
   return out
-end
-
-function m.getRPCType(pRPC)
-  local name = utils.getKeyByValue(m.rpc, pRPC)
-  if string.find(name, "Get") == 1 then
-    return m.eventType.RESPONSE
-  elseif string.find(name, "On") == 1 then
-    return m.eventType.NOTIFICATION
-  end
-  return nil
 end
 
 function m.getGraph(pAPIType, pEventType, pFuncName)

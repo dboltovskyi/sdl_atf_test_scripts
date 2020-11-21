@@ -1,10 +1,10 @@
 ----------------------------------------------------------------------------------------------------
 -- TBA
 ----------------------------------------------------------------------------------------------------
---[[ Required Shared libraries ]]-------------------------------------------------------------------
+--[[ Required Shared libraries ]]
 local common = require('test_scripts/API/VehicleData/common')
 
---[[ Local Constants ]]-----------------------------------------------------------------------------
+--[[ Local Constants ]]
 local testTypes = {
   common.testType.VALID_RANDOM,
   common.testType.ONLY_MANDATORY_PARAMS,
@@ -18,12 +18,7 @@ local testTypes = {
   common.testType.MANDATORY_MISSING
 }
 
---[[ Local Variables ]]-----------------------------------------------------------------------------
--- function common.getVDParams()
---   return { windowStatus = 1 }
--- end
-
---[[ Local Functions ]]-----------------------------------------------------------------------------
+--[[ Local Functions ]]
 local function processRPC(pParams)
   local cid = common.getMobileSession():SendRPC(pParams.mobile.name, pParams.mobile.request)
   common.getHMIConnection():ExpectRequest(pParams.hmi.name, pParams.hmi.request)
@@ -33,7 +28,7 @@ local function processRPC(pParams)
   common.getMobileSession():ExpectResponse(cid, pParams.mobile.response)
 end
 
---[[ Scenario ]]------------------------------------------------------------------------------------
+--[[ Scenario ]]
 common.Title("Preconditions")
 common.Step("Clean environment and update preloaded_pt file", common.preconditions)
 common.Step("Start SDL, HMI, connect Mobile, start Session", common.start)

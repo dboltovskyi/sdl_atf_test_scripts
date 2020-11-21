@@ -144,13 +144,13 @@ m.isVersion = {
   ALL = 3
 }
 
---[[ API Functions ]]
+--[[ Common Functions ]]
 
---[[ @getVDParams: Return available for processing VD parameters
---! @parameters:
---! @return:
+--[[ @getAvailableVDParams: Return available for processing VD parameters
+--! @parameters: none
+--! @return: none
 --]]
-local function getVDParams()
+local function getAvailableVDParams()
   local graph = ah.getGraph(ah.apiType.MOBILE, ah.eventType.REQUEST, m.rpc.get)
   local vdParams = {}
   for _, data in pairs(graph) do
@@ -172,24 +172,7 @@ local function getVDParams()
   return vdParams
 end
 
-m.vdParams = getVDParams()
-
---[[ @getVersioningParamsFromAPI: Return VD parameters and values which has version defined in API
---! @parameters:
---! @return: table with VD parameters and values
---]]
--- local function getVersioningParamsFromAPI()
---   local out = {}
---   local tests = m.getTests(m.rpc.get, m.testType.PARAM_VERSION)
---   for _, t in pairs(tests) do
---     out[t.param] = t.version
---   end
---   return out
--- end
-
--- m.versioningVD = getVersioningParamsFromAPI()
-
---[[ Common Functions ]]
+local vdParams = getAvailableVDParams()
 
 --[[ @updatePreloadedPTFile: Update preloaded file with additional permissions
 --! @parameters:
@@ -256,7 +239,7 @@ end
 --! @return: table with VD parameters and values
 --]]
 function m.getVDParams(pIsSubscribable)
-  if pIsSubscribable == nil then return m.vdParams end
+  if pIsSubscribable == nil then return vdParams end
   local out = {}
   for param in pairs(m.vd) do
     if pIsSubscribable == (m.vd[param] ~= "") then out[param] = true end

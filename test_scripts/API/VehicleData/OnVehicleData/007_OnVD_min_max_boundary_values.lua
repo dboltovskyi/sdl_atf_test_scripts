@@ -12,6 +12,7 @@ local testTypes = {
   common.testType.UPPER_IN_BOUND,
   common.testType.LOWER_OUT_OF_BOUND,
   common.testType.UPPER_OUT_OF_BOUND,
+  common.testType.INVALID_TYPE,
   common.testType.ENUM_ITEMS,
   common.testType.BOOL_ITEMS,
   common.testType.MANDATORY_ONLY,

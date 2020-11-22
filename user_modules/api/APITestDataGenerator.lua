@@ -9,11 +9,12 @@ local m = {}
 
 --[[ Constants ]]-----------------------------------------------------------------------------------
 m.valueType = {
-  LOWER_IN_BOUND = 1,
-  UPPER_IN_BOUND = 2,
-  LOWER_OUT_OF_BOUND = 3,
-  UPPER_OUT_OF_BOUND = 4,
-  VALID_RANDOM = 5
+  VALID_RANDOM = 1,
+  LOWER_IN_BOUND = 2,
+  UPPER_IN_BOUND = 3,
+  LOWER_OUT_OF_BOUND = 4,
+  UPPER_OUT_OF_BOUND = 5,
+  INVALID_TYPE = 6
 }
 
 --[[ Value generators ]]----------------------------------------------------------------------------
@@ -41,6 +42,8 @@ local function getStringValue(pTypeData, pValueType)
     if not min or min == 0 then min = ah.dataType.STRING.min end
     if not max or max == 0 then max = ah.dataType.STRING.max end
     length = math.random(min, max)
+  elseif pValueType == m.valueType.INVALID_TYPE then
+    return false
   end
   return string.rep("a", length)
 end
@@ -67,6 +70,8 @@ local function getIntegerValue(pTypeData, pValueType)
     if not min then min = ah.dataType.INTEGER.min end
     if not max then max = ah.dataType.INTEGER.max end
     value = math.random(min, max)
+  elseif pValueType == m.valueType.INVALID_TYPE then
+    return true
   end
   return value
 end
@@ -93,6 +98,8 @@ local function getFloatValue(pTypeData, pValueType)
     if not min then min = ah.dataType.FLOAT.min end
     if not max then max = ah.dataType.FLOAT.max end
     value = tonumber(string.format('%.02f', math.random() + math.random(min, max-1)))
+  elseif pValueType == m.valueType.INVALID_TYPE then
+    return true
   end
   return value
 end
@@ -119,6 +126,8 @@ local function getDoubleValue(pTypeData, pValueType)
     if not min then min = ah.dataType.DOUBLE.min end
     if not max then max = ah.dataType.DOUBLE.max end
     value = tonumber(string.format('%.02f', math.random() + math.random(min, max-1)))
+  elseif pValueType == m.valueType.INVALID_TYPE then
+    return true
   end
   return value
 end
@@ -129,6 +138,8 @@ local function getBooleanValue(pTypeData, pValueType)
   end
   if pValueType == m.valueType.VALID_RANDOM then
     return math.random(0, 1) == 1
+  elseif pValueType == m.valueType.INVALID_TYPE then
+    return 123
   end
   return true
 end
@@ -138,6 +149,8 @@ local function getEnumTypeValue(pTypeData, pValueType)
     return #pTypeData.data + 1
   elseif pValueType == m.valueType.VALID_RANDOM then
     return pTypeData.data[math.random(1, #pTypeData.data)]
+  elseif pValueType == m.valueType.INVALID_TYPE then
+    return false
   end
   return pTypeData.data[1]
 end

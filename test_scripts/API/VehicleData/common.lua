@@ -114,17 +114,18 @@ m.isExpectedSubscription = true
 m.isNotExpectedSubscription = false
 
 m.testType = {
-  VALID_RANDOM = 1,
-  MANDATORY_ONLY = 2,
+  VALID_RANDOM_ALL = 1,
+  VALID_RANDOM = 2,
   UPPER_IN_BOUND = 3,
   LOWER_IN_BOUND = 4,
   UPPER_OUT_OF_BOUND = 5,
   LOWER_OUT_OF_BOUND = 6,
-  ENUM_ITEMS = 7,
-  BOOL_ITEMS = 8,
-  PARAM_VERSION = 9,
-  VALID_RANDOM_ALL = 10,
-  MANDATORY_MISSING = 11
+  INVALID_TYPE = 7,
+  ENUM_ITEMS = 8,
+  BOOL_ITEMS = 9,
+  PARAM_VERSION = 10,
+  MANDATORY_ONLY = 11,
+  MANDATORY_MISSING = 12
 }
 
 m.isMandatory = {
@@ -940,7 +941,23 @@ local function getMandatoryMissingTests()
   return tests
 end
 
---[[ Test Getter Function ]]------------------------------------------------------------------------
+local function getInvalidTypeTests()
+  local dataTypes = { ah.dataType.INTEGER.type, ah.dataType.FLOAT.type, ah.dataType.DOUBLE.type,
+    ah.dataType.STRING.type, ah.dataType.ENUM.type }
+  local tcs = createTestCases(ah.apiType.HMI, rpcType, m.rpcHMIMap[rpc],
+    m.isMandatory.ALL, m.isArray.ALL, m.isVersion.ALL, dataTypes)
+  local tests = {}
+  for _, tc in pairs(tcs) do
+    tc.graph[tc.paramId].valueType = tdg.valueType.INVALID_TYPE
+    table.insert(tests, {
+        name = "Param_" .. ah.getFullParamName(tc.graph, tc.paramId),
+        params = getParamsFuncMap.INVALID[rpcType](tc.graph),
+      })
+  end
+  return tests
+end
+
+--[[ Test Getter Functions ]]-----------------------------------------------------------------------
 function m.getTests(pRPC, pTestType, pParamName)
   local rpcTypeMap = {
     [m.rpc.get] = ah.eventType.RESPONSE,
@@ -962,7 +979,8 @@ function m.getTests(pRPC, pTestType, pParamName)
     [m.testType.BOOL_ITEMS] = getBoolItemsTests,
     [m.testType.PARAM_VERSION] = getVersionTests,
     [m.testType.VALID_RANDOM_ALL] = getValidRandomAllTests,
-    [m.testType.MANDATORY_MISSING] = getMandatoryMissingTests
+    [m.testType.MANDATORY_MISSING] = getMandatoryMissingTests,
+    [m.testType.INVALID_TYPE] = getInvalidTypeTests
   }
   if testTypeMap[testType] then return testTypeMap[testType]() end
   return {}
@@ -980,9 +998,8 @@ end
 function m.processNotification(pParams, pTestType, pVDParam)
   local function SendNotification()
     local times = m.isExpected
-    if pTestType == m.testType.LOWER_OUT_OF_BOUND
-      or pTestType == m.testType.UPPER_OUT_OF_BOUND
-      or pTestType == m.testType.MANDATORY_MISSING
+    if pTestType == m.testType.LOWER_OUT_OF_BOUND or pTestType == m.testType.UPPER_OUT_OF_BOUND
+      or pTestType == m.testType.MANDATORY_MISSING or pTestType == m.testType.INVALID_TYPE
       or not m.isSubscribable(pVDParam) then
       times = m.isNotExpected
     end

@@ -446,7 +446,7 @@ end
 function m.splitString(pStr, pDelimiter)
   local result = {}
   for match in (pStr .. pDelimiter):gmatch("(.-)%" .. pDelimiter) do
-    table.insert(result, match)
+    if string.len(match) > 0 then table.insert(result, match) end
   end
   return result
 end

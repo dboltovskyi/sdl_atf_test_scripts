@@ -151,4 +151,23 @@ function m.getBranch(pGraph, pId, pTbl)
   return pTbl
 end
 
+function m.getBranch2(pGraph, pId)
+  local function getChildren(pGraph, pId, pTbl)
+    pTbl[pId] = true
+    for k, v in pairs(pGraph) do
+      if v.parentId == pId then
+        pTbl[k] = true
+        getChildren(pGraph, k, pTbl)
+      end
+    end
+    return pTbl
+  end
+  local children = getChildren(pGraph, pId, {})
+  local branch = utils.cloneTable(pGraph)
+  for k in pairs(branch) do
+    if not children[k] then branch[k] = nil end
+  end
+  return branch
+end
+
 return m

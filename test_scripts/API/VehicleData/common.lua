@@ -475,9 +475,9 @@ end
 --]]
 function m.setAppVersion(pParamVersion, pOperator)
   m.cprint(color.magenta, "Param version:", pParamVersion)
-  local major = tonumber(utils.splitString(pParamVersion)[1], ".") or 0
-  local minor = tonumber(utils.splitString(pParamVersion)[2], ".") or 0
-  local patch = tonumber(utils.splitString(pParamVersion)[3], ".") or 0
+  local major = tonumber(utils.splitString(pParamVersion, ".")[1]) or 0
+  local minor = tonumber(utils.splitString(pParamVersion, ".")[2]) or 0
+  local patch = tonumber(utils.splitString(pParamVersion, ".")[3]) or 0
   local ver = (major*100 + minor*10 + patch) + pOperator
   if ver < 450 then ver = 450 end
   ver = tostring(ver)
@@ -874,9 +874,8 @@ end
 
 local function getVersionTests()
   local tests = {}
-  local dataTypes = { }
   local tcs = createTestCases(ah.apiType.MOBILE, ah.eventType.REQUEST, rpc,
-    m.isMandatory.ALL, m.isArray.ALL, m.isVersion.YES, dataTypes)
+    m.isMandatory.ALL, m.isArray.ALL, m.isVersion.YES, {})
   for _, tc in pairs(tcs) do
     table.insert(tests, {
         param = tc.graph[tc.paramId].name,
@@ -1047,5 +1046,21 @@ function m.getTestsForOnVD(pTestTypes)
     end
   end
 end
+
+local function getDefaultValues()
+  local out = {}
+  local fullGraph = ah.getGraph(ah.apiType.HMI, ah.eventType.RESPONSE, m.rpcHMIMap[m.rpc.get])
+  for k, v in pairs(fullGraph) do
+    if v.parentId == nil  then
+      local name = v.name
+      local graph = ah.getBranch2(fullGraph, k)
+      local params = tdg.getParamValues(graph)
+      out[name] = params[name]
+    end
+  end
+  return out
+end
+
+m.vdValues = getDefaultValues()
 
 return m

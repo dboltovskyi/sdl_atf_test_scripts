@@ -6,10 +6,8 @@ local common = require('test_scripts/API/VehicleData/common')
 
 --[[ Local Constants ]]
 local testTypes = {
-  common.testType.LOWER_IN_BOUND,
-  common.testType.UPPER_IN_BOUND,
-  common.testType.LOWER_OUT_OF_BOUND,
-  common.testType.UPPER_OUT_OF_BOUND
+  common.testType.ENUM_ITEMS,
+  common.testType.BOOL_ITEMS
 }
 
 --[[ Scenario ]]
@@ -20,7 +18,7 @@ common.Step("Register App", common.registerApp)
 common.Step("Activate App", common.activateApp)
 
 common.Title("Test")
-common.getTestsForOnVD(testTypes)
+common.getTestsForGetVD(testTypes)
 
 common.Title("Postconditions")
 common.Step("Stop SDL", common.postconditions)

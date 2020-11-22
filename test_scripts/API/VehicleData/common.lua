@@ -19,6 +19,7 @@ config.zeroOccurrenceTimeout = 1000
 --[[ Local Variables ]]
 local m = {}
 local hashId = {}
+local isSubscribed = {}
 
 --[[ Common Proxy Functions ]]
 do
@@ -114,7 +115,7 @@ m.isNotExpectedSubscription = false
 
 m.testType = {
   VALID_RANDOM = 1,
-  ONLY_MANDATORY_PARAMS = 2,
+  MANDATORY_ONLY = 2,
   UPPER_IN_BOUND = 3,
   LOWER_IN_BOUND = 4,
   UPPER_OUT_OF_BOUND = 5,
@@ -233,6 +234,11 @@ function m.getHashId(pAppId)
   return hashId[pAppId]
 end
 
+function m.isSubscribable(pParam)
+  if m.vd[pParam] ~= "" then return true end
+  return false
+end
+
 --[[ @getVDParams: Return VD parameters and values
 --! @parameters:
 --! pIsSubscribable: true if parameter is available for subscription, otherwise - false
@@ -242,7 +248,7 @@ function m.getVDParams(pIsSubscribable)
   if pIsSubscribable == nil then return vdParams end
   local out = {}
   for param in pairs(m.vd) do
-    if pIsSubscribable == (m.vd[param] ~= "") then out[param] = true end
+    if pIsSubscribable == m.isSubscribable(param) then out[param] = true end
   end
   return out
 end
@@ -947,7 +953,7 @@ function m.getTests(pRPC, pTestType, pParamName)
 
   local testTypeMap = {
     [m.testType.VALID_RANDOM] = getValidRandomTests,
-    [m.testType.ONLY_MANDATORY_PARAMS] = getOnlyMandatoryTests,
+    [m.testType.MANDATORY_ONLY] = getOnlyMandatoryTests,
     [m.testType.LOWER_IN_BOUND] = getInBoundTests,
     [m.testType.UPPER_IN_BOUND] = getInBoundTests,
     [m.testType.LOWER_OUT_OF_BOUND] = getOutOfBoundTests,
@@ -960,6 +966,69 @@ function m.getTests(pRPC, pTestType, pParamName)
   }
   if testTypeMap[testType] then return testTypeMap[testType]() end
   return {}
+end
+
+function m.processRequest(pParams)
+  local cid = m.getMobileSession():SendRPC(pParams.mobile.name, pParams.mobile.request)
+  m.getHMIConnection():ExpectRequest(pParams.hmi.name, pParams.hmi.request)
+  :Do(function(_, data)
+      m.getHMIConnection():SendResponse(data.id, data.method, "SUCCESS", pParams.hmi.response)
+    end)
+  m.getMobileSession():ExpectResponse(cid, pParams.mobile.response)
+end
+
+function m.processNotification(pParams, pTestType, pVDParam)
+  local function SendNotification()
+    local times = m.isExpected
+    if pTestType == m.testType.LOWER_OUT_OF_BOUND
+      or pTestType == m.testType.UPPER_OUT_OF_BOUND
+      or pTestType == m.testType.MANDATORY_MISSING
+      or not m.isSubscribable(pVDParam) then
+      times = m.isNotExpected
+    end
+    m.getHMIConnection():SendNotification(pParams.hmi.name, pParams.hmi.notification)
+    m.getMobileSession():ExpectNotification(pParams.mobile.name, pParams.mobile.notification)
+    :Times(times)
+  end
+  if not isSubscribed[pVDParam] and m.isSubscribable(pVDParam) then
+    m.processSubscriptionRPC(m.rpc.sub, pVDParam)
+    :Do(function()
+        SendNotification()
+      end)
+    isSubscribed[pVDParam] = true
+  else
+    SendNotification()
+  end
+end
+
+function m.getTestsForGetVD(pTestTypes)
+  for param in m.spairs(m.getVDParams()) do
+    m.Title("VD parameter: " .. param)
+    for _, tt in pairs(pTestTypes) do
+      local tests = m.getTests(m.rpc.get, tt, param)
+      if m.getTableSize(tests) > 0 then
+        m.Title("Test type: " .. m.getKeyByValue(m.testType, tt))
+        for _, t in pairs(tests) do
+          m.Step(t.name, m.processRequest, { t.params })
+        end
+      end
+    end
+  end
+end
+
+function m.getTestsForOnVD(pTestTypes)
+  for param in m.spairs(m.getVDParams()) do
+    m.Title("VD parameter: " .. param)
+    for _, tt in pairs(pTestTypes) do
+      local tests = m.getTests(m.rpc.on, tt, param)
+      if m.getTableSize(tests) > 0 then
+        m.Title("Test type: " .. m.getKeyByValue(m.testType, tt))
+        for _, t in pairs(tests) do
+          m.Step(t.name, m.processNotification, { t.params, tt, param })
+        end
+      end
+    end
+  end
 end
 
 return m

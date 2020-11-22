@@ -6,27 +6,17 @@ local common = require('test_scripts/API/VehicleData/common')
 
 --[[ Local Constants ]]
 local testTypes = {
+  common.testType.VALID_RANDOM_ALL,
   common.testType.VALID_RANDOM,
-  common.testType.ONLY_MANDATORY_PARAMS,
   common.testType.LOWER_IN_BOUND,
   common.testType.UPPER_IN_BOUND,
   common.testType.LOWER_OUT_OF_BOUND,
   common.testType.UPPER_OUT_OF_BOUND,
   common.testType.ENUM_ITEMS,
   common.testType.BOOL_ITEMS,
-  common.testType.VALID_RANDOM_ALL,
+  common.testType.MANDATORY_ONLY,
   common.testType.MANDATORY_MISSING
 }
-
---[[ Local Functions ]]
-local function processRPC(pParams)
-  local cid = common.getMobileSession():SendRPC(pParams.mobile.name, pParams.mobile.request)
-  common.getHMIConnection():ExpectRequest(pParams.hmi.name, pParams.hmi.request)
-  :Do(function(_, data)
-      common.getHMIConnection():SendResponse(data.id, data.method, "SUCCESS", pParams.hmi.response)
-    end)
-  common.getMobileSession():ExpectResponse(cid, pParams.mobile.response)
-end
 
 --[[ Scenario ]]
 common.Title("Preconditions")
@@ -36,18 +26,7 @@ common.Step("Register App", common.registerApp)
 common.Step("Activate App", common.activateApp)
 
 common.Title("Test")
-for param in common.spairs(common.getVDParams(true)) do
-  common.Title("VD parameter: " .. param)
-  for _, testType in pairs(testTypes) do
-    local tests = common.getTests(common.rpc.get, testType, param)
-    if common.getTableSize(tests) > 0 then
-      common.Title(common.getKeyByValue(common.testType, testType))
-      for _, t in pairs(tests) do
-        common.Step(t.name, processRPC, { t.params })
-      end
-    end
-  end
-end
+common.getTestsForGetVD(testTypes)
 
 common.Title("Postconditions")
 common.Step("Stop SDL", common.postconditions)

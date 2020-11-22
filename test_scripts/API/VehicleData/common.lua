@@ -16,10 +16,8 @@ runner.testSettings.isSelfIncluded = false
 config.defaultProtocolVersion = 2
 config.zeroOccurrenceTimeout = 1000
 
---[[ Local Variables ]]
+--[[ Module ]]
 local m = {}
-local hashId = {}
-local isSubscribed = {}
 
 --[[ Common Proxy Functions ]]
 do
@@ -108,6 +106,7 @@ m.app = {
   [1] = 1,
   [2] = 2
 }
+
 m.isExpected = 1
 m.isNotExpected = 0
 m.isExpectedSubscription = true
@@ -145,6 +144,21 @@ m.isVersion = {
   NO = false,
   ALL = 3
 }
+
+--[[ Local Variables ]]
+local hashId = {}
+local isSubscribed = {}
+local rpc
+local rpcType
+local testType
+local paramName
+local boundValueTypeMap = {
+  [m.testType.UPPER_IN_BOUND] = tdg.valueType.UPPER_IN_BOUND,
+  [m.testType.LOWER_IN_BOUND] = tdg.valueType.LOWER_IN_BOUND,
+  [m.testType.UPPER_OUT_OF_BOUND] = tdg.valueType.UPPER_OUT_OF_BOUND,
+  [m.testType.LOWER_OUT_OF_BOUND] = tdg.valueType.LOWER_OUT_OF_BOUND
+}
+
 
 --[[ Common Functions ]]
 
@@ -300,23 +314,6 @@ function m.processRPCgenericError(pRPC, pParam, pValue)
     m.getHMIConnection():SendResponse(data.id, data.method, "SUCCESS", { [pParam] = pValue })
   end)
   m.getMobileSession():ExpectResponse(cid, { success = false, resultCode = "GENERIC_ERROR" })
-end
-
---[[ @getInvalidData: Return invalid value bases on valid one
---! @parameters:
---! pData: valid value
---! @return: invalid value
---]]
-function m.getInvalidData(pData)
-  if type(pData) == "boolean" then return 123 end
-  if type(pData) == "number" then return true end
-  if type(pData) == "string" then return false end
-  if type(pData) == "table" then
-    for k, v in pairs(pData) do
-      pData[k] = m.getInvalidData(v)
-    end
-    return pData
-  end
 end
 
 --[[ @processSubscriptionRPC: Processing SubscribeVehicleData and UnsubscribeVehicleData RPCs
@@ -489,20 +486,6 @@ function m.setAppVersion(pParamVersion, pOperator)
   actions.app.getParams().syncMsgVersion.minorVersion = minor
   actions.app.getParams().syncMsgVersion.patchVersion = patch
 end
-
---[[ Local Variables ]]-----------------------------------------------------------------------------
-local rpc
-local rpcType
-local testType
-local paramName
-
---[[ Local Constants ]]-----------------------------------------------------------------------------
-local boundValueTypeMap = {
-  [m.testType.UPPER_IN_BOUND] = tdg.valueType.UPPER_IN_BOUND,
-  [m.testType.LOWER_IN_BOUND] = tdg.valueType.LOWER_IN_BOUND,
-  [m.testType.UPPER_OUT_OF_BOUND] = tdg.valueType.UPPER_OUT_OF_BOUND,
-  [m.testType.LOWER_OUT_OF_BOUND] = tdg.valueType.LOWER_OUT_OF_BOUND
-}
 
 --[[ Params Generator Functions ]]------------------------------------------------------------------
 local function getParamsValidDataTestForRequest(pGraph)

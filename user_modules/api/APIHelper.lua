@@ -140,18 +140,7 @@ function m.getFullParamName(pGraph, pId)
   return out
 end
 
-function m.getBranch(pGraph, pId, pTbl)
-  pTbl[pId] = true
-  for k, v in pairs(pGraph) do
-    if v.parentId == pId then
-      pTbl[k] = true
-      m.getBranch(pGraph, k, pTbl)
-    end
-  end
-  return pTbl
-end
-
-function m.getBranch2(pGraph, pId)
+function m.getBranch(pGraph, pId)
   local function getChildren(pGraph, pId, pTbl)
     pTbl[pId] = true
     for k, v in pairs(pGraph) do

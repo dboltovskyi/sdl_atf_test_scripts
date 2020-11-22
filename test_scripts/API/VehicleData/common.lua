@@ -896,16 +896,7 @@ local function getValidRandomAllTests()
   end
   local paramId = getParamId(graph, paramName)
 
-  local paramIds = ah.getBranch(graph, paramId, {})
-  local function getUpdatedGraph(pGraph, pParamIds)
-    for k in pairs(pGraph) do
-      if not pParamIds[k] then
-        pGraph[k] = nil
-      end
-    end
-    return pGraph
-  end
-  graph = getUpdatedGraph(graph, paramIds)
+  graph = ah.getBranch(graph, paramId)
   local tc = { graph = graph, paramId = paramId }
   table.insert(tests, {
       name = "Param_" .. ah.getFullParamName(tc.graph, tc.paramId),
@@ -926,9 +917,9 @@ local function getMandatoryMissingTests()
       local graph = utils.cloneTable(randomAllTests[1].graph)
       if graph[paramId].parentId ~= nil and graph[paramId].mandatory == true then
         local name = ah.getFullParamName(graph, paramId)
-        local idsToDelete = ah.getBranch(graph, paramId, {})
+        local branchToDelete = ah.getBranch(graph, paramId, {})
         for id in pairs(graph) do
-          if idsToDelete[id] == true then graph[id] = nil end
+          if branchToDelete[id] then graph[id] = nil end
         end
         table.insert(tests, {
           name = "Param_missing_" .. name,
@@ -1053,7 +1044,7 @@ local function getDefaultValues()
   for k, v in pairs(fullGraph) do
     if v.parentId == nil  then
       local name = v.name
-      local graph = ah.getBranch2(fullGraph, k)
+      local graph = ah.getBranch(fullGraph, k)
       local params = tdg.getParamValues(graph)
       out[name] = params[name]
     end

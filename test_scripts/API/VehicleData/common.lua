@@ -45,7 +45,7 @@ do
   m.getTableSize = utils.getTableSize
 end
 
---[[ Common Variables ]]
+--[[ Common Constants and Variables ]]
 m.rpc = {
   get = "GetVehicleData",
   sub = "SubscribeVehicleData",
@@ -145,7 +145,7 @@ m.isVersion = {
   ALL = 3
 }
 
---[[ Local Variables ]]
+--[[ Local Constants and Variables ]]
 local hashId = {}
 local isSubscribed = {}
 local rpc
@@ -158,7 +158,6 @@ local boundValueTypeMap = {
   [m.testType.UPPER_OUT_OF_BOUND] = tdg.valueType.UPPER_OUT_OF_BOUND,
   [m.testType.LOWER_OUT_OF_BOUND] = tdg.valueType.LOWER_OUT_OF_BOUND
 }
-
 
 --[[ Common Functions ]]
 
@@ -249,6 +248,12 @@ function m.getHashId(pAppId)
   return hashId[pAppId]
 end
 
+--[[ @isSubscribable: Check whether VD parameter is subscribable
+--! E.g. it's no possible to subscribe to 'vin' VD parameter
+--! @parameters:
+--! pParam: name of the VD parameter
+--! @return: true if it's possible to subscribe to VD parameter, otherwise - false
+--]]
 function m.isSubscribable(pParam)
   if m.vd[pParam] ~= "" then return true end
   return false
@@ -488,6 +493,12 @@ function m.setAppVersion(pParamVersion, pOperator)
 end
 
 --[[ Params Generator Functions ]]------------------------------------------------------------------
+
+--[[ @getParamsValidDataTestForRequest: Provide parameters for processing valid sequence for 'GetVehicleData' request
+--! @parameters:
+--! pGraph: graph with structure of parameters
+--! @return: table with parameters
+--]]
 local function getParamsValidDataTestForRequest(pGraph)
   local request = { [paramName] = true }
   local hmiResponse = tdg.getParamValues(pGraph)
@@ -509,6 +520,11 @@ local function getParamsValidDataTestForRequest(pGraph)
   return params
 end
 
+--[[ @getParamsInvalidDataTestForRequest: Provide parameters for processing invalid sequence for 'GetVehicleData' request
+--! @parameters:
+--! pGraph: graph with structure of parameters
+--! @return: table with parameters
+--]]
 local function getParamsInvalidDataTestForRequest(pGraph)
   local request = { [paramName] = true }
   local hmiResponse = tdg.getParamValues(pGraph)
@@ -527,6 +543,11 @@ local function getParamsInvalidDataTestForRequest(pGraph)
   return params
 end
 
+--[[ @getParamsAnyDataTestForNotification: Provide parameters for processing any sequence for 'OnVehicleData' notification
+--! @parameters:
+--! pGraph: graph with structure of parameters
+--! @return: table with parameters
+--]]
 local function getParamsAnyDataTestForNotification(pGraph)
   local notification = tdg.getParamValues(pGraph)
   local params = {
@@ -554,9 +575,21 @@ local getParamsFuncMap = {
 }
 
 --[[ Test Cases Generator Function ]]---------------------------------------------------------------
-local function createTestCases(pAPIType, pFuncType, pFuncName, pIsMandatory, pIsArray, pIsVersion, pDataTypes)
 
-  local graph = ah.getGraph(pAPIType, pFuncType, pFuncName)
+--[[ @createTestCases: Generate test cases depends on API structure of VD parameter and various options
+--! @parameters:
+--! pAPIType: type of the API, e.g. 'mobile' or 'hmi'
+--! pEventType: type of the event, e.g. 'request', 'response' or 'notification'
+--! pFuncName: name of the API function, e.g. 'GetVehicleData'
+--! pIsMandatory: defines how mandatory parameters is going to be handled (see 'm.isMandatory')
+--! pIsArray: defines how array parameters is going to be handled (see 'm.isArray')
+--! pIsVersion: defines how parameters with version defined is going to be handled (see 'm.isVersion')
+--! pDataTypes: list of data types included into processing, e.g. 'ah.dataType.INTEGER.type'
+--! @return: table with test cases
+--]]
+local function createTestCases(pAPIType, pEventType, pFuncName, pIsMandatory, pIsArray, pIsVersion, pDataTypes)
+
+  local graph = ah.getGraph(pAPIType, pEventType, pFuncName)
 
   local function getParents(pGraph, pId)
     local out = {}
@@ -673,6 +706,11 @@ local function createTestCases(pAPIType, pFuncType, pFuncName, pIsMandatory, pIs
 end
 
 --[[ Tests Generator Functions ]]-------------------------------------------------------------------
+
+--[[ @getValidRandomTests: Generate tests for VALID_RANDOM test type
+--! @parameters: none
+--! @return: table with tests
+--]]
 local function getValidRandomTests()
   local tcs = createTestCases(ah.apiType.HMI, rpcType, m.rpcHMIMap[rpc],
     m.isMandatory.ALL, m.isArray.ALL, m.isVersion.ALL, {})
@@ -686,6 +724,10 @@ local function getValidRandomTests()
   return tests
 end
 
+--[[ @getOnlyMandatoryTests: Generate tests for MANDATORY_ONLY test type
+--! @parameters: none
+--! @return: table with tests
+--]]
 local function getOnlyMandatoryTests()
   local function isTCExist(pExistingTCs, pTC)
     local tc = utils.cloneTable(pTC)
@@ -722,6 +764,10 @@ local function getOnlyMandatoryTests()
   return tests
 end
 
+--[[ @getInBoundTests: Generate tests for LOWER_IN_BOUND/UPPER_IN_BOUND test types
+--! @parameters: none
+--! @return: table with tests
+--]]
 local function getInBoundTests()
   local tests = {}
   -- tests simple data types
@@ -748,6 +794,10 @@ local function getInBoundTests()
   return tests
 end
 
+--[[ @getOutOfBoundTests: Generate tests for LOWER_OUT_OF_BOUND/UPPER_OUT_OF_BOUND test types
+--! @parameters: none
+--! @return: table with tests
+--]]
 local function getOutOfBoundTests()
   local tests = {}
   -- tests for simple data types
@@ -819,6 +869,10 @@ local function getOutOfBoundTests()
   return tests
 end
 
+--[[ @getEnumItemsTests: Generate tests for ENUM_ITEMS test type
+--! @parameters: none
+--! @return: table with tests
+--]]
 local function getEnumItemsTests()
   local tests = {}
   local dataTypes = { ah.dataType.ENUM.type }
@@ -837,6 +891,10 @@ local function getEnumItemsTests()
   return tests
 end
 
+--[[ @getBoolItemsTests: Generate tests for BOOL_ITEMS test type
+--! @parameters: none
+--! @return: table with tests
+--]]
 local function getBoolItemsTests()
   local tests = {}
   local dataTypes = { ah.dataType.BOOLEAN.type }
@@ -855,6 +913,10 @@ local function getBoolItemsTests()
   return tests
 end
 
+--[[ @getVersionTests: Generate tests for PARAM_VERSION test type
+--! @parameters: none
+--! @return: table with tests
+--]]
 local function getVersionTests()
   local tests = {}
   local tcs = createTestCases(ah.apiType.MOBILE, ah.eventType.REQUEST, rpc,
@@ -868,6 +930,10 @@ local function getVersionTests()
   return tests
 end
 
+--[[ @getValidRandomAllTests: Generate tests for VALID_RANDOM_ALL test type
+--! @parameters: none
+--! @return: table with tests
+--]]
 local function getValidRandomAllTests()
   local tests = {}
   local graph = ah.getGraph(ah.apiType.HMI, rpcType, m.rpcHMIMap[rpc])
@@ -890,6 +956,10 @@ local function getValidRandomAllTests()
   return tests
 end
 
+--[[ @getMandatoryMissingTests: Generate tests for MANDATORY_MISSING test type
+--! @parameters: none
+--! @return: table with tests
+--]]
 local function getMandatoryMissingTests()
   local tests = {}
   local mndTests = getOnlyMandatoryTests()
@@ -914,6 +984,10 @@ local function getMandatoryMissingTests()
   return tests
 end
 
+--[[ @getInvalidTypeTests: Generate tests for INVALID_TYPE test type
+--! @parameters: none
+--! @return: table with tests
+--]]
 local function getInvalidTypeTests()
   local dataTypes = { ah.dataType.INTEGER.type, ah.dataType.FLOAT.type, ah.dataType.DOUBLE.type,
     ah.dataType.STRING.type, ah.dataType.ENUM.type }
@@ -931,6 +1005,14 @@ local function getInvalidTypeTests()
 end
 
 --[[ Test Getter Functions ]]-----------------------------------------------------------------------
+
+--[[ @getTests: Provide tests for defined test type and VD parameter
+--! @parameters:
+--! pRPC: name of RPC, e.g. 'GetVehicleData'
+--! pTestType: test type, e.g. 'm.testType.VALID_RANDOM'
+--! pParamName: name of the VD parameter
+--! @return: table with tests
+--]]
 function m.getTests(pRPC, pTestType, pParamName)
   local rpcTypeMap = {
     [m.rpc.get] = ah.eventType.RESPONSE,
@@ -959,6 +1041,11 @@ function m.getTests(pRPC, pTestType, pParamName)
   return {}
 end
 
+--[[ @processRequest: Processing sequence for 'GetVehicleData' request
+--! @parameters:
+--! pParams: all parameters for the sequence
+--! @return: none
+--]]
 function m.processRequest(pParams)
   local cid = m.getMobileSession():SendRPC(pParams.mobile.name, pParams.mobile.request)
   m.getHMIConnection():ExpectRequest(pParams.hmi.name, pParams.hmi.request)
@@ -968,29 +1055,41 @@ function m.processRequest(pParams)
   m.getMobileSession():ExpectResponse(cid, pParams.mobile.response)
 end
 
-function m.processNotification(pParams, pTestType, pVDParam)
+--[[ @processNotification: Processing sequence for 'OnVehicleData' notification
+--! @parameters:
+--! pParams: all parameters for the sequence
+--! pTestType: test type, e.g. 'm.testType.VALID_RANDOM'
+--! pParamName: name of the VD parameter
+--! @return: none
+--]]
+function m.processNotification(pParams, pTestType, pParamName)
   local function SendNotification()
     local times = m.isExpected
     if pTestType == m.testType.LOWER_OUT_OF_BOUND or pTestType == m.testType.UPPER_OUT_OF_BOUND
       or pTestType == m.testType.MANDATORY_MISSING or pTestType == m.testType.INVALID_TYPE
-      or not m.isSubscribable(pVDParam) then
+      or not m.isSubscribable(pParamName) then
       times = m.isNotExpected
     end
     m.getHMIConnection():SendNotification(pParams.hmi.name, pParams.hmi.notification)
     m.getMobileSession():ExpectNotification(pParams.mobile.name, pParams.mobile.notification)
     :Times(times)
   end
-  if not isSubscribed[pVDParam] and m.isSubscribable(pVDParam) then
-    m.processSubscriptionRPC(m.rpc.sub, pVDParam)
+  if not isSubscribed[pParamName] and m.isSubscribable(pParamName) then
+    m.processSubscriptionRPC(m.rpc.sub, pParamName)
     :Do(function()
         SendNotification()
       end)
-    isSubscribed[pVDParam] = true
+    isSubscribed[pParamName] = true
   else
     SendNotification()
   end
 end
 
+--[[ @getTestsForGetVD: Generate test steps for 'GetVehicleData' tests for defined test types
+--! @parameters:
+--! pTestTypes: test types
+--! @return: test steps
+--]]
 function m.getTestsForGetVD(pTestTypes)
   for param in m.spairs(m.getVDParams()) do
     m.Title("VD parameter: " .. param)
@@ -1006,6 +1105,11 @@ function m.getTestsForGetVD(pTestTypes)
   end
 end
 
+--[[ @getTestsForGetVD: Generate test steps for 'OnVehicleData' tests for defined test types
+--! @parameters:
+--! pTestTypes: test types
+--! @return: test steps
+--]]
 function m.getTestsForOnVD(pTestTypes)
   for param in m.spairs(m.getVDParams()) do
     m.Title("VD parameter: " .. param)
@@ -1021,6 +1125,10 @@ function m.getTestsForOnVD(pTestTypes)
   end
 end
 
+--[[ @getDefaultValues: Generate default random valid values for all VD parameters
+--! @parameters: none
+--! @return: values for parameters
+--]]
 local function getDefaultValues()
   local out = {}
   local fullGraph = ah.getGraph(ah.apiType.HMI, ah.eventType.RESPONSE, m.rpcHMIMap[m.rpc.get])

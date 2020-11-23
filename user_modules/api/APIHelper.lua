@@ -42,6 +42,12 @@ local schema = {
 }
 
 --[[ Functions ]]-----------------------------------------------------------------------------------
+
+--[[ @getType: Provide type of the parameter without interface
+--! @parameters:
+--! pType: type of the parameter (possibly with interface)
+--! @return: type of the parameter
+--]]
 local function getType(pType)
   if string.find(pType, "%.") then
     return utils.splitString(pType, ".")[2]
@@ -49,6 +55,13 @@ local function getType(pType)
   return pType
 end
 
+--[[ @getParamsData: Provide hierarchy of parameters and sub-parameters for the defined API function
+--! @parameters:
+--! pAPIType: type of the API, e.g. 'mobile' or 'hmi'
+--! pEventType: type of the event, e.g. 'request', 'response' or 'notification'
+--! pFuncName: name of the API function, e.g. 'GetVehicleData'
+--! @return: structure with hierarchy of parameters
+--]]
 local function getParamsData(pAPI, pEventType, pFunctionName)
 
   local function buildParams(pTbl, pParams)
@@ -107,6 +120,13 @@ local function getParamsData(pAPI, pEventType, pFunctionName)
   return out
 end
 
+--[[ @getGraph: Provide graph of all parameters for defined API function
+--! @parameters:
+--! pAPIType: type of the API, e.g. 'mobile' or 'hmi'
+--! pEventType: type of the event, e.g. 'request', 'response' or 'notification'
+--! pFuncName: name of the API function, e.g. 'GetVehicleData'
+--! @return: graph of all parameters (incl. sub-parameters) for the API function
+--]]
 function m.getGraph(pAPIType, pEventType, pFuncName)
 
   local function getGraph(pParams, pGraph, pParentId)
@@ -130,6 +150,13 @@ function m.getGraph(pAPIType, pEventType, pFuncName)
   return getGraph(apiParamsData, {})
 end
 
+--[[ @getFullParamName: Provide full parameter name created based on hierarchy.
+--! E.g. for the `pressure` sub-parameter it returns `tirePressure.innerLeftRear.pressure`
+--! @parameters:
+--! pGraph: graph which includes defined parameter
+--! pId: id of the parameter in graph
+--! @return: full name of the parameter
+--]]
 function m.getFullParamName(pGraph, pId)
   local out = pGraph[pId].name
   pId = pGraph[pId].parentId
@@ -140,6 +167,12 @@ function m.getFullParamName(pGraph, pId)
   return out
 end
 
+--[[ @getBranch: Provide branch (part of the initial graph) related to defined parameter
+--! @parameters:
+--! pGraph: graph which includes defined parameter
+--! pId: id of the parameter in graph
+--! @return: reduced graph with defined parameter and all it's sub-parameters
+--]]
 function m.getBranch(pGraph, pId)
   local function getChildren(pGraph, pId, pTbl)
     pTbl[pId] = true

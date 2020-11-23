@@ -18,7 +18,7 @@ m.valueType = {
 }
 
 --[[ Value generators ]]----------------------------------------------------------------------------
-math.randomseed(os.clock())
+math.randomseed(tonumber(tostring(os.time()):reverse():sub(1,6)))
 
 local function getStringValue(pTypeData, pValueType)
   local length

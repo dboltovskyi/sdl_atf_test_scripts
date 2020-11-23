@@ -1,5 +1,22 @@
 ----------------------------------------------------------------------------------------------------
--- TBA
+-- Description: Check that SDL processes OnVehicleData notification with <vd_param> parameter
+--
+-- Preconditions:
+-- 1) SDL and HMI are started
+-- 2) SubscribeVehicleData, OnVehicleData RPCs and <vd_param> parameter are allowed by policies
+-- 3) App is registered
+-- 4) App is subscribed to <vd_param> parameter data
+--
+-- In case:
+-- 1) HMI sends OnVehicleData notification with valid data for <vd_param> parameter to SDL
+-- (closest lower/upper values to the defined boundary)
+-- SDL does:
+-- - a) transfer this notification to App
+-- Exception: Notification for unsubscribable VD parameter is not transfered
+-- 2) HMI sends OnVehicleData notification with invalid data for <vd_param> parameter to SDL
+-- (closest lower/upper values to the defined boundary)
+-- SDL does:
+-- - a) not transfer this notification to App
 ----------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
 local common = require('test_scripts/API/VehicleData/common')
